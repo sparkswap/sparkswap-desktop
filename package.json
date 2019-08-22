@@ -3,7 +3,7 @@
   "author": "Sparkswap <dev@sparkswap.com> (https://github.com/sparkswap)",
   "description": "Sparkswap Satstacker",
   "productName": "Sparkswap Satstacker",
-  "version": "0.1.0",
+  "version": "0.1.0-1",
   "private": true,
   "main": "./build/electron.js",
   "repository": {
