@@ -1,10 +1,13 @@
 import React, { ReactNode, RefObject } from 'react'
 import { ExternalButton, ExternalLink } from './components'
 import { Classes, Button, Dialog, H5, Spinner } from '@blueprintjs/core'
+import { showErrorToast } from './AppToaster'
 import './Onboarding.css'
 import { getAuth } from '../domain/main-request'
 import { ANCHOR_PARTITION } from '../../common/constants'
+import { delay } from '../../global-shared/util'
 import { WebviewTag } from 'electron'
+import WebviewCSSPath from './OnboardingWebview.css.txt'
 
 // We assume development will always refer to `register-sandbox`
 const BASE_URL = process.env.NODE_ENV === 'development'
@@ -165,12 +168,27 @@ interface AnchorPostMessageEvent extends MessageEvent {
 
 export class DepositDialog extends React.Component<DepositDialogProps, DepositDialogState> {
   private webviewRef: RefObject<WebviewTag>
+  private webviewCSS?: string
 
   constructor (props: DepositDialogProps) {
     super(props)
     this.webviewRef = React.createRef()
     this.state = {
       webviewIsLoading: true
+    }
+
+    this.loadCSS()
+  }
+
+  async loadCSS (): Promise<string | undefined> {
+    if (this.webviewCSS) {
+      return this.webviewCSS
+    }
+    try {
+      this.webviewCSS = await (await fetch(WebviewCSSPath)).text()
+      return this.webviewCSS
+    } catch (e) {
+      console.error(`Error while loading css for injection: ${e.message}`)
     }
   }
 
@@ -183,7 +201,20 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     this.handleAnchorStatus(status)
   }
 
-  onStopLoading = (): void => {
+  handleWebviewReady = async (): Promise<void> => {
+    const webviewNode = this.webviewRef.current
+    if (!webviewNode) return
+
+    const webviewCSS = await this.loadCSS()
+
+    if (!webviewCSS) {
+      showErrorToast('Error loading deposit workflow. Please try again.')
+      this.props.onClose()
+      return
+    }
+
+    webviewNode.insertCSS(webviewCSS)
+    await delay(100)
     this.setState({ webviewIsLoading: false })
   }
 
@@ -191,20 +222,28 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     const webviewNode = this.webviewRef.current
     if (!webviewNode) return
 
+    webviewNode.addEventListener('dom-ready', this.handleWebviewReady)
     webviewNode.addEventListener('message', this.handleMessage as EventListener)
-    webviewNode.addEventListener('did-stop-loading', this.onStopLoading)
   }
 
   handleCloseWebview = (): void => {
     const webviewNode = this.webviewRef.current
     if (!webviewNode) return
 
+    this.setState({ webviewIsLoading: true })
+    webviewNode.removeEventListener('dom-ready', this.handleWebviewReady)
     webviewNode.removeEventListener('message', this.handleMessage as EventListener)
-    webviewNode.removeEventListener('did-stop-loading', this.onStopLoading)
   }
 
   componentWillUnmount (): void {
     this.handleCloseWebview()
+  }
+
+  get className (): string {
+    return [
+      'DepositDialog',
+      this.state.webviewIsLoading ? 'webview-loading' : ''
+    ].filter(Boolean).join(' ')
   }
 
   renderNonWebviewContent (): ReactNode {
@@ -220,6 +259,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
 
     return (
       <Dialog
+        className={this.className}
         title="Deposit USD"
         isOpen={this.props.isOpen}
         onClose={() => this.props.onClose()}

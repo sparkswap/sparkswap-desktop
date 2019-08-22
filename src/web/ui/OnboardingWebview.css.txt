@@ -1,0 +1,132 @@
+body {
+  background: transparent !important;
+  font-family: -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Open Sans", "Helvetica Neue", "Icons16", sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Open Sans", "Helvetica Neue", "Icons16", sans-serif !important;
+}
+
+.cart-page-container {
+  margin-top: 0 !important;
+}
+
+.cart-page-container .container {
+  padding: 0;
+}
+
+.cart-page-container .container .row {
+  margin: 0;
+}
+
+.cart-page-container .container .row .col-lg-7 {
+  padding: 0;
+}
+
+.cart-page-container .content-pane {
+  padding: 0;
+}
+
+.cart-page-container .order-history-wrapper {
+  border: none;
+  color: rgba(245,248,250,1);
+}
+
+.cart-page-container .order-history-wrapper .col-lg-12 {
+  padding: 0;
+  margin-top: -30px;
+}
+
+.cart-page-container .order-history-wrapper .panel-header {
+  display: none;
+}
+
+.cart-page-container .order-history-wrapper .panel-content {
+  margin-top: 0;
+}
+
+.cart-page-container .order-history-wrapper .buy-form input.full-width {
+  background-color: #1b2129;
+  box-shadow: none;
+  height: inherit;
+  font-size: 14px;
+  padding: 0.5em 0.75em;
+  border: none;
+  letter-spacing: normal;
+}
+
+.cart-page-container .order-history-wrapper .buy-form .input-group .input-group-addon {
+  font-size: 14px;
+  color: #1b2129;
+  background-color: #3A4045;
+  letter-spacing: normal;
+  border-radius: 2px;
+  border: none;
+}
+
+.cart-page-container .order-history-wrapper .buy-form h3 {
+  font-size: 14px;
+  color: inherit;
+  letter-spacing: normal;
+}
+
+.buy-form .top-margin {
+  margin-top: 15px;
+}
+
+.buy-form .btn-primary.buyButton {
+  margin-top: 30px;
+  height: auto;
+  padding: 1em;
+  box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
+  background-color: #394b59;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+  font-size: 14px;
+  font-weight: 300;
+  border: none;
+  color: rgba(245,248,250,1);
+}
+
+.buy-form .btn-primary.buyButton:hover {
+  background-color: #546879;
+}
+
+.buy-form .buyButton .loading-spinner {
+  margin-top: 0;
+  right: 15px;
+}
+
+.buy-form .payment-method {
+  border: none;
+}
+
+.buy-form .payment-method .btn,
+.buy-form .payment-method .block {
+  height: auto;
+  padding: 1em;
+  box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
+  background-color: #394b59;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+  border-radius: 3px;
+  color: rgba(245,248,250,1);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: normal;
+}
+
+.buy-form .payment-method .btn:hover {
+  background-color: #546879;
+  color: rgba(245,248,250,1);
+}
+
+.buy-form .login-errors {
+  color: #DB3737;
+  letter-spacing: normal;
+  font-family: -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Open Sans", "Helvetica Neue", "Icons16", sans-serif;
+}
+
+/* disabled button is todo */
+
+#deposit-confirm-pane {
+  display: none;
+}

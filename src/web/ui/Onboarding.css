@@ -7,8 +7,17 @@
   margin-top: 2em;
 }
 
+.webview-loading #AnchorDepositIFrame {
+  display: none;
+}
+
 #AnchorDepositIFrame {
   height: 300px;
+}
+
+.DepositDialog {
+  position: relative;
+  min-height: 536px;
 }
 
 .AnchorSpinner {
