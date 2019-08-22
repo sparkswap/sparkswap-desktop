@@ -1,0 +1,36 @@
+.StatusBadge {
+  display: inline-block;
+  border-style: solid;
+  border-radius: 50%;
+  border-color: #8A9BA8;
+  margin: 0.5em 1.25em;
+}
+
+.StatusBadge.bp3-intent-primary {
+  border-color: #48AFF0;
+}
+
+.StatusBadge.bp3-intent-success {
+  border-color: #3DCC91;
+}
+
+.StatusBadge.bp3-intent-warning {
+  border-color: #FFB366;
+}
+
+.StatusBadge.bp3-intent-danger {
+  border-color: #FF7373;
+}
+
+.StatusBadge.pulse {
+  animation: 2s ease infinite alternate statuspulse;
+}
+
+@keyframes statuspulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.7;
+  }
+}

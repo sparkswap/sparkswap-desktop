@@ -1,0 +1,11 @@
+.FilePathInput .bp3-file-upload-input {
+  width: 0;
+  padding-right: 65px;
+}
+
+.FilePathInput .bp3-file-input {
+  width: 75px;
+}
+.FilePathInput input {
+  padding-right: 80px !important;
+}

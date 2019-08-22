@@ -1,0 +1,94 @@
+/* Make the history entries scroll without the headers */
+
+.History {
+  margin: 20px 0;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.History .table-outer {
+  position: relative;
+  height: 100%;
+  padding-top: 30px;
+  width: 100%;
+}
+
+.History .table-outer .table-inner {
+  overflow-y: scroll;
+  height: 100%;
+
+  /* Room for the scroll bar */
+  width: 105%;
+  padding-right: 5%;
+}
+
+.History .table-outer .table-inner table {
+  width: 100%;
+}
+
+.History .table-outer .table-inner table thead {
+  width: 100%;
+}
+
+.History .table-outer .table-inner table thead tr:only-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+
+  /* Room for the scroll bar */
+  width: 105%;
+  padding-right: 5%;
+}
+
+.History .table-outer .table-inner table thead tr th:first-child {
+  flex: 1;
+}
+
+/* Fixed width is required for the separate head/body scroll */
+
+.History table td,
+.History table th {
+  width: 30%;
+}
+
+.History table td:first-child,
+.History table th:first-child {
+  width: 40%;
+}
+
+/* Removes line between table header and body */
+.bp3-dark .History table.bp3-html-table tbody tr:first-child td {
+  box-shadow: none;
+}
+
+/* Tightens up spacing between rows */
+.History table.bp3-html-table.bp3-html-table-condensed td {
+  padding: 2px 11px;
+}
+
+/* Aligns history table's left and right sides */
+.History table.bp3-html-table.bp3-html-table-condensed tr>td:first-child,
+.History table.bp3-html-table.bp3-html-table-condensed tr>th:first-child {
+  padding-left: 0;
+}
+
+.History table.bp3-html-table.bp3-html-table-condensed tr>td:last-child,
+.History table.bp3-html-table.bp3-html-table-condensed tr>th:last-child {
+  padding-right: 0;
+}
+
+/* Reduces weight of column headers */
+.History table.bp3-html-table th {
+  font-weight: 100;
+}
+
+/* TODO: make global color palette and remove custom color */
+.bp3-dark .History .text-muted {
+  color: #828f99;
+}
+
+.History .DateColumn {
+  text-align: right;
+}

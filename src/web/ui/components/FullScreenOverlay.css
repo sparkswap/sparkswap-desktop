@@ -1,0 +1,39 @@
+.FullScreenOverlay {
+  margin: 3em 0;
+}
+
+/* TODO: unify this with App.css */
+.FullScreenOverlay .bp3-overlay-backdrop {
+  background-image: linear-gradient(
+    to top right,
+    rgba(27, 34, 42, 1), rgba(41, 52, 59, 1)
+  );
+  background-attachment: fixed;
+}
+
+.FullScreenOverlay .ContentWrapper {
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%)
+}
+
+.FullScreenOverlay .Title {
+  text-align: center;
+  margin-bottom: 3em;
+}
+
+.FullScreenOverlay .Title .bp3-heading {
+  font-weight: 400;
+}
+
+.FullScreenOverlay .Body {
+  width: 50%;
+  margin: 0 auto;
+}
+
+.FullScreenOverlay .home-button {
+  position: fixed;
+  top: 35px;
+  right: 70px;
+  z-index: 21;
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="78px" height="78px" viewBox="0 0 78 78" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 51.2 (57519) - http://www.bohemiancoding.com/sketch -->
+    <title>Sparkswap</title>
+    <defs>
+      <linearGradient id="blackwhite" gradientTransform="rotate(315) translate(-0.5)">
+        <stop offset="1%" stop-color="#A7D9E5" />
+        <stop offset="90%" stop-color="#FCFDFE" stop-opacity="0.9" />
+      </linearGradient>
+    </defs>
+    <g id="Icon-(inverted)" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M39,78 C17.4608948,78 0,60.5391052 0,39 C0,17.4608948 17.4608948,0 39,0 C60.5391052,0 78,17.4608948 78,39 C78,60.5391052 60.5391052,78 39,78 Z M19,62 C30.60354,56.9768934 42.0664382,52.0145501 53.7217464,46.9690728 C49.7119613,42.3661707 45.8452118,37.9283273 42.0921727,33.6204753 C47.7693102,27.7040561 53.3378244,21.9006992 59,16 C47.4350617,21.0022476 35.9416412,25.97366 24.2851361,31.0155096 C28.3107808,35.6329224 32.1868066,40.0786257 35.9287739,44.3707579 C30.2630075,50.2711548 24.6831222,56.081767 19,62 Z" id="Combined-Shape" fill="url('#blackwhite')"></path>
+    </g>
+</svg>

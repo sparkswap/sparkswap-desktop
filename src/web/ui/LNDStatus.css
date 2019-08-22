@@ -1,0 +1,39 @@
+.bp3-button.settings-button.bp3-minimal {
+  position: fixed;
+  top: 38px;
+  /* based on .App .logo's and positioning + 40px*/
+  right: 70px;
+  z-index: 22;
+  text-align: right;
+}
+
+.bp3-button.settings-button.bp3-minimal .bp3-button-text {
+  /* the spinner is a flex display, so we need the parent to be one too */
+  display: flex;
+}
+
+.bp3-button.settings-button.bp3-minimal.loading .bp3-spinner {
+  margin-right: 0.7em;
+}
+
+.bp3-button.settings-button.bp3-minimal .StatusBadge {
+  margin-left: 0.2em;
+}
+
+.bp3-button.settings-button.bp3-minimal {
+  font-size: 0.85em;
+}
+
+.bp3-button.settings-button.bp3-minimal .bp3-icon:last-child {
+  margin-left: 0.75em;
+}
+
+.bp3-dark.sparkswap .bp3-button.bp3-intent-warning.settings-button.bp3-minimal,
+.bp3-dark.sparkswap .bp3-button.bp3-intent-warning.settings-button.bp3-minimal .bp3-icon {
+  color: rgba(255,179,102, 0.7)
+}
+
+.bp3-dark.sparkswap .bp3-button.bp3-intent-warning.settings-button:hover,
+.bp3-dark.sparkswap .bp3-button.bp3-intent-warning.settings-button:hover .bp3-icon {
+  color: rgba(255,179,102, 0.9)
+}

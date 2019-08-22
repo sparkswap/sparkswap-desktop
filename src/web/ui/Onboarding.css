@@ -1,0 +1,21 @@
+.RegisterPanel {
+  text-align: center;
+  margin-top: 2em;
+}
+
+.RegisterPanel .RegisterButton {
+  margin-top: 2em;
+}
+
+#AnchorDepositIFrame {
+  height: 300px;
+}
+
+.AnchorSpinner {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin-bottom: -100px;
+}

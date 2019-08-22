@@ -1,0 +1,43 @@
+.Balances {
+  margin-bottom: 20px;
+}
+
+.Balances .balances-row {
+  display: flex;
+}
+
+.Balances .single-balance {
+  font-weight: 500;
+  margin-right: 3em;
+  height: 25px;
+  vertical-align: middle;
+}
+
+.Balances .single-balance:last-child {
+  margin-right: 0;
+}
+
+.Balances .single-balance>span {
+  line-height: 25px;
+  display: inline-block;
+  text-align: right;
+  min-width: 125px;
+}
+
+.Balances .single-balance .balance-amount {
+  margin-right: 0.25em;
+  display: inline-block;
+  min-width: 70px;
+}
+
+.Balances .single-balance:first-child>span {
+  text-align: left;
+}
+
+.Balances .single-balance>.bp3-button {
+  line-height: 25px;
+  display: inline-block;
+  margin-left: 2em;
+  /* couldn't fine any other way to get this to line up */
+  margin-top: -3px;
+}

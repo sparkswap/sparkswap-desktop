@@ -1,0 +1,101 @@
+.Trade {
+  margin-top: 45px;
+}
+
+.Trade form {
+  padding: 0;
+  padding-top: 35px;
+  padding-bottom: 40px;
+  border-radius: 0.25em;
+}
+
+.Trade .bp3-overlay-backdrop {
+  position: absolute;
+  animation: backdropfadein 0.1s ease 1;
+}
+
+@keyframes backdropfadein {
+  from {
+    background-color: rgba(16, 22, 26, 0);
+  }
+
+  to {
+    background-color: rgba(16, 22, 26, 0.7);
+  }
+}
+
+.Trade .quoted .seconds-remaining {
+  display: block;
+  text-align: center;
+  opacity: 0.5;
+  height: 20px;
+  padding-top: 5px;
+  padding-bottom: 20px;
+}
+
+.Trade .quoted {
+  position: relative;
+  z-index: 100;
+  background: rgba(57, 75, 89, 0.5);
+  padding-bottom: 10px;
+  margin-bottom: 62px;
+  padding-top: 10px;
+}
+
+.Trade .conversion {
+  text-align: center;
+  padding: 12px 18px;
+  margin: 0;
+}
+
+.Trade .button-container {
+  width: 75%;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+
+.Trade .button-container .bp3-button.bp3-fill {
+  padding: 12px 18px;
+}
+
+.Trade .quoted .button-container .bp3-button.bp3-minimal {
+  padding-left: 2px;
+}
+
+.Trade .TradeForm {
+  margin-bottom: 0;
+}
+
+@keyframes color-change {
+  0% { color: #f0413b; }
+  100% { color: #f5f8fa; }
+}
+
+.PulseRed input {
+  animation: color-change 1s 1;
+}
+
+.Trade .TradeForm .bp3-input {
+  background: none;
+  font-size: 2.5em;
+  text-align: right;
+  height: 1.5em;
+}
+
+.Trade .TradeForm .bp3-input:disabled {
+  background: none;
+  color: inherit;
+}
+
+.Trade .TradeForm .bp3-input:focus {
+  box-shadow: none
+}
+
+.Trade .TradeForm .bp3-input-action {
+  top: 50%;
+  opacity: 0.5;
+}
+
+.Trade .TradeForm .bp3-input-action .bp3-heading {
+  padding-left: 1em;
+}

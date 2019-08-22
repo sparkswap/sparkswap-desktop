@@ -1,0 +1,20 @@
+/* Overlay */
+
+.LNDConnect .FullScreenOverlay .bp3-dialog-footer-actions {
+  justify-content: center;
+  margin: 1.5em 0 0.5em 0;
+}
+
+.LNDConnect .FullScreenOverlay .bp3-dialog-footer {
+  justify-content: center;
+  text-align: center;
+}
+
+.LNDConnect .FullScreenOverlay .bp3-dialog-footer-actions .bp3-button {
+  margin-left: 0;
+  min-width: 250px;
+}
+
+.LNDConnect .FullScreenOverlay .Body {
+  max-width: 500px;
+}

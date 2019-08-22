@@ -1,0 +1,45 @@
+---
+appId: "org.sparkswap.Satstacker"
+artifactName: "${productName}-${os}-${arch}-v${version}.${ext}"
+generateUpdatesFilesForAllChannels: true
+files:
+  - "build/**/*"
+  - "package.json"
+directories:
+  buildResources: "public"
+  output: "release-builds"
+
+mac:
+  category: "public.app-category.finance"
+  publish:
+    - "github"
+  icon: "public/icon.icns"
+  target:
+    - "dmg"
+
+win:
+  icon: "public/icon-1024.png"
+  publish:
+    - "github"
+  target:
+    - target: nsis
+      arch:
+        - "x64"
+
+linux:
+  category: "Finance"
+  packageCategory: "wallet"
+  icon: "public/icon-1024.png"
+  publish:
+    - "github"
+  target:
+    - target: "AppImage"
+      arch: "x64"
+  desktop:
+    Comment: "Sparkswap Satstacker"
+    Icon: "public/icon-1024.png"
+    Name: "Sparkswap-Satstacker"
+    StartupNotify: "true"
+    Terminal: "false"
+    Type: "Application"
+    Categories: "Office;Finance"

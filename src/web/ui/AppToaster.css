@@ -1,0 +1,38 @@
+.sparkswap .AppToaster .bp3-toast {
+  width: 530px;
+  font-size: 13px;
+  line-height: 16px;
+  box-shadow: 0 0 0 1px rgba(16, 22, 26, 0.2);
+  color: #7b8e9a;
+}
+
+.sparkswap .AppToaster .bp3-toast .bp3-toast-message {
+  padding: 7px 9px;
+}
+
+.sparkswap .AppToaster .bp3-toast .bp3-button-group .bp3-button {
+  padding: 2px;
+  min-height: 10px;
+  min-width: 20px;
+}
+
+.sparkswap .AppToaster .bp3-toast.bp3-intent-success {
+  color: #34ec98;
+  background-color: #1b2129;
+}
+
+.sparkswap .AppToaster .bp3-toast.bp3-intent-danger {
+  color: #f0413b;
+  background-color: #1b2129;
+}
+
+.sparkswap .AppToaster .bp3-toast.loading .bp3-button-group .bp3-button:first-child:hover {
+  /* This gets an important tag because the base stylesheet uses one. :( */
+  background: none !important;
+  cursor: default;
+}
+
+/* Hide the close button only. #yolo */
+.sparkswap .AppToaster .bp3-toast.hide-dismiss .bp3-button-group .bp3-button:last-child {
+  display: none;
+}

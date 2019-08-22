@@ -1,0 +1,175 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+body.sparkswap {
+  background-color: #293742;
+  background-image: linear-gradient(
+    to top right,
+    rgba(27, 34, 42, 1), rgba(41, 52, 59, 1)
+  );
+  background-attachment: fixed
+}
+
+.App {
+  padding: 60px 30px;
+  height: 100%;
+}
+
+.App .chrome-title {
+  height: 40px;
+  width: 100%;
+  -webkit-app-region: drag;
+  text-align: right;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 21;
+}
+
+.App .logo {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  top: 40px;
+  right: 30px;
+  z-index: 22;
+}
+
+.App .chrome-title button {
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+}
+
+.app-content {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  height: 100%;
+  overflow: hidden;
+}
+
+.BalancesAndPrice {
+  flex: auto;
+  min-width: 325px;
+}
+
+.TradeAndHistory {
+  flex: initial;
+  width: 325px;
+  height: 100%;
+}
+
+.vertical-line {
+  margin: 0 30px;
+  width: 1px;
+  background-color: rgba(90, 103, 112, 0.50);
+}
+
+/* Fonts */
+
+.sparkswap h1.bp3-heading {
+  font-size: 38px;
+}
+
+.sparkswap .bp3-heading .subtitle {
+  color: #77838C;
+  font-size: 0.35em;
+  font-weight: bold;
+  margin-left: 1.5em;
+}
+
+.sparkswap h5.bp3-heading .subtitle {
+  font-size: 0.95em;
+  font-weight: 400;
+}
+
+/* Inputs */
+
+.bp3-dark.sparkswap .bp3-input {
+  background-color: #1b2129;
+  box-shadow: none;
+}
+
+/* Buttons */
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]),
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):hover {
+  box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+}
+
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):hover {
+  background-color: #546879;
+}
+
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):active {
+  background-color: #374754;
+  box-shadow: none;
+}
+
+.bp3-dark.sparkswap .bp3-button.bp3-minimal {
+  box-shadow: none;
+  background: none;
+  color: rgba(245,248,250, 0.4);
+}
+
+.bp3-dark.sparkswap .bp3-button.bp3-minimal .bp3-icon {
+  color: rgba(245,248,250, 0.4);
+}
+
+.bp3-dark.sparkswap .bp3-button.bp3-minimal:hover,
+.bp3-dark.sparkswap .bp3-button.bp3-minimal:active {
+  background: none;
+  color: rgba(245,248,250, 0.7);
+}
+
+.bp3-dark.sparkswap .bp3-button.bp3-minimal:hover .bp3-icon,
+.bp3-dark.sparkswap .bp3-button.bp3-minimal:active .bp3-icon {
+  color: rgba(245,248,250, 0.7);
+}
+
+/* Dialogs */
+
+.bp3-dark.sparkswap .bp3-dialog {
+  width: 360px;
+  background-color: rgba(16, 22, 26, 0.85);
+  box-shadow: none;
+  padding-bottom: 15px;
+}
+
+.bp3-dark.sparkswap .bp3-dialog .bp3-dialog-header {
+  background: none;
+  box-shadow: none;
+  padding-left: 15px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-body {
+  min-height: 360px;
+  margin: 15px;
+  margin-top: 5px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-body p {
+  margin-top: 40px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-footer {
+  margin: 0 15px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-footer-actions .bp3-button {
+  padding: 13px 20px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-footer-actions .bp3-button.bp3-fill:only-child {
+  margin-left: 0;
+}
