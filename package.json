@@ -3,7 +3,7 @@
   "author": "Sparkswap <dev@sparkswap.com> (https://github.com/sparkswap)",
   "description": "Sparkswap Desktop: the only way to buy Bitcoin instantly",
   "productName": "Sparkswap",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "private": true,
   "main": "./build/electron.js",
   "repository": {
