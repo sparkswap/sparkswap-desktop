@@ -1,7 +1,7 @@
 import { getBalance } from '../domain/main-request'
 import { Asset, Amount, valueToAsset } from '../../global-shared/types'
 import { delay } from '../../global-shared/util'
-import EventEmitter from 'events'
+import { EventEmitter } from 'events'
 import { toCents } from './quantity'
 
 // Milliseconds between polls for balance
@@ -28,6 +28,15 @@ export function isUSDXSufficient (usdxQuantity: number): boolean {
     return false
   }
   return toCents(usdxQuantity) <= balance.value
+}
+
+export function hasUSDX (): boolean {
+  const balance = balances[Asset.USDX]
+  if (balance instanceof Error) {
+    return false
+  }
+
+  return balance.value > 0
 }
 
 export async function getBalanceState (asset: Asset): Promise<BalanceState> {
@@ -58,7 +67,7 @@ export async function getBalanceState (asset: Asset): Promise<BalanceState> {
   return balances[asset]
 }
 
-async function pollBalances (): Promise<void> {
+async function pollBalances (): Promise<never> {
   while (true) {
     Object.keys(balances).forEach(asset => getBalanceState(valueToAsset(asset)))
     await delay(POLL_BALANCE_DELAY)

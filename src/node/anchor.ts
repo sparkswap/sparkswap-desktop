@@ -3,13 +3,14 @@ import { URL } from '../global-shared/types'
 import * as server from './server'
 import * as anchor from '../global-shared/anchor-engine/api'
 import { AnchorEngine } from '../global-shared/anchor-engine'
+import { IS_PRODUCTION } from '../common/config'
 
-// public API key for the platform
-const PLATFORM_API_KEY = process.env.NODE_ENV === 'development'
-  ? 'pk_bGuxdNPqqmYqt6xCDaWaAz' : 'TODO'
+// Public API key for the platform
+const PLATFORM_API_KEY = IS_PRODUCTION ? 'pk_kAerU8q99D1W8GgHtPxHHc' : 'pk_bGuxdNPqqmYqt6xCDaWaAz'
 
 export class AnchorClient {
   private _apiKey?: string
+  private _email?: string
   private _engine?: AnchorEngine
 
   constructor () {
@@ -29,10 +30,30 @@ export class AnchorClient {
       this._apiKey = config.anchor.apiKey
       this._engine = new AnchorEngine(this._apiKey)
     }
+    if (config.anchor.email) {
+      this._email = config.anchor.email
+    }
+  }
+
+  isConfigured (): boolean {
+    return Boolean(this._apiKey)
+  }
+
+  private async getEmail (): Promise<string | null> {
+    if (this._email) return this._email
+
+    const email = await server.getEmail()
+    if (email) {
+      this._email = email
+      addConfig('anchor', { email })
+      return email
+    }
+
+    return null
   }
 
   async startDeposit (): Promise<URL> {
-    const email = await server.getEmail()
+    const email = await this.getEmail()
     if (!email) {
       throw new Error('Email address not found')
     }
@@ -42,6 +63,7 @@ export class AnchorClient {
     }
 
     const depositResponse = await anchor.createDepositIntent(PLATFORM_API_KEY, email)
+
     const { url } = await server.submitKYC(depositResponse.identifier)
     addConfig('anchor', { apiKey: depositResponse.api_key })
     await this.initialize()

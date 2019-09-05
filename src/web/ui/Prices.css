@@ -1,7 +1,15 @@
+.PriceChart {
+  height: calc(100% - 90px);
+}
+
 .PriceChart .current-price {
   margin-bottom: 0em;
 }
 
 .PriceChart .price-change {
   margin-bottom: 3em;
+}
+
+.PriceChart .chart-wrapper {
+  height: calc(100% - 10em);
 }

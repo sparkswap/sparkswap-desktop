@@ -41,7 +41,7 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
 
   renderAmount (state: BalanceState): ReactNode {
     const className = [state instanceof Error ? Classes.SKELETON : '', 'balance-amount'].join(' ')
-    const value = state instanceof Error ? '----' : formatAmount(state)
+    const value = state instanceof Error ? '0.00000000' : formatAmount(state)
 
     return (
       <span className={className}>

@@ -25,10 +25,24 @@ const STATUS_TEXT = Object.freeze({
   [lnd.Statuses.VALIDATED]: 'Connected to LND'
 })
 
+const ERROR_STATUS = [
+  lnd.Statuses.UNKNOWN,
+  lnd.Statuses.UNAVAILABLE
+]
+
+const SYNCING_STATUS = [
+  lnd.Statuses.UNLOCKED,
+  lnd.Statuses.NOT_SYNCED
+]
+
 class LNDStatus extends React.Component<LNDStatusProps, {}> {
   get buttonIntent (): Intent {
-    if (this.props.status === lnd.Statuses.VALIDATED) {
+    if (this.props.loading || this.props.status === lnd.Statuses.VALIDATED || SYNCING_STATUS.includes(this.props.status)) {
       return Intent.NONE
+    }
+
+    if (ERROR_STATUS.includes(this.props.status)) {
+      return Intent.DANGER
     }
 
     return Intent.WARNING
@@ -39,42 +53,47 @@ class LNDStatus extends React.Component<LNDStatusProps, {}> {
       return Intent.SUCCESS
     }
 
+    if (ERROR_STATUS.includes(this.props.status)) {
+      return Intent.DANGER
+    }
+
     return Intent.WARNING
   }
 
-  get text (): React.ReactNode {
+  get className (): string {
+    return [
+      'settings-button',
+      this.props.loading ? 'loading' : ''
+    ].filter(Boolean).join(' ')
+  }
+
+  renderText (): ReactNode {
+    if (this.props.loading) {
+      return 'Connecting to LND'
+    }
     return STATUS_TEXT[this.props.status]
   }
 
+  renderBadge (): ReactNode {
+    if (this.props.loading || SYNCING_STATUS.includes(this.props.status)) {
+      return <Spinner tagName='span' size={13} />
+    }
+
+    return <StatusBadge intent={this.statusIntent} />
+  }
+
   render (): ReactNode {
-    const buttonProps = {
-      onClick: () => this.props.onClick(),
-      minimal: true,
-      small: true
-    }
-
-    if (this.props.loading) {
-      return (
-        <Button
-          {...buttonProps}
-          rightIcon='cog'
-          className='settings-button loading'
-        >
-          <Spinner tagName='span' size={13} />
-          Connecting to LND
-        </Button>
-      )
-    }
-
     return (
       <Button
-        {...buttonProps}
+        className={this.className}
+        onClick={() => this.props.onClick()}
+        minimal={true}
+        small={true}
         rightIcon='cog'
-        className='settings-button'
         intent={this.buttonIntent}
       >
-        <StatusBadge intent={this.statusIntent} pulse={this.statusIntent === Intent.WARNING} />
-        {this.text}
+        {this.renderBadge()}
+        {this.renderText()}
       </Button>
     )
   }

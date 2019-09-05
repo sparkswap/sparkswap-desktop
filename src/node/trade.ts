@@ -16,6 +16,9 @@ import allSettled, { PromiseResult, PromiseStatus } from '../global-shared/all-s
 import * as server from './server'
 import { Quote, Trade, TradeFailureReason } from '../common/types'
 import { logger } from '../common/utils'
+import { getChannelsState } from './channels'
+
+const { ExpiredSwapError: LndExpiredSwapError } = LndEngine.ERRORS
 
 // Milliseconds after we start executing a swap that we will still
 // accept an inbound HTLC for it.
@@ -51,7 +54,8 @@ async function resolveTrade (db: Database, engines: Engines, trade: Trade): Prom
   const {
     id: tradeId,
     hash,
-    sourceAmount
+    sourceAmount,
+    destinationAmount
   } = trade
 
   let serverAddress = ''
@@ -80,6 +84,21 @@ async function resolveTrade (db: Database, engines: Engines, trade: Trade): Prom
     logger.error(`Error while forwarding swap for Trade Id ${tradeId} ` +
       `with Hash ${hash}`, { error: e.message })
     failTrade(db, tradeId, TradeFailureReason.PERMANENT_FORWARD_ERROR)
+
+    if (e instanceof LndExpiredSwapError) {
+      // ExpiredSwapError will be triggered if a channel is pending open and a user tries a swap
+      const { maxRemotePendingOpenBalance, maxRemoteActiveBalance } = await getChannelsState(engines.BTC)
+
+      if (maxRemoteActiveBalance > destinationAmount.value) {
+        throw new Error('Trade timed out before completion.')
+      }
+
+      if (maxRemotePendingOpenBalance >= destinationAmount.value) {
+        throw new Error('Channel with Sparkswap is not yet open. Please wait for the channel to finish opening, then try again.')
+      } else {
+        throw new Error('No active channels with enough inbound capacity.')
+      }
+    }
     throw e
   }
 }

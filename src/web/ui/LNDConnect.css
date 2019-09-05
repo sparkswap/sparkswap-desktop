@@ -10,11 +10,66 @@
   text-align: center;
 }
 
+.LNDConnect .FullScreenOverlay .bp3-dialog-footer-actions {
+  display: flex;
+}
+
 .LNDConnect .FullScreenOverlay .bp3-dialog-footer-actions .bp3-button {
   margin-left: 0;
-  min-width: 250px;
+  flex: 1;
+  max-width: 250px;
 }
 
 .LNDConnect .FullScreenOverlay .Body {
   max-width: 500px;
+}
+
+.LNDConnect .FullScreenOverlay .bp3-dialog-footer-actions .bp3-divider {
+  margin-left: 2em;
+  margin-right: 2em;
+
+}
+
+.LNDConnect .FullScreenOverlay .AutoConnect {
+  text-align: center;
+  margin-bottom: 3em;
+}
+
+.LNDConnect .FullScreenOverlay .bp3-dialog-footer .AutoConnectButtons + .bp3-button.bp3-minimal {
+  padding: 0;
+  float: right;
+}
+
+
+.LNDConnect .FullScreenOverlay .Title {
+  margin-bottom: 1em;
+}
+
+.LNDConnect .ConnectGraphic {
+  height: 40px;
+  margin: 3em auto;
+}
+
+.bp3-dark .download-lnd .bp3-divider {
+  border-color: rgba(47, 56, 65, 0.8);
+  border-width: 2px;
+}
+
+.download-lnd ul {
+  width: 75%;
+  margin: 20px auto 0;
+}
+
+.download-lnd ul li a {
+  font-size: 1.2em;
+  display: inline-block;
+  padding: 1.5em 1.5em;
+  line-height: 1.3em;
+}
+
+.download-lnd ul li a img {
+  display: inline-block;
+  margin-right: 1em;
+  width: 1.3em;
+  vertical-align: text-top;
 }

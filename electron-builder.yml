@@ -1,45 +1,54 @@
 ---
-appId: "org.sparkswap.Satstacker"
-artifactName: "${productName}-${os}-${arch}-v${version}.${ext}"
+appId: 'com.sparkswap.Sparkswap'
+artifactName: '${productName}-${os}-${arch}-v${version}.${ext}'
 generateUpdatesFilesForAllChannels: true
 files:
-  - "build/**/*"
-  - "package.json"
+  - 'build/**/*'
+  - 'package.json'
 directories:
-  buildResources: "public"
-  output: "release-builds"
+  buildResources: 'public'
+  output: 'release-builds'
+afterSign: './scripts/notarize.js'
 
 mac:
-  category: "public.app-category.finance"
+  category: 'public.app-category.finance'
   publish:
-    - "github"
-  icon: "public/icon.icns"
+    - 'github'
+  icon: 'public/icon.png'
   target:
-    - "dmg"
+    - 'dmg'
+    - 'zip'
+  hardenedRuntime: true
+  gatekeeperAssess: false
 
 win:
-  icon: "public/icon-1024.png"
+  icon: 'public/icon.png'
   publish:
-    - "github"
+    - 'github'
   target:
     - target: nsis
       arch:
-        - "x64"
+        - 'x64'
 
 linux:
-  category: "Finance"
-  packageCategory: "wallet"
-  icon: "public/icon-1024.png"
+  category: 'Finance'
+  packageCategory: 'wallet'
   publish:
-    - "github"
+    - 'github'
   target:
-    - target: "AppImage"
-      arch: "x64"
+    - target: 'AppImage'
+      arch: 'x64'
   desktop:
-    Comment: "Sparkswap Satstacker"
-    Icon: "public/icon-1024.png"
-    Name: "Sparkswap-Satstacker"
-    StartupNotify: "true"
-    Terminal: "false"
-    Type: "Application"
-    Categories: "Office;Finance"
+    Comment: 'Sparkswap Desktop: the only way to buy Bitcoin instantly'
+    Icon: 'Sparkswap'
+    Name: 'Sparkswap'
+    StartupNotify: 'true'
+    Terminal: 'false'
+    Type: 'Application'
+    Categories: 'Office;Finance'
+
+nsis:
+  oneClick: false
+
+dmg:
+  sign: false

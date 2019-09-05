@@ -8,7 +8,7 @@ import {
   valueToUnit
 } from '../../global-shared/types'
 import { Quote, Trade, TradeStatus, TradeFailureReason } from '../../common/types'
-import EventEmitter from 'events'
+import { EventEmitter } from 'events'
 
 export const updater = new EventEmitter()
 
@@ -126,7 +126,7 @@ INSERT INTO trades (
 
   const id = Number(statement.run(dbTrade).lastInsertRowid)
 
-  updater.emit('insert', db, id)
+  updater.emit('insert', id)
 
   return id
 }
@@ -140,7 +140,7 @@ WHERE id = @id AND hash = @hash
 
   statement.run({ id, hash, preimage })
 
-  updater.emit('update', db, id)
+  updater.emit('update', id)
 }
 
 export function failTrade (db: Database, id: number, reason: TradeFailureReason): void {
@@ -152,7 +152,7 @@ WHERE id = @id
 
   statement.run({ id, reason })
 
-  updater.emit('update', db, id)
+  updater.emit('update', id)
 }
 
 export function getTrades (db: Database, since = new Date(0), limit = 100): Trade[] {
@@ -172,6 +172,7 @@ SELECT
   failureCode
 FROM trades
 WHERE startTime >= datetime(@sinceTimestamp, 'unixepoch', 'localtime')
+ORDER BY datetime(startTime) DESC
 LIMIT @limit
   `)
 
@@ -222,36 +223,9 @@ WHERE endTime IS NULL
   return statement.all().map(deserializeTrade)
 }
 
-let lastUpdate: Date | null = null
-
-export function setLastUpdate (db: Database): Date | null {
-  const statement = db.prepare(`
-SELECT
-  endTime
-FROM trades
-ORDER BY endTime
-LIMIT 1
-  `)
-
-  lastUpdate = new Date(statement.pluck().get())
-
-  return lastUpdate
+function triggerChange (tradeId: number): void {
+  updater.emit('change', tradeId)
 }
 
-export function getLastUpdate (): Date | null {
-  return lastUpdate
-}
-
-function updateTime (db: Database, tradeId: number): void {
-  const trade = getTrade(db, tradeId)
-
-  const tradeTime = trade.endTime || trade.startTime
-
-  if (!tradeTime) return
-
-  lastUpdate = tradeTime
-  updater.emit('change', lastUpdate)
-}
-
-updater.on('insert', updateTime)
-updater.on('update', updateTime)
+updater.on('insert', triggerChange)
+updater.on('update', triggerChange)

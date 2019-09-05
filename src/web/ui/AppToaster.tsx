@@ -2,11 +2,13 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import './AppToaster.css'
 import {
+  IActionProps,
   IToastProps,
   IToasterProps,
   Toaster,
   Position,
-  Spinner
+  Spinner,
+  Intent
 } from '@blueprintjs/core'
 
 interface AppToastProps extends IToastProps {
@@ -72,10 +74,21 @@ export const toaster = createAppToaster({
   position: Position.TOP
 })
 
-export function showErrorToast (message: string): void {
-  toaster.show({ message, intent: 'danger' })
+export function showErrorToast (message: string, action?: IActionProps): void {
+  toaster.show({ message, intent: Intent.DANGER, action })
 }
 
 export function showSuccessToast (message: string): void {
-  toaster.show({ message, intent: 'success' })
+  toaster.show({ message, intent: Intent.SUCCESS })
+}
+
+export function showLoadingToast (message: string): () => void {
+  const toastId = toaster.show({
+    message,
+    timeout: 0,
+    hideDismiss: true,
+    loading: true
+  })
+
+  return () => toaster.dismiss(toastId)
 }

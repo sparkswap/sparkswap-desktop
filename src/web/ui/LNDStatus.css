@@ -5,6 +5,11 @@
   right: 70px;
   z-index: 22;
   text-align: right;
+  line-height: 1em;
+}
+
+.bp3-dark.sparkswap .bp3-button.settings-button.bp3-minimal:not([class*="bp3-intent-"]):hover {
+  box-shadow: none;
 }
 
 .bp3-button.settings-button.bp3-minimal .bp3-button-text {
@@ -12,7 +17,7 @@
   display: flex;
 }
 
-.bp3-button.settings-button.bp3-minimal.loading .bp3-spinner {
+.bp3-button.settings-button.bp3-minimal .bp3-spinner {
   margin-right: 0.7em;
 }
 

@@ -1,20 +1,18 @@
-import * as url from 'url'
-import { shell, App } from 'electron'
+import * as path from 'path'
+import { App } from 'electron'
 import { listen, listenSync, close as closeListeners } from './main-listener'
 import LndClient from './lnd'
 import LndEngine from 'lnd-engine'
 import { AnchorEngine } from '../global-shared/anchor-engine'
-import { Amount, Asset, valueToAsset, assetToUnit } from '../global-shared/types'
+import { Amount, Asset, Unit, valueToAsset, assetToUnit } from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
-import { Quote, Trade } from '../common/types'
+import { Quote } from '../common/types'
 import * as store from './data'
 import { Database } from 'better-sqlite3'
 import { AnchorClient } from './anchor'
-import {
-  executeTrade,
-  retryPendingTrades
-} from './trade'
+import { executeTrade, retryPendingTrades } from './trade'
 import { getAuth } from './auth'
+import { openLink } from './util'
 
 type Engine = LndEngine | AnchorEngine
 
@@ -22,15 +20,6 @@ interface Engines {
   BTC: LndEngine,
   USDX: AnchorEngine,
   [symbol: string]: Engine
-}
-
-// TODO: make a whitelist of links and use that instead of just enforcing https
-function openLink (link: string): void {
-  if (new url.URL(link).protocol === 'https:') {
-    shell.openExternal(link)
-  } else {
-    console.warn(`tried to open insecure link: ${link}`)
-  }
 }
 
 export class Router {
@@ -42,7 +31,6 @@ export class Router {
 
   constructor () {
     this.db = store.initialize()
-    store.setLastTradeUpdate(this.db)
     this.lndClient = new LndClient()
     this.anchorClient = new AnchorClient()
 
@@ -76,6 +64,10 @@ export class Router {
   }
 
   private async getBalance (asset: Asset): Promise<Amount> {
+    if (asset === Asset.USDX && !this.anchorClient.isConfigured()) {
+      return { asset: Asset.USDX, unit: Unit.Cent, value: 0 }
+    }
+
     const engine = this.getEngine(asset)
 
     const balances = await Promise.all([
@@ -94,33 +86,19 @@ export class Router {
     }
   }
 
-  private async getTrades (lastUpdate: Date): Promise<Trade[]> {
-    const lastTradeUpdate = store.getLastTradeUpdate()
-    if (lastTradeUpdate == null || lastUpdate < lastTradeUpdate) {
-      return store.getTrades(this.db)
-    }
-
-    const trades: Trade[] = await new Promise(resolve => {
-      store.tradeUpdater.once('change', () => {
-        resolve(store.getTrades(this.db))
-      })
-    })
-
-    return trades
-  }
-
   listen (): void {
     listen('lnd:connect', (config: ConnectionConfig) => this.lndClient.manualConnect(config))
     listen('lnd:scan', () => this.lndClient.scan())
-    listen('lnd:getStatus', () => this.lndClient.status)
+    listen('lnd:getStatus', () => this.lndClient.getStatus())
     listenSync('lnd:getConnectionConfig', () => this.lndClient.getConnectionConfig())
     listen('lnd:getPaymentChannelNetworkAddress', () => this.lndClient.engine.getPaymentChannelNetworkAddress())
     listen('getBalance', (asset: string) => this.getBalance(valueToAsset(asset)))
     listen('openLink', ({ link }: { link: string}) => openLink(link))
     listen('trade:execute', (quote: Quote) => executeTrade(this.db, this.engines, quote))
-    listen('trade:getTrades', (lastUpdate: number) => this.getTrades(new Date(lastUpdate)))
+    listen('trade:getTrades', () => store.getTrades(this.db))
     listen('auth:getAuth', () => getAuth())
     listen('anchor:startDeposit', () => this.anchorClient.startDeposit())
+    listenSync('getWebviewPreloadPath', () => path.join(__dirname, 'webview-preload.js'))
   }
 
   close (): void {
@@ -130,14 +108,14 @@ export class Router {
 }
 
 function startRouter (app: App): void {
-  const router = new Router()
-
   app.on('ready', () => {
-    router.listen()
-  })
+    const router = new Router()
 
-  app.on('will-quit', () => {
-    router.close()
+    router.listen()
+
+    app.on('will-quit', () => {
+      router.close()
+    })
   })
 }
 

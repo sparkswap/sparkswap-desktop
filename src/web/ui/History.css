@@ -3,13 +3,13 @@
 .History {
   margin: 20px 0;
   position: relative;
-  height: 100%;
+  height: calc(100% - 304px);
   width: 100%;
 }
 
 .History .table-outer {
   position: relative;
-  height: 100%;
+  height: calc(100% - 30px);
   padding-top: 30px;
   width: 100%;
 }
@@ -91,4 +91,10 @@
 
 .History .DateColumn {
   text-align: right;
+}
+
+.History .trade-status-spinner {
+  justify-content: flex-end;
+  padding-top: .25em;
+  padding-right: .5em;
 }

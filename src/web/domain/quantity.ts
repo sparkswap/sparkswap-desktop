@@ -1,7 +1,6 @@
 import { satoshisPerBTC, centsPerUSD } from '../../common/constants'
 
-// TODO: determine the exact minimum amount
-export const MIN_QUANTITY = 0.00001
+export const MIN_QUANTITY = 0.00000001 // one satoshi
 export const MIN_QUANTITY_SAT = Math.round(MIN_QUANTITY * satoshisPerBTC)
 // See: https://github.com/lightningnetwork/lnd/blob/4e62e8ae676b23e1b92c9160cb749ceb6964bd7c/rpcserver.go#L62
 export const MAX_QUANTITY = 0.04294967

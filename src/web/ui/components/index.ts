@@ -3,6 +3,7 @@ import FullScreenOverlay from './FullScreenOverlay'
 import InlineTooltip from './InlineTooltip'
 import { ExternalButton, ExternalLink } from './ExternalSource'
 import StatusBadge from './StatusBadge'
+import SpinnerMessage from './SpinnerMessage'
 
 export {
   FilePathInput,
@@ -10,5 +11,6 @@ export {
   InlineTooltip,
   ExternalButton,
   ExternalLink,
-  StatusBadge
+  StatusBadge,
+  SpinnerMessage
 }

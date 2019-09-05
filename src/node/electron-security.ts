@@ -1,43 +1,18 @@
 import * as url from 'url'
-import { App, session } from 'electron'
-import { ANCHOR_PARTITION } from '../common/constants'
+import * as path from 'path'
+import { App } from 'electron'
+import { injectContentSecurityPolicies } from './content-security-policies'
+import { IS_PRODUCTION } from '../common/config'
 
-const URL_WHITELIST = ['https://sandbox-portal.anchorusd.com', 'https://portal.anchorusd.com']
+const WEBVIEW_PRELOAD = `file://${path.join(__dirname, 'webview-preload.js')}`
 
-const ANCHOR_WEBVIEW_CONTENT_WHITELIST = 'cdn.rawgit.com:* cdn.plaid.com:* ' +
-  'sandbox.plaid.com:* ' +
-  'ajax.googleapis.com:* ' +
-  'cdnjs.cloudflare.com:* ' +
-  'unpkg.com:* ' +
-  'netdna.bootstrapcdn.com:* ' +
-  'use.fontawesome.com:* ' +
-  'fonts.googleapis.com:*'
+const WEBVIEW_URL_WHITELIST = IS_PRODUCTION
+  ? ['https://portal.anchorusd.com']
+  : ['https://sandbox-portal.anchorusd.com']
 
-// TODO: add production URLs
-const APP_CONTENT_SECURITY_POLICY = `default-src 'self' 'unsafe-inline' localhost:* ws://localhost:*`
-const ANCHOR_WEBVIEW_CONTENT_SECURITY_POLICY = `${APP_CONTENT_SECURITY_POLICY} ${ANCHOR_WEBVIEW_CONTENT_WHITELIST}`
-
-function injectContentSecurityPolicies (): void {
-  if (!session.defaultSession) throw new Error('Default session is not defined')
-  // Block all remote CSS and JavaScript
-  session.defaultSession.webRequest.onHeadersReceived((details, next) => {
-    next({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [APP_CONTENT_SECURITY_POLICY]
-      }
-    })
-  })
-
-  session.fromPartition(ANCHOR_PARTITION).webRequest.onHeadersReceived((details, next) => {
-    next({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [ANCHOR_WEBVIEW_CONTENT_SECURITY_POLICY]
-      }
-    })
-  })
-}
+const NAVIGATION_WHITELIST =
+  ['https://support.sparkswap.com'].concat(
+    IS_PRODUCTION ? [] : ['localhost:5000'])
 
 function secureApp (app: App): void {
   app.on('ready', () => {
@@ -48,7 +23,7 @@ function secureApp (app: App): void {
     // disable navigation
     contents.on('will-navigate', (event, navigationUrl) => {
       const parsedUrl = new url.URL(navigationUrl)
-      if (parsedUrl.host !== `localhost:${process.env.PORT}`) {
+      if (!NAVIGATION_WHITELIST.includes(parsedUrl.host)) {
         console.warn(`tried to navigate app to url: ${navigationUrl}`)
         event.preventDefault()
       }
@@ -61,19 +36,29 @@ function secureApp (app: App): void {
     // disable webviews
     contents.on('will-attach-webview', (event, webPreferences, params) => {
       const url = new URL(params.src)
-      if (!URL_WHITELIST.includes(url.origin)) {
+      if (!WEBVIEW_URL_WHITELIST.includes(url.origin)) {
         console.warn(`tried to attach webview with url: ${url.href}`)
         event.preventDefault()
       }
 
       // Best practices for webviews (see: https://electronjs.org/docs/tutorial/security#11-verify-webview-options-before-creation)
 
-      // Strip away preload scripts if unused or verify their location is legitimate
-      delete webPreferences.preload
-      delete webPreferences.preloadURL
+      // Strip away preload scripts if not our explicit preload script
+      if (webPreferences.preload !== WEBVIEW_PRELOAD) {
+        delete webPreferences.preload
+      }
+      if (webPreferences.preloadURL !== WEBVIEW_PRELOAD) {
+        delete webPreferences.preloadURL
+      }
 
       // Disable Node.js integration
       webPreferences.nodeIntegration = false
+
+      // Disable subframe usage
+      webPreferences.nodeIntegrationInSubFrames = false
+
+      // Disable remote module
+      webPreferences.enableRemoteModule = false
     })
   })
 }

@@ -1,5 +1,5 @@
-import { Amount, Asset, URL } from '../../global-shared/types'
-import { Auth, Quote, Trade } from '../../common/types'
+import { Amount, Asset, URL, UnknownObject } from '../../global-shared/types'
+import { Auth, Quote, Trade, TradeStatus } from '../../common/types'
 import { ipcRenderer } from '../electron'
 
 let counter = 1
@@ -49,14 +49,20 @@ export async function sendExecuteTrade (quote: Quote): Promise<void> {
   await mainRequest('trade:execute', quote)
 }
 
-export async function getTrades (lastUpdate: Date): Promise<Trade[]> {
-  // eslint-disable-next-line
-  return (await mainRequest('trade:getTrades', lastUpdate.getTime()) as any).map((trade: any) => {
-    trade.startTime = new Date(trade.startTime)
-    trade.endTime = trade.endTime ? new Date(trade.endTime) : undefined
+function deserializeTrade (wireTrade: UnknownObject): Trade {
+  return {
+    id: wireTrade.id as number,
+    status: wireTrade.status as TradeStatus,
+    hash: wireTrade.hash as string,
+    destinationAmount: wireTrade.destinationAmount as Amount,
+    sourceAmount: wireTrade.sourceAmount as Amount,
+    startTime: new Date(wireTrade.startTime as string),
+    endTime: wireTrade.endTime ? new Date(wireTrade.endTime as string) : undefined
+  }
+}
 
-    return trade as Trade
-  })
+export async function getTrades (): Promise<Trade[]> {
+  return (await mainRequest('trade:getTrades') as UnknownObject[]).map(deserializeTrade)
 }
 
 export async function startDeposit (): Promise<URL> {
@@ -65,6 +71,10 @@ export async function startDeposit (): Promise<URL> {
 
 export async function getBalance (asset: Asset): Promise<Amount> {
   return await mainRequest('getBalance', asset) as Amount
+}
+
+export function getWebviewPreloadPath (): string {
+  return mainRequestSync('getWebviewPreloadPath') as string
 }
 
 export default mainRequest

@@ -1,4 +1,4 @@
-import EventEmitter from 'events'
+import { EventEmitter } from 'events'
 import LndEngine from 'lnd-engine'
 import { ConnectionConfig, Statuses } from '../global-shared/types/lnd'
 import { Asset } from '../global-shared/types'
@@ -49,6 +49,14 @@ class LndClient extends EventEmitter {
     addConfig('lnd', { hostName, port, tlsCertPath, macaroonPath })
 
     this.connect(this.getConnectionConfig())
+  }
+
+  async getStatus (): Promise<Statuses> {
+    if (!this._engine) {
+      return LndEngine.STATUSES.UNKNOWN
+    }
+
+    return this._engine.getStatus()
   }
 
   async scan (): Promise<Statuses> {

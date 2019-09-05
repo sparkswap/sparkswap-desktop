@@ -1,11 +1,45 @@
 import { logger } from '../common/utils'
 import { delay } from '../global-shared/util'
-import { AnchorEngine } from '../global-shared/anchor-engine'
+import {
+  AnchorEngine
+} from '../global-shared/anchor-engine'
 import LndEngine from 'lnd-engine'
 import { SwapHash, SwapPreimage } from '../global-shared/types'
 import { OUTBOUND_TIME_LOCK, INBOUND_TIME_LOCK } from '../global-shared/time-locks'
 
 type Engine = LndEngine | AnchorEngine
+
+const {
+  PermanentSwapError: LndPermanentSwapError,
+  ExpiredSwapError: LndExpiredSwapError,
+  CanceledSwapError: LndCanceledSwapError,
+  SettledSwapError: LndSettledSwapError
+} = LndEngine.ERRORS
+
+const {
+  PermanentSwapError: AnchorPermanentSwapError,
+  ExpiredSwapError: AnchorExpiredSwapError,
+  CanceledSwapError: AnchorCanceledSwapError,
+  SettledSwapError: AnchorSettledSwapError
+} = AnchorEngine.ERRORS
+
+interface EngineErrors {
+  PermanentSwapError: typeof LndPermanentSwapError | typeof AnchorPermanentSwapError,
+  ExpiredSwapError: typeof LndExpiredSwapError | typeof AnchorExpiredSwapError,
+  CanceledSwapError: typeof LndCanceledSwapError | typeof AnchorCanceledSwapError,
+  SettledSwapError: typeof LndSettledSwapError | typeof AnchorSettledSwapError
+}
+
+function getInstanceErrors (engine: Engine): EngineErrors {
+  if (engine instanceof LndEngine) {
+    return LndEngine.ERRORS
+  }
+  if (engine instanceof AnchorEngine) {
+    return AnchorEngine.ERRORS
+  }
+
+  throw new Error('Invalid Engine')
+}
 
 interface Payment {
   engine: Engine,
@@ -53,7 +87,7 @@ async function translateIdempotent (
   try {
     committedTime = await inboundEngine.waitForSwapCommitment(hash)
   } catch (e) {
-    if (e instanceof LndEngine.ERRORS.SettledSwapError) {
+    if (e instanceof getInstanceErrors(inboundEngine).SettledSwapError) {
       logger.debug(`Swap for ${hash} has already been settled`)
 
       return inboundEngine.getSettledSwapPreimage(hash)
@@ -107,6 +141,9 @@ async function settleSwap (engine: Engine, hash: SwapHash, preimage: SwapPreimag
  * to protect us against being in a non-atomic state.
  */
 async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayment: Payment): Promise<SwapPreimage> {
+  const inboundErrors = getInstanceErrors(inboundEngine)
+  const outboundErrors = getInstanceErrors(outboundPayment.engine)
+
   try {
     const paymentPreimage = await translateIdempotent(hash, inboundEngine, outboundPayment)
     logger.debug(`Successfully retrieved preimage for swap ${hash}`)
@@ -115,13 +152,13 @@ async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayme
 
     return paymentPreimage
   } catch (e) {
-    if (e instanceof LndEngine.ERRORS.PermanentSwapError) {
+    if (e instanceof outboundErrors.PermanentSwapError) {
       await cancelSwap(inboundEngine, hash, e)
 
       throw e
     }
 
-    if (e instanceof LndEngine.ERRORS.CanceledSwapError) {
+    if (e instanceof inboundErrors.CanceledSwapError) {
       logger.error(`Swap for ${hash} has been cancelled upstream. ` +
         'We may be in a non-atomic state (if the downstream is still active), ' +
         'or be retrying a cancelled swap.')
@@ -133,7 +170,7 @@ async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayme
       throw e
     }
 
-    if (e instanceof LndEngine.ERRORS.ExpiredSwapError) {
+    if (e instanceof inboundErrors.ExpiredSwapError) {
       logger.error(`Swap for ${hash} is expired upstream. ` +
         'We may be in a non-atomic state (if the downstream is still active), ' +
         'or be retrying a cancelled swap.')

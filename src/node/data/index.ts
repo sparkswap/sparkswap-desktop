@@ -6,8 +6,6 @@ import {
   getPendingTrades,
   completeTrade,
   failTrade,
-  setLastUpdate as setLastTradeUpdate,
-  getLastUpdate as getLastTradeUpdate,
   updater as tradeUpdater
 } from './trades'
 
@@ -20,7 +18,5 @@ export {
   getPendingTrades,
   completeTrade,
   failTrade,
-  setLastTradeUpdate,
-  getLastTradeUpdate,
   tradeUpdater
 }

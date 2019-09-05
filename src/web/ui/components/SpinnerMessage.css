@@ -1,0 +1,12 @@
+.SpinnerMessage {
+  position: relative;
+}
+
+.SpinnerMessage .message {
+  position: absolute;
+  color: #8a9ba8;
+  margin: 0 auto;
+  width: 100%;
+  text-align: center;
+  top: 50%;
+}

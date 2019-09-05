@@ -3,15 +3,13 @@ import * as path from 'path'
 import { writeFileSync, readFileSync } from 'fs'
 import { logger } from '../common/utils'
 import { Auth, LndConfig } from '../common/types'
+import { UnknownObject } from '../global-shared/types'
 
 const CONFIG_NAME = 'sparkswap-config.json'
 
-interface UnknownObject {
-  [key: string]: unknown
-}
-
 export interface AnchorConfig {
-  apiKey: string
+  apiKey: string,
+  email: string
 }
 
 export interface Config {
@@ -33,7 +31,8 @@ const defaults = {
     apiKey: ''
   },
   anchor: {
-    apiKey: ''
+    apiKey: '',
+    email: ''
   }
 }
 

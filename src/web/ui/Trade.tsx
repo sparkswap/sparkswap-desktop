@@ -3,17 +3,20 @@ import {
   Button,
   FormGroup,
   NumericInput,
-  H6
+  H6,
+  Intent,
+  Classes
 } from '@blueprintjs/core'
 import { toaster, showSuccessToast, showErrorToast } from './AppToaster'
 import getQuote from '../domain/quote'
 import executeTrade from '../domain/trade'
 import { isValidQuantity, MIN_QUANTITY, MAX_QUANTITY } from '../domain/quantity'
-import { isUSDXSufficient } from '../domain/balance'
+import { isUSDXSufficient, hasUSDX, getBalanceState } from '../domain/balance'
 import { centsPerUSD } from '../../common/constants'
 import { formatDollarValue } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
 import { QuoteResponse } from '../../global-shared/types/server'
+import { Asset } from '../../global-shared/types'
 import './Trade.css'
 
 interface TradeProps {
@@ -27,7 +30,8 @@ interface TradeState {
   assetSymbol: string,
   currentPrice: number,
   quantity?: number,
-  quote?: QuoteResponse
+  quote?: QuoteResponse,
+  hasLoadedCurrentPrice: boolean
 }
 
 const initialState: TradeState = {
@@ -36,6 +40,7 @@ const initialState: TradeState = {
   quantityStr: '',
   assetSymbol: 'BTC',
   currentPrice: marketDataSubscriber.currentPrice,
+  hasLoadedCurrentPrice: marketDataSubscriber.hasLoadedCurrentPrice,
   quote: undefined,
   quantity: undefined
 }
@@ -52,7 +57,10 @@ class Trade extends React.Component<TradeProps, TradeState> {
       currentPrice
     } = this.state
 
-    const usdQuantity = currentPrice * parseFloat(quantityStr)
+    const dollars = currentPrice * parseFloat(quantityStr)
+    // we apply ceil to reproduce the calculation done for quotes on the server
+    const cents = Math.ceil(dollars * centsPerUSD)
+    const usdQuantity = parseFloat((cents / centsPerUSD).toFixed(2))
 
     if (!isNaN(usdQuantity) && usdQuantity > 0) {
       return usdQuantity
@@ -66,8 +74,8 @@ class Trade extends React.Component<TradeProps, TradeState> {
   }
 
   onData = () => {
-    const { currentPrice } = marketDataSubscriber
-    this.setState({ currentPrice })
+    const { currentPrice, hasLoadedCurrentPrice } = marketDataSubscriber
+    this.setState({ currentPrice, hasLoadedCurrentPrice })
   }
 
   componentWillUnmount (): void {
@@ -99,6 +107,8 @@ class Trade extends React.Component<TradeProps, TradeState> {
         return
       }
 
+      getBalanceState(Asset.USDX)
+      getBalanceState(Asset.BTC)
       showSuccessToast('Trade completed')
     }
   }
@@ -135,17 +145,40 @@ class Trade extends React.Component<TradeProps, TradeState> {
     })
   }
 
+  showDepositError (message: string): void {
+    toaster.show({
+      intent: Intent.DANGER,
+      message,
+      action: {
+        onClick: () => this.props.onDeposit(),
+        text: 'Deposit'
+      }
+    })
+  }
+
   startBuy = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!this.state.hasLoadedCurrentPrice) {
+      showErrorToast('Wait for prices to load before buying BTC.')
+      return
+    }
+
     const quantity = parseFloat(this.state.quantityStr)
+
+    if (!hasUSDX()) {
+      this.showDepositError(`Deposit USD before purchasing ${this.state.assetSymbol}`)
+      return
+    }
 
     if (!isValidQuantity(quantity)) {
       this.setState({ isPulsingQuantity: true })
       setTimeout(() => this.setState({ isPulsingQuantity: false }), 1000)
-      if (quantity < MIN_QUANTITY) {
-        showErrorToast(`Minimum quantity is ${MIN_QUANTITY} BTC`)
+      if (quantity < MIN_QUANTITY || this.state.quantityStr === '') {
+        const minQuantity = MIN_QUANTITY.toFixed(8)
+        showErrorToast(`Minimum quantity is ${minQuantity} BTC`)
       } else if (quantity > MAX_QUANTITY) {
-        showErrorToast(`Maximum quantity is ${MAX_QUANTITY} BTC`)
+        const maxQuantity = MAX_QUANTITY.toFixed(8)
+        showErrorToast(`Maximum quantity is ${maxQuantity} BTC`)
       } else {
         showErrorToast(`Invalid BTC quantity`)
       }
@@ -153,14 +186,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
     }
 
     if (!isUSDXSufficient(this.state.currentPrice * quantity)) {
-      toaster.show({
-        intent: 'danger',
-        message: `Insufficient USD to purchase ${quantity} ${this.state.assetSymbol}`,
-        action: {
-          onClick: () => this.props.onDeposit(),
-          text: 'Deposit'
-        }
-      })
+      this.showDepositError(`Insufficient USD to purchase ${quantity} ${this.state.assetSymbol}`)
       return
     }
 
@@ -173,7 +199,11 @@ class Trade extends React.Component<TradeProps, TradeState> {
       })
       this.countdown()
     } catch (e) {
-      showErrorToast('Failed to get price: ' + e.message)
+      if (e.statusCode === 403) {
+        showErrorToast('Your account must be approved prior to trading.')
+      } else {
+        showErrorToast('Failed to get price: ' + e.message)
+      }
     }
   }
 
@@ -189,9 +219,16 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
   renderSubmitButton (): ReactNode {
     if (!this.isQuoteValid || !this.state.quote) {
+      const { hasLoadedCurrentPrice, quantityStr } = this.state
+
+      const shouldUseSkeleton = !(hasLoadedCurrentPrice || quantityStr === '')
+      const conversionClassName = shouldUseSkeleton ? Classes.SKELETON : ''
+
       return (
         <div className="button-container">
-          <pre className="conversion">= {formatDollarValue(this.usdQuantity)}</pre>
+          <pre className="conversion">
+            = <span className={conversionClassName}>{formatDollarValue(this.usdQuantity)}</span>
+          </pre>
           <Button className="buy" type="submit" icon="layers" fill={true}>Buy {this.state.assetSymbol}</Button>
         </div>
       )

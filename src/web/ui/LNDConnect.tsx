@@ -2,14 +2,14 @@ import * as lnd from '../domain/lnd'
 import { delay } from '../../global-shared/util'
 
 import React, { ReactNode } from 'react'
-import { toaster } from './AppToaster'
+import { toaster, showSuccessToast, showErrorToast } from './AppToaster'
 import {
   FormGroup,
   InputGroup,
   Classes,
   Button,
-  Dialog,
-  ButtonGroup
+  Divider,
+  Dialog
 } from '@blueprintjs/core'
 import './LNDConnect.css'
 import {
@@ -19,12 +19,15 @@ import {
   ExternalLink
 } from './components'
 import LNDStatus from './LNDStatus'
-
-interface LNDConnectProps {
-  onClose: () => void
-}
+import { Asset } from '../../global-shared/types'
+import { getBalanceState } from '../domain/balance'
+import LNDGraphic from './assets/sparkswap-lnd.svg'
+import ZapLogo from './assets/zap.svg'
+import LNAppLogo from './assets/lightning-app.svg'
+import LPULogo from './assets/lightning-power.png'
 
 interface LNDConnectState {
+  isUnmounted: boolean,
   overlayIsOpen: boolean,
   status: lnd.Statuses,
   hostName: string,
@@ -49,10 +52,10 @@ const TOAST_MESSAGES = Object.freeze({
   [lnd.Statuses.NO_CONFIG]: 'Sparkswap is not configured.'
 })
 
-const LOADING_TIMEOUT = 100
+const POLL_INTERVAL = 1000
 
-class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
-  constructor (props: LNDConnectProps) {
+class LNDConnect extends React.Component<{}, LNDConnectState> {
+  constructor (props: {}) {
     super(props)
     const {
       hostName,
@@ -63,6 +66,7 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
     } = lnd.getConnectionConfig()
 
     this.state = {
+      isUnmounted: false,
       loading: false,
       scanning: false,
       status: lnd.Statuses.UNKNOWN,
@@ -75,28 +79,31 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
       configured,
       isDownloadDialogOpen: false
     }
+
+    this.pollStatus()
   }
 
   componentDidMount (): void {
-    this.initialLoad()
+    if (this.state.configured) {
+      this.afterConnectAttempt()
+    }
   }
 
-  async initialLoad (): Promise<void> {
-    if (this.state.configured) {
-      this.setState({
-        loading: true
-      })
+  componentWillUnmount (): void {
+    this.setState({ isUnmounted: true })
+  }
 
-      await this.updateStatus()
+  isConnected (): boolean {
+    const lndStatus = this.state.status
+    return lndStatus === lnd.Statuses.VALIDATED ||
+          lndStatus === lnd.Statuses.LOCKED ||
+          lndStatus === lnd.Statuses.NEEDS_WALLET ||
+          lndStatus === lnd.Statuses.UNLOCKED ||
+          lndStatus === lnd.Statuses.NOT_SYNCED
+  }
 
-      this.setState({
-        loading: false
-      })
-
-      if (this.state.status === lnd.Statuses.VALIDATED) {
-        this.showConnectSuccess()
-      }
-    }
+  isReady (): boolean {
+    return this.state.status === lnd.Statuses.VALIDATED
   }
 
   loadConfig (): void {
@@ -117,25 +124,34 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
         configured
       })
     } catch (e) {
-      toaster.show({
-        intent: 'danger',
-        message: `Error while loading config: ${e.message}`
-      })
+      showErrorToast(`Error while loading config: ${e.message}`)
     }
   }
 
-  async updateStatus (): Promise<void> {
+  async updateStatus (newStatus?: lnd.Statuses): Promise<void> {
     try {
-      const status = await lnd.getStatus()
-
-      this.setState({
-        status
-      })
+      const oldStatus = this.state.status
+      const status = newStatus || await lnd.getStatus()
+      this.setState({ status })
+      if (status === lnd.Statuses.VALIDATED && status !== oldStatus) {
+        getBalanceState(Asset.BTC)
+      }
     } catch (e) {
-      toaster.show({
-        intent: 'danger',
-        message: `Error while retrieving LND Status: ${e.message}`
-      })
+      this.setState({ status: lnd.Statuses.UNAVAILABLE })
+    }
+  }
+
+  hasConfig (): boolean {
+    const { hostName, port, tlsCertPath, macaroonPath } = this.state
+    return Boolean(hostName && port && tlsCertPath && macaroonPath)
+  }
+
+  async pollStatus (): Promise<void> {
+    while (!this.state.isUnmounted) {
+      if (this.hasConfig()) {
+        await this.updateStatus()
+      }
+      await delay(POLL_INTERVAL)
     }
   }
 
@@ -145,7 +161,6 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
   }
 
   handleOverlayClose = () => {
-    if (this.props.onClose) this.props.onClose()
     this.setState({
       overlayIsOpen: false
     })
@@ -176,22 +191,15 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
   }
 
   showConnectSuccess (): void {
-    toaster.show({
-      intent: 'success',
-      message: TOAST_MESSAGES[this.state.status]
-    })
+    showSuccessToast(TOAST_MESSAGES[this.state.status])
   }
 
-  showAutoConnectErr (message: string): void {
-    toaster.show({
-      intent: 'danger',
-      message,
-      action: {
+  showConnectError (message: string): void {
+    showErrorToast(message,
+      (this.state.overlayIsOpen || this.isConnected()) ? undefined : {
         text: 'Configure Manually',
         onClick: () => this.setState({ forceManualConfig: true })
-      }
-    })
-    this.loadConfig()
+      })
   }
 
   handleScan = async () => {
@@ -208,9 +216,7 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
 
     try {
       const status = await lnd.scan()
-      this.setState({
-        status
-      })
+      this.updateStatus(status)
 
       switch (status) {
         case lnd.Statuses.VALIDATED:
@@ -221,25 +227,38 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
         case lnd.Statuses.NEEDS_WALLET:
         case lnd.Statuses.UNLOCKED:
         case lnd.Statuses.NOT_SYNCED:
-          toaster.show({
-            intent: 'danger',
-            message: TOAST_MESSAGES[status]
-          })
+          showErrorToast(TOAST_MESSAGES[status])
           this.loadConfig()
           this.setState({
             forceManualConfig: true
           })
           break
         default:
-          this.showAutoConnectErr('A local LND instance was not found.')
+          this.showConnectError('A local LND instance was not found.')
       }
     } catch (e) {
-      return this.showAutoConnectErr(`Error while scanning: ${e.message}`)
+      return this.showConnectError(`Error while scanning: ${e.message}`)
     } finally {
       this.setState({
         scanning: false
       })
       toaster.dismiss(toastId)
+    }
+  }
+
+  afterConnectAttempt = async () => {
+    this.setState({ loading: true })
+    await this.updateStatus()
+    this.setState({ loading: false })
+
+    if (this.isConnected()) {
+      this.handleOverlayClose()
+    }
+
+    if (this.isReady()) {
+      this.showConnectSuccess()
+    } else {
+      this.showConnectError(TOAST_MESSAGES[this.state.status])
     }
   }
 
@@ -251,37 +270,22 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
       macaroonPath
     } = this.state
 
-    this.setState({
-      loading: true
-    })
+    if (!hostName || !port || !tlsCertPath || !macaroonPath) {
+      showErrorToast('All fields are required')
+      return
+    }
+
+    this.setState({ loading: true })
 
     try {
       await lnd.connect({ hostName, port: parseInt(port, 10), tlsCertPath, macaroonPath })
-      // delay to give time to update status
-      await delay(LOADING_TIMEOUT)
-      await this.updateStatus()
-      if (this.state.status === lnd.Statuses.VALIDATED) {
-        this.handleOverlayClose()
-        toaster.show({
-          intent: 'success',
-          message: TOAST_MESSAGES[this.state.status]
-        })
-      } else {
-        toaster.show({
-          intent: 'danger',
-          message: TOAST_MESSAGES[this.state.status]
-        })
-      }
     } catch (e) {
-      toaster.show({
-        intent: 'danger',
-        message: `Error while connecting: ${e.message}`
-      })
+      this.showConnectError(`Error while connecting: ${e.message}`)
     } finally {
-      this.setState({
-        loading: false
-      })
+      this.setState({ loading: false })
     }
+
+    await this.afterConnectAttempt()
   }
 
   renderConfigButtons (): ReactNode {
@@ -289,16 +293,15 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
 
     return (
       <React.Fragment>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <ButtonGroup className="ConnectButtons" vertical={true}>
-            <Button icon="offline" className='scan-button' large={true} loading={scanning} onClick={this.handleScan}>Scan for LND</Button>
-            <Button icon="cog" large={true} onClick={() => this.setState({ forceManualConfig: true })}>Configure manually</Button>
-            <Button
-              minimal={true}
-              onClick={() => this.setState({ isDownloadDialogOpen: true })}
-            >I dont have LND yet</Button>
-          </ButtonGroup>
+        <div className={`${Classes.DIALOG_FOOTER_ACTIONS} AutoConnectButtons`}>
+          <Button
+            large={true}
+            onClick={() => this.setState({ isDownloadDialogOpen: true })}
+          >Download LND</Button>
+          <Divider />
+          <Button large={true} className='scan-button' loading={scanning} onClick={this.handleScan}>Scan for LND</Button>
         </div>
+        <Button icon="cog" minimal={true} onClick={() => this.setState({ forceManualConfig: true })}>Configure manually</Button>
       </React.Fragment>
     )
   }
@@ -306,12 +309,43 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
   renderAutoConfig (): ReactNode {
     return (
       <React.Fragment>
-        <div>
-          <p>Sparkswap needs to connect to your instance of LND to enable trading.</p>
+        <div className="AutoConnect">
+          <img src={LNDGraphic} className="ConnectGraphic" alt="Sparkswap + LND" />
+          <p>To buy Bitcoin instantly over the Lightning Network, first establish a connection to your LND node.</p>
         </div>
         <div className={Classes.DIALOG_FOOTER}>
           {this.renderConfigButtons()}
         </div>
+      </React.Fragment>
+    )
+  }
+
+  renderManualConfigButtons (): ReactNode {
+    const {
+      configured,
+      scanning
+    } = this.state
+
+    if (configured) {
+      return (
+        <Button
+          minimal={true}
+          loading={scanning}
+          onClick={this.handleScan}
+        >Scan for LND</Button>
+      )
+    }
+
+    return (
+      <React.Fragment>
+        <Button
+          minimal={true}
+          onClick={() => this.setState({ forceManualConfig: false })}
+        >Go back</Button>
+        <Button
+          minimal={true}
+          onClick={() => this.setState({ overlayIsOpen: false, isDownloadDialogOpen: false }) }
+        >Skip Configuration</Button>
       </React.Fragment>
     )
   }
@@ -322,8 +356,7 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
       port,
       tlsCertPath,
       macaroonPath,
-      loading,
-      configured
+      loading
     } = this.state
 
     return (
@@ -404,10 +437,7 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button large={true} onClick={this.handleConnect} loading={loading}>Connect to LND</Button>
           </div>
-          {!configured
-            ? <Button minimal={true} onClick={() => this.setState({ forceManualConfig: false })}>Go back</Button>
-            : ''
-          }
+          {this.renderManualConfigButtons()}
         </div>
       </React.Fragment>
     )
@@ -435,32 +465,46 @@ class LNDConnect extends React.Component<LNDConnectProps, LNDConnectState> {
     return (
       <div className="LNDConnect">
         {this.maybeRenderStatus()}
-        <FullScreenOverlay isOpen={overlayIsOpen} onClose={this.handleOverlayClose} showHomeButton={configured} title="Connect LND">
+        <FullScreenOverlay isOpen={overlayIsOpen} onClose={this.handleOverlayClose} showHomeButton={configured} title="Connect to LND">
           {configured || forceManualConfig ? this.renderManualConfig() : this.renderAutoConfig()}
         </FullScreenOverlay>
-        <Dialog title="Download LND" icon="download" isOpen={this.state.isDownloadDialogOpen}>
+        <Dialog
+          title="Download LND"
+          className="download-lnd"
+          isOpen={this.state.isDownloadDialogOpen}
+          onClose={() => this.setState({ isDownloadDialogOpen: false })}
+        >
           <div className={Classes.DIALOG_BODY}>
             <p>
-              Don&apos;t have LND? Try one of these:
-              <ul>
-                <li><ExternalLink href="https://zap.jackmallers.com">Zap</ExternalLink></li>
-                <li><ExternalLink href="https://github.com/lightninglabs/lightning-app/releases">Lightning App</ExternalLink></li>
-                <li><ExternalLink href="https://github.com/lightning-power-users/node-launcher">Node Launcher</ExternalLink></li>
+              Don&apos;t have LND yet? Download one of the apps below to install a Lightning node on your machine:
+              <ul className="bp3-list-unstyled">
+                <li>
+                  <ExternalLink href="https://zap.jackmallers.com">
+                    <img src={ZapLogo} alt="Zap Desktop" />
+                    Zap
+                  </ExternalLink>
+                </li>
+                <li><Divider /></li>
+                <li>
+                  <ExternalLink href="https://github.com/lightninglabs/lightning-app/releases">
+                    <img src={LNAppLogo} alt="Lightning App" />
+                    Lightning App
+                  </ExternalLink>
+                </li>
+                <li><Divider /></li>
+                <li>
+                  <ExternalLink href="https://github.com/lightning-power-users/node-launcher">
+                    <img src={LPULogo} alt="Node Launcher" />
+                    Node Launcher
+                  </ExternalLink>
+                </li>
               </ul>
             </p>
 
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({
-                overlayIsOpen: false, isDownloadDialogOpen: false })}>
-                Skip configuration
-              </Button>
-              <Button
-                intent="primary"
-                onClick={() => this.setState({ isDownloadDialogOpen: false })}>
-                Close
-              </Button>
+              <Button fill={true} onClick={() => this.setState({ isDownloadDialogOpen: false })}>Cancel</Button>
             </div>
           </div>
         </Dialog>

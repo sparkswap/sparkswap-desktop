@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
 import './History.css'
-import { HTMLTable, H4 } from '@blueprintjs/core'
+import { HTMLTable, H4, Spinner } from '@blueprintjs/core'
 import { Trade, TradeStatus } from '../../common/types'
 import { formatDate, formatAmount } from './formatters'
 import { trades, updater as tradeUpdater } from '../domain/history'
@@ -9,24 +9,25 @@ interface HistoryRowProps {
   trade: Trade
 }
 
-class HistoryRow extends React.Component<HistoryRowProps> {
+class HistoryRow extends React.PureComponent<HistoryRowProps> {
   render (): ReactNode {
     const { trade } = this.props
-    // TODO: handle failed case?
-    const className = trade.status === TradeStatus.PENDING ? 'text-muted' : undefined
+    const className = trade.status === TradeStatus.COMPLETE ? undefined : 'text-muted'
 
     // Assumes buying BTC
     const amountBtc = formatAmount(trade.destinationAmount)
     const amountUsd = formatAmount(trade.sourceAmount)
 
-    // const formattedDate = trade.endTime ? formatDate(trade.endTime) : formatDate(trade.startTime)
-    const formattedDate = formatDate(trade.endTime || trade.startTime)
+    const dateField =
+      trade.status === TradeStatus.PENDING
+        ? <Spinner className='trade-status-spinner' size={12} />
+        : formatDate(trade.endTime || trade.startTime)
 
     return (
       <tr>
         <td className={className}>{amountBtc}</td>
         <td className={className}>{amountUsd}</td>
-        <td className='text-muted DateColumn'>{formattedDate}</td>
+        <td className='text-muted DateColumn'>{dateField}</td>
       </tr>
     )
   }
@@ -36,7 +37,7 @@ interface HistoryState {
   trades: Trade[]
 }
 
-class History extends React.Component<{}, HistoryState> {
+class History extends React.PureComponent<{}, HistoryState> {
   constructor (props: object) {
     super(props)
     this.state = {
@@ -65,7 +66,7 @@ class History extends React.Component<{}, HistoryState> {
                 </tr>
               </thead>
               <tbody>
-                {trades.map((trade, key) => <HistoryRow trade={trade} key={key} />)}
+                {trades.map((trade) => <HistoryRow trade={trade} key={trade.id} />)}
               </tbody>
             </HTMLTable>
           </div>

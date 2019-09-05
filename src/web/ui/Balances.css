@@ -27,7 +27,7 @@
 .Balances .single-balance .balance-amount {
   margin-right: 0.25em;
   display: inline-block;
-  min-width: 70px;
+  min-width: 95px;
 }
 
 .Balances .single-balance:first-child>span {
@@ -36,7 +36,6 @@
 
 .Balances .single-balance>.bp3-button {
   line-height: 25px;
-  display: inline-block;
   margin-left: 2em;
   /* couldn't fine any other way to get this to line up */
   margin-top: -3px;

@@ -1,4 +1,4 @@
-import EventEmitter from 'events'
+import { EventEmitter } from 'events'
 import { HistoricalDataResponse } from '../../global-shared/types/server'
 import { delay } from '../../global-shared/util'
 import { EVENT_NAMES, WEBSOCKETS_URL } from '../../common/config'
@@ -11,7 +11,7 @@ const WS_RETRY_DELAY = 100
 // Milliseconds between retries if the initial load fails
 const REST_RETRY_DELAY = 2000
 
-interface PricePoint {
+export interface PricePoint {
   date: Date,
   price: number
 }
@@ -26,15 +26,24 @@ function formatHistoricalData (res: HistoricalDataResponse): PricePoint[] {
   }).sort((a, b) => a.date.getTime() - b.date.getTime())
 }
 
+const isValidPrice = (price: number): boolean => !isNaN(price) && price > 0
+
 export class MarketData extends EventEmitter {
   currentPrice: number
-
   historicalData: PricePoint[]
+  hasLoadedCurrentPrice: boolean
 
   constructor () {
     super()
     this.currentPrice = 0
     this.historicalData = []
+    this.hasLoadedCurrentPrice = false
+
+    this.on('update', () => {
+      if (!this.hasLoadedCurrentPrice && isValidPrice(this.currentPrice)) {
+        this.hasLoadedCurrentPrice = true
+      }
+    })
 
     this.retrieveMarketData()
     this.retrySubscribeUpdatesForever()
@@ -50,7 +59,6 @@ export class MarketData extends EventEmitter {
         } = await getMarketData()
 
         this.historicalData = formatHistoricalData(rawHistoricalData)
-
         this.currentPrice = rawCurrentPrice || 0
 
         this.emit('update', {
@@ -66,7 +74,7 @@ export class MarketData extends EventEmitter {
     } while (error != null)
   }
 
-  private async retrySubscribeUpdatesForever (): Promise<void> {
+  private async retrySubscribeUpdatesForever (): Promise<never> {
     while (true) {
       try {
         await this.subscribeUpdates()

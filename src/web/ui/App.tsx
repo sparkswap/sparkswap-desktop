@@ -4,12 +4,21 @@ import LNDConnect from './LNDConnect'
 import PriceChart from './Prices'
 import TradeHistory from './History'
 import Trade from './Trade'
-import { DepositDialog, OnboardingStage, RegisterDialog } from './Onboarding'
+import {
+  getRegistrationURL,
+  DepositDialog,
+  OnboardingStage,
+  RegisterDialog
+} from './Onboarding'
 import Balances from './Balances'
-import { toaster } from './AppToaster'
+import { showErrorToast, showSuccessToast, showLoadingToast } from './AppToaster'
 import register from '../domain/register'
-import { ReviewStatus, URL } from '../../global-shared/types'
+import { getBalanceState } from '../domain/balance'
+import { getAuth, openLinkInBrowser } from '../domain/main-request'
+import { ReviewStatus, URL, Asset } from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
+import { formatDollarValue } from './formatters'
+import { IActionProps } from '@blueprintjs/core'
 
 interface OnboardingStep {
   stage: OnboardingStage,
@@ -18,9 +27,10 @@ interface OnboardingStep {
 
 interface AppState {
   onboardingStage: OnboardingStage,
-  refreshScreen: boolean,
   depositLoading: boolean,
-  depositUrl?: URL
+  showSteps: boolean,
+  depositUrl?: URL,
+  uuid?: string
 }
 
 class App extends React.Component<{}, AppState> {
@@ -28,15 +38,15 @@ class App extends React.Component<{}, AppState> {
     super(props)
     this.state = {
       onboardingStage: OnboardingStage.NONE,
-      refreshScreen: true,
-      depositLoading: false
+      depositLoading: false,
+      showSteps: true
     }
+    this.updateUUID()
   }
 
-  handleOverlayClose = () => {
-    this.setState({
-      refreshScreen: true
-    })
+  async updateUUID (): Promise<void> {
+    const { uuid } = await getAuth()
+    this.setState({ uuid })
   }
 
   async register (): Promise<OnboardingStep> {
@@ -50,39 +60,27 @@ class App extends React.Component<{}, AppState> {
         case ReviewStatus.PENDING:
         case ReviewStatus.APPROVED:
           return { stage: OnboardingStage.DEPOSIT, depositUrl: url }
-        case ReviewStatus.REJECTED:
-          // TODO: Create a nice screen for the user if they have been rejected
-          // so that they dont hate us
-          toaster.show({
-            intent: 'danger',
-            message: 'Error while registering: Please contact Sparkswap at support@sparkswap.com'
-          })
-          return { stage: OnboardingStage.NONE }
         default:
-          toaster.show({
-            intent: 'danger',
-            message: `Error while registering: unknown status ${reviewStatus}`
+          console.debug(`Register returned status: ${reviewStatus}`)
+          showErrorToast('Error during identity verification', {
+            text: 'Contact support',
+            onClick: () => openLinkInBrowser(
+              'https://support.sparkswap.com/identity-verification-failed')
           })
           return { stage: OnboardingStage.NONE }
       }
     } catch (e) {
-      toaster.show({
-        intent: 'danger',
-        message: `Error while registering: ${e.message}`
+      console.error(`Register threw an error: ${e.message}`)
+      showErrorToast('Error during identity verification', {
+        text: 'Contact support',
+        onClick: () => openLinkInBrowser(
+          'https://support.sparkswap.com/identity-verification-error')
       })
       return { stage: OnboardingStage.NONE }
     }
   }
 
   async handleInitialOnboarding (): Promise<void> {
-    const toastId = toaster.show({
-      intent: 'success',
-      message: 'Starting deposit workflow',
-      loading: true,
-      timeout: 0,
-      hideDismiss: true
-    })
-
     this.setState({ depositLoading: true })
 
     const {
@@ -93,44 +91,61 @@ class App extends React.Component<{}, AppState> {
     this.setState({
       onboardingStage: stage,
       depositUrl,
-      depositLoading: false
+      depositLoading: false,
+      showSteps: false
     })
-
-    toaster.dismiss(toastId)
   }
 
   async handleRegisterProceed (): Promise<void> {
-    const {
-      stage,
-      depositUrl
-    } = await this.register()
+    const dismissLoader = showLoadingToast('Verifying identity')
 
-    if (stage === OnboardingStage.REGISTER) {
-      toaster.show({
-        intent: 'danger',
-        message: 'You must first verify your identity before you can proceed to step 2.',
-        timeout: 5000,
-        hideDismiss: true
+    try {
+      const {
+        stage,
+        depositUrl
+      } = await this.register()
+
+      if (stage === OnboardingStage.REGISTER) {
+        const uuid = this.state.uuid
+        showErrorToast('Verify your identity before proceeding to Step 2.',
+          uuid ? {
+            text: 'Verify',
+            onClick: () => openLinkInBrowser(getRegistrationURL(uuid))
+          } : undefined)
+      }
+
+      this.setState({
+        onboardingStage: stage,
+        depositUrl,
+        showSteps: true
       })
+    } finally {
+      dismissLoader()
     }
-
-    this.setState({
-      onboardingStage: stage,
-      depositUrl
-    })
   }
 
   startDeposit = async (): Promise<void> => {
     switch (this.state.onboardingStage) {
       case OnboardingStage.NONE:
-        this.handleInitialOnboarding()
+        await this.handleInitialOnboarding()
         return
       case OnboardingStage.REGISTER:
-        this.handleRegisterProceed()
+        await this.handleRegisterProceed()
         return
       default:
         throw new Error('Unknown onboarding stage')
     }
+  }
+
+  handleDepositDone = (amount: number): void => {
+    showSuccessToast(`Transfer of ${formatDollarValue(amount)} USD initiated.`)
+    getBalanceState(Asset.USDX)
+    this.handleClose()
+  }
+
+  handleDepositError = (message: string, action?: IActionProps): void => {
+    showErrorToast(message, action)
+    this.handleClose()
   }
 
   handleClose = (): void => {
@@ -141,8 +156,8 @@ class App extends React.Component<{}, AppState> {
     const {
       onboardingStage,
       depositLoading,
-      refreshScreen,
-      depositUrl
+      depositUrl,
+      showSteps
     } = this.state
 
     return (
@@ -152,8 +167,9 @@ class App extends React.Component<{}, AppState> {
         </div>
         <div className="chrome-title">
         </div>
-        <LNDConnect onClose={this.handleOverlayClose} />
+        <LNDConnect />
         <RegisterDialog
+          uuid={this.state.uuid}
           onClose={this.handleClose}
           onProceed={this.startDeposit}
           isOpen={onboardingStage === OnboardingStage.REGISTER}
@@ -162,11 +178,14 @@ class App extends React.Component<{}, AppState> {
           depositUrl={depositUrl || ''}
           onClose={this.handleClose}
           isOpen={onboardingStage === OnboardingStage.DEPOSIT}
+          onDepositDone={this.handleDepositDone}
+          onDepositError={this.handleDepositError}
+          showSteps={showSteps}
         />
         <div className="app-content">
           <div className="BalancesAndPrice">
             <Balances onDeposit={this.startDeposit} depositLoading={depositLoading} />
-            <PriceChart redraw={refreshScreen} />
+            <PriceChart />
           </div>
           <div className="vertical-line" />
           <div className="TradeAndHistory">

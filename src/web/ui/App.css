@@ -102,12 +102,15 @@ body.sparkswap {
 
 /* Buttons */
 .bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]),
-.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):hover {
+.bp3-dark.sparkswap .bp3-button:not([class*='bp3-disabled']) {
   box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
 }
 
-.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):hover {
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):hover,
+.bp3-dark.sparkswap .bp3-button:not([class*='bp3-disabled']):hover {
+  box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
   background-color: #546879;
 }
 
@@ -141,7 +144,7 @@ body.sparkswap {
 
 .bp3-dark.sparkswap .bp3-dialog {
   width: 360px;
-  background-color: rgba(16, 22, 26, 0.95);
+  background-color: rgba(16, 22, 26, 0.85);
   box-shadow: none;
   padding-bottom: 15px;
 }
@@ -158,12 +161,21 @@ body.sparkswap {
   margin-top: 5px;
 }
 
-.sparkswap .bp3-dialog .bp3-dialog-body p {
-  margin-top: 40px;
+.sparkswap .bp3-dialog .bp3-dialog-body .bp3-heading {
+  margin-bottom: 20px;
 }
+
+.sparkswap .bp3-dialog .bp3-dialog-body p {
+  margin-top: 10px;
+}
+
 
 .sparkswap .bp3-dialog .bp3-dialog-footer {
   margin: 0 15px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-footer>.bp3-button.bp3-minimal {
+  padding-left: 1px;
 }
 
 .sparkswap .bp3-dialog .bp3-dialog-footer-actions .bp3-button {
@@ -173,3 +185,25 @@ body.sparkswap {
 .sparkswap .bp3-dialog .bp3-dialog-footer-actions .bp3-button.bp3-fill:only-child {
   margin-left: 0;
 }
+
+/* Skeleton */
+
+/* Make the beginning of the loading 0 opacity to reduce flicker */
+.bp3-dark.sparkswap .bp3-skeleton {
+  border-color: rgba(0, 0, 0, 0);
+  background: rgba(0, 0, 0, 0);
+  animation: 1000ms linear infinite alternate gentle-glow;
+  animation-delay: 500ms;
+}
+
+@keyframes gentle-glow {
+  0% {
+    border-color: rgba(92, 112, 128, 0.0);
+    background: rgba(92, 112, 128, 0.0);
+  }
+  100% {
+    border-color: rgba(206, 217, 224, 0.2);
+    background: rgba(206, 217, 224, 0.2);
+  }
+}
+

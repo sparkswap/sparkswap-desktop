@@ -8,11 +8,28 @@
 }
 
 .webview-loading #AnchorDepositIFrame {
-  display: none;
+  opacity: 0;
+}
+
+.bp3-overlay-backdrop.plaid {
+  background-color: rgba(16, 22, 26, 0);
+  transition: background-color ease 350ms;
 }
 
 #AnchorDepositIFrame {
+  width: 360px;
   height: 300px;
+  position: absolute;
+  left: 0;
+  top: 250px;
+}
+
+.plaid #AnchorDepositIFrame {
+  height: 100%;
+  width: 100%;
+  left: 0;
+  top: 0;
+  position: fixed;
 }
 
 .DepositDialog {

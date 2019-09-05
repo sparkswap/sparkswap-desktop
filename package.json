@@ -1,22 +1,24 @@
 {
-  "name": "sparkswap-satstacker",
+  "name": "sparkswap-desktop",
   "author": "Sparkswap <dev@sparkswap.com> (https://github.com/sparkswap)",
-  "description": "Sparkswap Satstacker",
-  "productName": "Sparkswap Satstacker",
-  "version": "0.1.0-1",
+  "description": "Sparkswap Desktop: the only way to buy Bitcoin instantly",
+  "productName": "Sparkswap",
+  "version": "0.1.4",
   "private": true,
   "main": "./build/electron.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sparkswap/satstacker-pub.git"
+    "url": "https://github.com/sparkswap/sparkswap-desktop.git"
   },
   "devDependencies": {
     "@types/better-sqlite3": "5.4.0",
+    "@types/js-yaml": "3.12.1",
     "@types/node-fetch": "2.5.0",
     "@typescript-eslint/eslint-plugin": "1.12.0",
     "@typescript-eslint/parser": "1.12.0",
-    "electron": "5.0.4",
+    "electron": "6.0.7",
     "electron-builder": "21.2.0",
+    "electron-notarize": "0.1.1",
     "eslint": "5.16.0",
     "eslint-config-standard": "13.0.1",
     "eslint-plugin-import": "2.18.0",
@@ -38,7 +40,8 @@
     "better-sqlite3": "5.4.1",
     "chart.js": "2.8.0",
     "electron-updater": "4.1.2",
-    "lnd-engine": "github:sparkswap/lnd-engine#v0.7.0-beta-rc5",
+    "js-yaml": "3.13.1",
+    "lnd-engine": "github:sparkswap/lnd-engine#v0.7.0-beta-rc6",
     "node-fetch": "2.6.0",
     "react": "16.8.6",
     "react-chartjs-2": "2.7.6",
@@ -53,7 +56,6 @@
     "start": "nf start",
     "react-start": "BROWSER=none react-app-rewired start --scripts-version react-scripts",
     "build": "react-app-rewired build --scripts-version react-scripts",
-    "build-mac-icon": "./scripts/create-icns.sh public/icon-1024.png public/icon",
     "test-web": "react-app-rewired test --scripts-version react-scripts",
     "test": "npm run test-web",
     "ci-test": "npm run typecheck && npm run lint",
@@ -78,10 +80,11 @@
     "package-win": "npm run package -- --win",
     "package-all": "npm run package -- -mwl",
     "publish": "npm run package -- --publish always",
-    "publish-win": "npm run package-win -- --publish",
-    "publish-mac": "npm run package-mac -- --publish",
-    "publish-linux": "npm run package-linux -- --publish",
-    "publish-all": "npm run package -- -mwl --publish"
+    "publish-win": "npm run package-win -- --publish always",
+    "publish-mac": "npm run package-mac -- --publish always",
+    "publish-linux": "npm run package-linux -- --publish always",
+    "publish-all": "npm run package -- -mwl --publish always",
+    "publish-client-code": "bash ./scripts/publish-client-code.sh"
   },
   "browserslist": {
     "production": [

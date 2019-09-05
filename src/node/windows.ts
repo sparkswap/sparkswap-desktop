@@ -1,6 +1,8 @@
 import * as url from 'url'
 import * as path from 'path'
-import { BrowserWindow, App, Event } from 'electron'
+import { autoUpdater, BrowserWindow, App, Event } from 'electron'
+import { IS_DEVELOPMENT, IS_PRODUCTION } from '../common/config'
+import { tradeUpdater } from './data'
 
 function createMainWindow (): BrowserWindow {
   const window = new BrowserWindow({
@@ -13,24 +15,34 @@ function createMainWindow (): BrowserWindow {
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
       webviewTag: true,
-      devTools: process.env.NODE_ENV === 'development'
+      devTools: IS_DEVELOPMENT
     },
-    icon: path.join(__dirname, '..', '..', 'index.html'),
+    icon: IS_DEVELOPMENT
+      ? path.join(__dirname, '..', '..', 'public', 'icon.png')
+      : path.join(__dirname, '..', '..', 'icon.png'),
     backgroundColor: '#293742',
     show: false
   })
 
-  const startUrl = process.env.ELECTRON_START_URL || url.format({
-    pathname: path.join(__dirname, '..', '..', 'index.html'),
-    protocol: 'file:',
-    slashes: true
-  })
+  const startUrl = IS_PRODUCTION
+    ? url.format({
+      pathname: path.join(__dirname, '..', '..', 'index.html'),
+      protocol: 'file:',
+      slashes: true
+    })
+    : 'http://localhost:5000'
 
   // and load the index.html of the app.
   window.loadURL(startUrl)
 
   window.on('ready-to-show', function () {
     window.show()
+  })
+
+  tradeUpdater.on('change', (id: number) => {
+    if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
+      window.webContents.send('tradeUpdate', id)
+    }
   })
 
   return window
@@ -76,11 +88,15 @@ function manageWindows (app: App): void {
     appIsQuitting = true
   })
 
+  autoUpdater.on('before-quit-for-update', () => {
+    appIsQuitting = true
+  })
+
   // Quit when all windows are closed.
   app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
+    if (process.platform !== 'darwin' || appIsQuitting) {
       app.quit()
     }
   })

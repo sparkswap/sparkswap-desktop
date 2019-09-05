@@ -26,7 +26,7 @@ However, if you change anything in `electron` or `main.js` you'll need to reload
 
 ## Releases
 
-To build dmg, AppImage, and exe for satstacker, run the following commands.
+To build dmg, AppImage, and exe for Sparkswap Desktop, run the following commands.
 
 ```
 npm run build-prod && npm run package-all
