@@ -41,7 +41,7 @@
     "chart.js": "2.8.0",
     "electron-updater": "4.1.2",
     "js-yaml": "3.13.1",
-    "lnd-engine": "github:sparkswap/lnd-engine#v0.7.0-beta-rc6",
+    "lnd-engine": "github:sparkswap/lnd-engine#v0.7.0-beta-rc7",
     "node-fetch": "2.6.0",
     "react": "16.8.6",
     "react-chartjs-2": "2.7.6",

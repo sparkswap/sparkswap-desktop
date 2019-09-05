@@ -8,6 +8,8 @@ import { LndConfig } from '../common/types'
 import SCAN_CONFIGS from './lnd-configs'
 import { delay } from '../global-shared/util'
 
+const MIN_LND_VERSION = '0.7.0-beta'
+
 const ASSET = Asset.BTC
 
 const CONNECT_TO_SERVER_RETRY_MS = 10000
@@ -90,7 +92,8 @@ class LndClient extends EventEmitter {
     try {
       // the LndEngine constructor will throw if the tlsCert or macaroon do not exist at the
       // specified file locations
-      this._engine = new LndEngine(`${hostName}:${port}`, ASSET, { tlsCertPath, macaroonPath }) as LndEngine
+      this._engine = new LndEngine(`${hostName}:${port}`, ASSET,
+        { tlsCertPath, macaroonPath, minVersion: MIN_LND_VERSION }) as LndEngine
       this.engine.validateEngine().then(() => this.emit('connect'))
     } catch (e) {
       console.error(`Unable to create engine`, e)

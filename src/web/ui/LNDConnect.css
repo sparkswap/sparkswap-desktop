@@ -40,14 +40,13 @@
   float: right;
 }
 
-
 .LNDConnect .FullScreenOverlay .Title {
   margin-bottom: 1em;
 }
 
 .LNDConnect .ConnectGraphic {
-  height: 40px;
-  margin: 3em auto;
+  height: 60px;
+  margin: 1.5em auto;
 }
 
 .bp3-dark .download-lnd .bp3-divider {

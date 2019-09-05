@@ -22,11 +22,13 @@ const STATUS_TEXT = Object.freeze({
   [lnd.Statuses.UNAVAILABLE]: 'LND is unreachable',
   [lnd.Statuses.UNLOCKED]: 'LND is syncing',
   [lnd.Statuses.NOT_SYNCED]: 'LND is syncing',
+  [lnd.Statuses.OLD_VERSION]: 'LND version is too old',
   [lnd.Statuses.VALIDATED]: 'Connected to LND'
 })
 
 const ERROR_STATUS = [
   lnd.Statuses.UNKNOWN,
+  lnd.Statuses.OLD_VERSION,
   lnd.Statuses.UNAVAILABLE
 ]
 

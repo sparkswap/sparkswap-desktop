@@ -49,7 +49,8 @@ const TOAST_MESSAGES = Object.freeze({
   [lnd.Statuses.NOT_SYNCED]: 'LND was found, but it is not finished syncing. Wait until it is finished, and try again.',
   [lnd.Statuses.UNAVAILABLE]: 'LND is not reachable.',
   [lnd.Statuses.UNKNOWN]: 'LND is not reachable.',
-  [lnd.Statuses.NO_CONFIG]: 'Sparkswap is not configured.'
+  [lnd.Statuses.NO_CONFIG]: 'Sparkswap is not configured.',
+  [lnd.Statuses.OLD_VERSION]: 'LND was found, but the version is too old.'
 })
 
 const POLL_INTERVAL = 1000
@@ -227,6 +228,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
         case lnd.Statuses.NEEDS_WALLET:
         case lnd.Statuses.UNLOCKED:
         case lnd.Statuses.NOT_SYNCED:
+        case lnd.Statuses.OLD_VERSION:
           showErrorToast(TOAST_MESSAGES[status])
           this.loadConfig()
           this.setState({

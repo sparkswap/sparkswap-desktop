@@ -15,7 +15,8 @@ declare module 'lnd-engine' {
     UNAVAILABLE = 'UNAVAILABLE',
     UNLOCKED = 'UNLOCKED',
     NOT_SYNCED = 'NOT_SYNCED',
-    VALIDATED = 'VALIDATED',
+    OLD_VERSION = 'OLD_VERSION',
+    VALIDATED = 'VALIDATED'
   }
 
   enum Errors {
@@ -41,6 +42,7 @@ declare module 'lnd-engine' {
       UNAVAILABLE: Statuses,
       UNLOCKED: Statuses,
       NOT_SYNCED: Statuses,
+      OLD_VERSION: Statuses,
       VALIDATED: Statuses
     }
 
@@ -51,7 +53,11 @@ declare module 'lnd-engine' {
       PermanentSwapError: typeof PermanentSwapError
     }
 
-    constructor(host: string, symbol: string, options: { tlsCertPath: string, macaroonPath: string })
+    constructor(host: string, symbol: string, options: {
+      tlsCertPath: string,
+      macaroonPath: string,
+      minVersion: string
+    })
 
     host: string
     tlsCertPath: string
