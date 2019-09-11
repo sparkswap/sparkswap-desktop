@@ -56,6 +56,9 @@ interface Payment {
  */
 const RETRY_DELAY = 30000
 
+const CANCEL_NUM_RETRIES = 10
+const CANCEL_RETRY_DELAY = 10000
+
 /**
  * Prepare for a swap by setting up a hold invoice
  * on the inbound chain.
@@ -117,11 +120,18 @@ async function translateIdempotent (
 /**
  * Cancel an upstream payment for a swap.
  */
-async function cancelSwap (engine: Engine, hash: SwapHash, error: Error): Promise<void> {
-  logger.error('Permanent Error encountered while translating swap, ' +
-    'cancelling upstream invoice', { error: error.message, hash })
-
-  return engine.cancelSwap(hash)
+async function cancelSwapWithRetry (engine: Engine, hash: SwapHash): Promise<void> {
+  for (let i = 0; i < CANCEL_NUM_RETRIES; i++) {
+    try {
+      await engine.cancelSwap(hash)
+      logger.info(`Canceled swap with hash ${hash}`)
+      return
+    } catch (e) {
+      logger.warn(`Error canceling swap with hash ${hash}: ${e.toString()}`)
+      await delay(CANCEL_RETRY_DELAY)
+    }
+  }
+  logger.error(`Failed to cancel swap with hash ${hash}`)
 }
 
 /**
@@ -153,8 +163,9 @@ async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayme
     return paymentPreimage
   } catch (e) {
     if (e instanceof outboundErrors.PermanentSwapError) {
-      await cancelSwap(inboundEngine, hash, e)
-
+      logger.error('Permanent Error encountered while translating swap, ' +
+        'cancelling upstream invoice', { error: e.message, hash })
+      cancelSwapWithRetry(inboundEngine, hash)
       throw e
     }
 

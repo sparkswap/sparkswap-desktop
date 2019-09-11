@@ -140,6 +140,12 @@ body.sparkswap {
   color: rgba(245,248,250, 0.7);
 }
 
+.bp3-dark.sparkswap .bp3-button.bp3-minimal.link-button {
+  padding: 0px;
+  padding-bottom: 2px;
+  min-height: 0px;
+}
+
 /* Dialogs */
 
 .bp3-dark.sparkswap .bp3-dialog {
@@ -206,4 +212,3 @@ body.sparkswap {
     background: rgba(206, 217, 224, 0.2);
   }
 }
-

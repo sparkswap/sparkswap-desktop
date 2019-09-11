@@ -1,8 +1,18 @@
 import * as url from 'url'
 import * as path from 'path'
 import { autoUpdater, BrowserWindow, App, Event } from 'electron'
+import { autoUpdater as electronUpdater } from 'electron-updater'
+import { IS_MACOS } from './util'
 import { IS_DEVELOPMENT, IS_PRODUCTION } from '../common/config'
 import { tradeUpdater } from './data'
+import { delay } from '../global-shared/util'
+import { ProgressInfo } from 'app-builder-lib'
+
+const DOWNLOAD_RESTART_DELAY_MS = 5000
+
+function isWindowAvailable (window: BrowserWindow): boolean {
+  return !window.isDestroyed() && !window.webContents.isDestroyed()
+}
 
 function createMainWindow (): BrowserWindow {
   const window = new BrowserWindow({
@@ -40,9 +50,30 @@ function createMainWindow (): BrowserWindow {
   })
 
   tradeUpdater.on('change', (id: number) => {
-    if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
+    if (isWindowAvailable(window)) {
       window.webContents.send('tradeUpdate', id)
     }
+  })
+
+  electronUpdater.on('download-progress', (progress: ProgressInfo) => {
+    if (!isWindowAvailable(window)) {
+      return
+    }
+
+    window.webContents.send('downloadStarted')
+
+    if (IS_MACOS) {
+      window.webContents.send('downloadProgress', progress.percent)
+    }
+  })
+
+  electronUpdater.on('update-downloaded', async () => {
+    if (isWindowAvailable(window)) {
+      window.webContents.send('downloadRestart')
+      await delay(DOWNLOAD_RESTART_DELAY_MS)
+    }
+
+    electronUpdater.quitAndInstall()
   })
 
   return window

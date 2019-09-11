@@ -56,6 +56,14 @@ export class Router {
     }
   }
 
+  private getEngineSafe (asset: Asset): Engine | null {
+    try {
+      return this.getEngine(asset)
+    } catch (e) {
+      return null
+    }
+  }
+
   private get engines (): Engines {
     return {
       [Asset.BTC]: this.getEngine(Asset.BTC) as LndEngine,
@@ -63,12 +71,16 @@ export class Router {
     }
   }
 
-  private async getBalance (asset: Asset): Promise<Amount> {
+  private async getBalance (asset: Asset): Promise<Amount | null> {
     if (asset === Asset.USDX && !this.anchorClient.isConfigured()) {
       return { asset: Asset.USDX, unit: Unit.Cent, value: 0 }
     }
 
-    const engine = this.getEngine(asset)
+    const engine = this.getEngineSafe(asset)
+
+    if (!engine || !engine.validated) {
+      return null
+    }
 
     const balances = await Promise.all([
       engine.getUncommittedBalance(),

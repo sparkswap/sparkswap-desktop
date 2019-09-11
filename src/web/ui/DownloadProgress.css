@@ -1,0 +1,9 @@
+.sparkswap .bp3-dialog .bp3-dialog-body.download-progress-dialog {
+    margin: 20px;
+    min-height: 50%;
+    text-align: center;
+}
+
+.sparkswap .bp3-dialog .bp3-spinner.download-progress-spinner {
+    margin-bottom: 20px;
+}

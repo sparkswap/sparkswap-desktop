@@ -13,11 +13,11 @@ interface FilePathInputProps {
 }
 
 class FilePathInput extends React.Component<FilePathInputProps> {
-  handlePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  handlePathChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.props.onChange(e.target.value)
   }
 
-  handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (!e.target.files || !e.target.files.length) return
     // Electron exposes a `path` property on File objects
     // @ts-ignore

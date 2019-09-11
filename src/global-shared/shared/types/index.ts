@@ -61,7 +61,7 @@ export enum ReviewStatus {
   REJECTED = 'REJECTED',
 }
 
-const reviewStatuses = Object.values(ReviewStatus)
+const reviewStatuses: string[] = Object.values(ReviewStatus)
 
 export function isReviewStatus (str: string): str is ReviewStatus {
   return reviewStatuses.includes(str)

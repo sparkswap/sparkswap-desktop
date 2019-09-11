@@ -1,10 +1,7 @@
-import fs from 'fs'
-import path from 'path'
-import yaml from 'js-yaml'
 import { dialog, App, Notification } from 'electron'
 import { autoUpdater, AppUpdater, UpdateInfo } from 'electron-updater'
 import { delay } from '../global-shared/util'
-import { IS_WINDOWS } from './util'
+import { IS_WINDOWS, IS_LINUX } from './util'
 import { IS_DEVELOPMENT } from '../common/config'
 
 interface DialogMessageBoxResponse {
@@ -22,17 +19,6 @@ autoUpdater.autoDownload = false
 // This option only affects windows/linux however we want this set so all platforms
 // have consistent functionality when installing/auto-updating
 autoUpdater.autoInstallOnAppQuit = false
-
-function getAppId (): string {
-  try {
-    const yamlPath = path.join(__dirname, '..', '..', 'electron-builder.yml')
-    const { appId } = yaml.safeLoad(fs.readFileSync(yamlPath).toString(), { json: true })
-    return appId
-  } catch (e) {
-    console.error('Unable to load application id ')
-    throw e
-  }
-}
 
 function createNotificationForPlatform (autoUpdater: AppUpdater): Notification {
   const notification = new Notification({
@@ -64,6 +50,13 @@ function createNotificationForPlatform (autoUpdater: AppUpdater): Notification {
     }
 
     autoUpdater.downloadUpdate()
+
+    // We call this manually to trigger UI components because download-progress
+    // will not get triggered for differential updates, which only occur on
+    // windows/linux
+    if (IS_WINDOWS || IS_LINUX) {
+      autoUpdater.emit('download-progress')
+    }
   })
 
   return notification
@@ -72,8 +65,10 @@ function createNotificationForPlatform (autoUpdater: AppUpdater): Notification {
 function enableAutoUpdate (app: App): void {
   // We need to set the App User Model Id to the app id or notifications for
   // windows will not work correctly.
+  // TODO: Consolidate this appId once windows supports configuration files other
+  // than yaml for electron-builder
   if (IS_WINDOWS) {
-    app.setAppUserModelId(getAppId())
+    app.setAppUserModelId('com.sparkswap.Sparkswap')
   }
 
   let updateNotification: Notification
@@ -84,7 +79,6 @@ function enableAutoUpdate (app: App): void {
   autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
     console.log(`Installing update for current version: ${autoUpdater.currentVersion}. Newest Version: ${info.version}`)
     shouldCheckForUpdates = true
-    autoUpdater.quitAndInstall()
   })
 
   autoUpdater.on('update-available', () => {

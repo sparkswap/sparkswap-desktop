@@ -7,7 +7,7 @@ interface ExternalButtonProps extends IButtonProps {
 }
 
 export class ExternalButton extends React.Component<ExternalButtonProps> {
-  handleClick = (e: React.MouseEvent<HTMLElement>) => {
+  handleClick = (e: React.MouseEvent<HTMLElement>): void => {
     e.preventDefault()
     openLinkInBrowser(this.props.href)
     if (this.props.onClick) this.props.onClick(e)
@@ -37,7 +37,7 @@ interface ExternalLinkProps {
 }
 
 export class ExternalLink extends React.Component<ExternalLinkProps> {
-  handleClick = (e: React.MouseEvent<HTMLElement>) => {
+  handleClick = (e: React.MouseEvent<HTMLElement>): void => {
     e.preventDefault()
     openLinkInBrowser(this.props.href)
     if (this.props.onClick) this.props.onClick(e)

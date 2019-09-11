@@ -14,6 +14,20 @@ module.exports = {
     "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended"
   ],
+  "overrides": [{
+    files: ['**/*.ts', '**/*.tsx'],
+    parser: '@typescript-eslint/parser',
+    parserOptions: {
+      ecmaVersion: 2018,
+      sourceType: 'module',
+      ecmaFeatures: { jsx: true },
+      warnOnUnsupportedTypeScriptVersion: true,
+    },
+    plugins: ['@typescript-eslint'],
+    rules: {
+      "@typescript-eslint/no-angle-bracket-type-assertion": "off",
+    }
+  }],
   "rules": {
     "no-restricted-imports": ["error", {
       "patterns": ["**/shared"]
@@ -45,6 +59,7 @@ module.exports = {
     "camelcase": "off",
     "@typescript-eslint/camelcase": ["error", {
       "ignoreDestructuring": true
-    }]
+    }],
+    "@typescript-eslint/ban-ts-ignore": "off"
   }
 }

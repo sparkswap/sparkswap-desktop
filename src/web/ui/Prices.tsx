@@ -98,7 +98,7 @@ class PriceChart extends React.Component<{}, PriceChartState> {
     marketDataSubscriber.on('update', this.handleData)
   }
 
-  handleData = () => {
+  handleData = (): void => {
     const {
       currentPrice,
       historicalData,

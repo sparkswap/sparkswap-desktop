@@ -44,6 +44,9 @@ export async function getBalanceState (asset: Asset): Promise<BalanceState> {
 
   try {
     const balance = await getBalance(asset)
+    if (balance === null) {
+      throw new Error(`${asset} engine is not validated`)
+    }
     const existingBalance = balances[asset]
     if (existingBalance instanceof Error || existingBalance.value !== balance.value) {
       update = true

@@ -14,7 +14,7 @@ interface FullScreenOverlayProps {
 }
 
 class FullScreenOverlay extends React.Component<FullScreenOverlayProps> {
-  handleClose = () => {
+  handleClose = (): void => {
     if (this.props.onClose) this.props.onClose()
   }
 

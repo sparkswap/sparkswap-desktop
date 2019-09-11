@@ -156,36 +156,36 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
     }
   }
 
-  handleOverlayOpen = () => {
+  handleOverlayOpen = (): void => {
     this.setState({ overlayIsOpen: true })
     this.loadConfig()
   }
 
-  handleOverlayClose = () => {
+  handleOverlayClose = (): void => {
     this.setState({
       overlayIsOpen: false
     })
   }
 
-  handleHostNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  handleHostNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({
       hostName: e.target.value
     })
   }
 
-  handlePortChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  handlePortChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({
       port: e.target.value
     })
   }
 
-  handleTlsCertPathChange = (tlsCertPath: string) => {
+  handleTlsCertPathChange = (tlsCertPath: string): void => {
     this.setState({
       tlsCertPath
     })
   }
 
-  handleMacaroonPathChange = (macaroonPath: string) => {
+  handleMacaroonPathChange = (macaroonPath: string): void => {
     this.setState({
       macaroonPath
     })
@@ -203,7 +203,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
       })
   }
 
-  handleScan = async () => {
+  handleScan = async (): Promise<void> => {
     this.setState({
       scanning: true
     })
@@ -248,7 +248,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
     }
   }
 
-  afterConnectAttempt = async () => {
+  afterConnectAttempt = async (): Promise<void> => {
     this.setState({ loading: true })
     await this.updateStatus()
     this.setState({ loading: false })
@@ -264,7 +264,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
     }
   }
 
-  handleConnect = async () => {
+  handleConnect = async (): Promise<void> => {
     const {
       hostName,
       port,

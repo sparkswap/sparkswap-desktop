@@ -3,12 +3,14 @@ import './App.css'
 import LNDConnect from './LNDConnect'
 import PriceChart from './Prices'
 import TradeHistory from './History'
+import DownloadProgress from './DownloadProgress'
 import Trade from './Trade'
 import {
   getRegistrationURL,
   DepositDialog,
   OnboardingStage,
-  RegisterDialog
+  RegisterDialog,
+  openBeacon
 } from './Onboarding'
 import Balances from './Balances'
 import { showErrorToast, showSuccessToast, showLoadingToast } from './AppToaster'
@@ -64,8 +66,7 @@ class App extends React.Component<{}, AppState> {
           console.debug(`Register returned status: ${reviewStatus}`)
           showErrorToast('Error during identity verification', {
             text: 'Contact support',
-            onClick: () => openLinkInBrowser(
-              'https://support.sparkswap.com/identity-verification-failed')
+            onClick: openBeacon
           })
           return { stage: OnboardingStage.NONE }
       }
@@ -73,8 +74,7 @@ class App extends React.Component<{}, AppState> {
       console.error(`Register threw an error: ${e.message}`)
       showErrorToast('Error during identity verification', {
         text: 'Contact support',
-        onClick: () => openLinkInBrowser(
-          'https://support.sparkswap.com/identity-verification-error')
+        onClick: openBeacon
       })
       return { stage: OnboardingStage.NONE }
     }
@@ -167,6 +167,7 @@ class App extends React.Component<{}, AppState> {
         </div>
         <div className="chrome-title">
         </div>
+        <DownloadProgress />
         <LNDConnect />
         <RegisterDialog
           uuid={this.state.uuid}

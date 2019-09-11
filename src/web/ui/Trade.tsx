@@ -18,6 +18,7 @@ import { marketDataSubscriber } from '../domain/market-data'
 import { QuoteResponse } from '../../global-shared/types/server'
 import { Asset } from '../../global-shared/types'
 import './Trade.css'
+import { delay } from '../../global-shared/util'
 
 interface TradeProps {
   onDeposit: Function
@@ -30,8 +31,7 @@ interface TradeState {
   assetSymbol: string,
   currentPrice: number,
   quantity?: number,
-  quote?: QuoteResponse,
-  hasLoadedCurrentPrice: boolean
+  quote?: QuoteResponse
 }
 
 const initialState: TradeState = {
@@ -39,8 +39,7 @@ const initialState: TradeState = {
   secondsRemaining: 0,
   quantityStr: '',
   assetSymbol: 'BTC',
-  currentPrice: marketDataSubscriber.currentPrice,
-  hasLoadedCurrentPrice: marketDataSubscriber.hasLoadedCurrentPrice,
+  currentPrice: 0,
   quote: undefined,
   quantity: undefined
 }
@@ -73,9 +72,9 @@ class Trade extends React.Component<TradeProps, TradeState> {
     return Boolean(this.state.quote)
   }
 
-  onData = () => {
-    const { currentPrice, hasLoadedCurrentPrice } = marketDataSubscriber
-    this.setState({ currentPrice, hasLoadedCurrentPrice })
+  onData = (): void => {
+    const { currentPrice } = marketDataSubscriber
+    this.setState({ currentPrice })
   }
 
   componentWillUnmount (): void {
@@ -86,15 +85,16 @@ class Trade extends React.Component<TradeProps, TradeState> {
     marketDataSubscriber.on('update', this.onData)
   }
 
-  confirmBuy = async () => {
+  confirmBuy = async (): Promise<void> => {
     const {
       quantity,
       quote
     } = this.state
 
     if (this.isQuoteValid) {
-      this.setState(initialState)
-      this.setState({ currentPrice: marketDataSubscriber.currentPrice })
+      this.setState(Object.assign(initialState, {
+        currentPrice: marketDataSubscriber.currentPrice
+      }))
 
       if (quantity == null || quote == null) {
         return
@@ -108,8 +108,11 @@ class Trade extends React.Component<TradeProps, TradeState> {
       }
 
       getBalanceState(Asset.USDX)
-      getBalanceState(Asset.BTC)
       showSuccessToast('Trade completed')
+
+      // This delay is necessary since LND doesn't update balance immediately after executeTrade
+      await delay(50)
+      getBalanceState(Asset.BTC)
     }
   }
 
@@ -134,12 +137,12 @@ class Trade extends React.Component<TradeProps, TradeState> {
     }, 1000)
   }
 
-  handleCancel = (e: React.MouseEvent) => {
+  handleCancel = (e: React.MouseEvent): void => {
     e.preventDefault()
     this.cancelQuote()
   }
 
-  cancelQuote = () => {
+  cancelQuote = (): void => {
     this.setState({
       quote: undefined
     })
@@ -156,9 +159,9 @@ class Trade extends React.Component<TradeProps, TradeState> {
     })
   }
 
-  startBuy = async (event: React.FormEvent) => {
+  startBuy = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
-    if (!this.state.hasLoadedCurrentPrice) {
+    if (!marketDataSubscriber.hasLoadedCurrentPrice) {
       showErrorToast('Wait for prices to load before buying BTC.')
       return
     }
@@ -219,7 +222,8 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
   renderSubmitButton (): ReactNode {
     if (!this.isQuoteValid || !this.state.quote) {
-      const { hasLoadedCurrentPrice, quantityStr } = this.state
+      const { quantityStr } = this.state
+      const { hasLoadedCurrentPrice } = marketDataSubscriber
 
       const shouldUseSkeleton = !(hasLoadedCurrentPrice || quantityStr === '')
       const conversionClassName = shouldUseSkeleton ? Classes.SKELETON : ''

@@ -36,6 +36,19 @@ function getErrorMessage (json: UnknownJSON): string {
   return json.reason ? `${error} (${json.reason})` : error
 }
 
+async function getJSON (url: string, httpOptions: RequestInit):
+Promise<{ ok: boolean, status: number, json: unknown }> {
+  const res = await fetch(url, httpOptions)
+
+  try {
+    const json = await res.json()
+    return { ok: res.ok, status: res.status, json }
+  } catch (e) {
+    const message = `Error while requesting "${httpOptions.method} ${url}": ${res.status} ${res.statusText}`
+    throw new FetchJsonError(message, res.status)
+  }
+}
+
 export default async function fetchJSON (url: string, httpOptions: RequestInit, options: ResponseOptions = {}): Promise<UnknownJSON> {
   if (!httpOptions.headers) {
     httpOptions.headers = new Headers()
@@ -51,21 +64,14 @@ export default async function fetchJSON (url: string, httpOptions: RequestInit, 
 
   httpOptions.headers.set('Accepts', 'application/json')
 
-  const res = await fetch(url, httpOptions)
+  const { ok, status, json } = await getJSON(url, httpOptions)
 
-  try {
-    var json = await res.json()
-  } catch (e) {
-    const message = `Error while requesting "${httpOptions.method} ${url}": ${res.status} ${res.statusText}`
-    throw new FetchJsonError(message, res.status)
-  }
-
-  if (!res.ok && !(options.ignoreCodes && options.ignoreCodes.includes(res.status))) {
-    const message = getErrorMessage(json)
+  if (!ok && !(options.ignoreCodes && options.ignoreCodes.includes(status))) {
+    const message = isUnknownJSON(json) ? getErrorMessage(json) : ''
     throw new Error(`Error while requesting "${httpOptions.method} ${url}": ${message}`)
   }
 
-  if (isUnknownJSON(json as unknown)) {
+  if (isUnknownJSON(json)) {
     return json
   }
 

@@ -2,7 +2,7 @@ import React, { ReactNode, RefObject } from 'react'
 import { ExternalButton, ExternalLink, SpinnerMessage } from './components'
 import { Classes, Button, Dialog, H5, Spinner, IActionProps } from '@blueprintjs/core'
 import './Onboarding.css'
-import { getWebviewPreloadPath, openLinkInBrowser } from '../domain/main-request'
+import { getWebviewPreloadPath } from '../domain/main-request'
 import { isPlaidMessage, PlaidMessage, PlaidEvent } from '../domain/plaid'
 import { ANCHOR_PARTITION } from '../../common/constants'
 import { delay } from '../../global-shared/util'
@@ -47,6 +47,11 @@ export function getRegistrationURL (uuid: string): string {
   return `${BASE_URL}${uuid}`
 }
 
+export function openBeacon (): void {
+  // @ts-ignore
+  window.Beacon('open')
+}
+
 export class RegisterDialog extends React.Component<RegisterDialogProps, RegisterDialogState> {
   constructor (props: RegisterDialogProps) {
     super(props)
@@ -64,7 +69,7 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
     const textBeforeClickingRegister = (
       <React.Fragment>
         <p>In order to trade on Sparkswap, you need to complete the identity verification process through our partner Abacus.</p>
-        <p>If you have any questions or concerns about this process, please visit <ExternalLink href="https://support.sparkswap.com/identity-verification">support.sparkswap.com/identity-verification</ExternalLink>.</p>
+        <p>If you have any questions or concerns about this process, please <Button className="link-button" minimal={true} onClick={openBeacon}>contact us</Button>.</p>
         <p>Upon clicking <ExternalLink href={this.registrationUrl}>Verify ID</ExternalLink>, you will be taken to a webpage to submit your identity information.</p>
       </React.Fragment>
     )
@@ -81,11 +86,11 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
       : textBeforeClickingRegister
   }
 
-  handleRegister = () => {
+  handleRegister = (): void => {
     this.setState({ hasClickedRegister: true })
   }
 
-  handleDone = async () => {
+  handleDone = async (): Promise<void> => {
     this.setState({ loading: true })
     await this.props.onProceed()
     this.setState({ loading: false })
@@ -369,7 +374,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     if (webviewUrl.pathname === ANCHOR_PHOTO_ID_PATH) {
       return this.depositError(DEPOSIT_ERROR_MESSAGE.ADDITIONAL_INFO_NEEDED, {
         text: 'Contact support',
-        onClick: () => openLinkInBrowser('https://support.sparkswap.com/additional-identity-verification')
+        onClick: openBeacon
       })
     }
 
@@ -449,7 +454,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       <React.Fragment>
         <p>In order to purchase BTC, you must transfer USD from your bank using our payment processing partner, <strong>AnchorUSD</strong>.</p>
         <p>Link your bank account and transfer your funds to AnchorUSD securely to continue.</p>
-        <p>For more information on how USD is handled, please visit <ExternalLink href="https://support.sparkswap.com/usd-handling">support.sparkswap.com/usd-handling</ExternalLink>.</p>
+        <p>For more information on how USD is handled, please <Button className="link-button" minimal={true} onClick={openBeacon}>contact us</Button>.</p>
       </React.Fragment>
     )
   }

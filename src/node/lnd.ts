@@ -96,7 +96,7 @@ class LndClient extends EventEmitter {
         { tlsCertPath, macaroonPath, minVersion: MIN_LND_VERSION }) as LndEngine
       this.engine.validateEngine().then(() => this.emit('connect'))
     } catch (e) {
-      console.error(`Unable to create engine`, e)
+      console.error(`Unable to create engine: ${e.message}`)
     }
   }
 
@@ -108,7 +108,7 @@ class LndClient extends EventEmitter {
         console.debug('Successfully connected to server')
         return
       } catch (e) {
-        console.error(`Failed to connect to server: ${e.message}`)
+        console.error(`Failed to connect to server: ${e.toString()}`)
         await delay(CONNECT_TO_SERVER_RETRY_MS)
       }
     }

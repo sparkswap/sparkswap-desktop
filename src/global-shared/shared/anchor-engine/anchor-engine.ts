@@ -95,6 +95,10 @@ export class AnchorEngine {
     this.incomingSwaps = new Map()
   }
 
+  get validated (): boolean {
+    return true
+  }
+
   async getPaymentChannelNetworkAddress (): Promise<PaymentChannelNetworkAddress> {
     return accountToAddress(await this.getAccountId())
   }

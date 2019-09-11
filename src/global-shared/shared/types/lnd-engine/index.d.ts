@@ -64,6 +64,7 @@ declare module 'lnd-engine' {
     macaroonPath: string
     status: Statuses
     maxChannelBalance: number
+    readonly validated: boolean
 
     validateEngine (): Promise<void>
     waitForSwapCommitment (hash: SwapHash): Promise<Date>
@@ -75,7 +76,7 @@ declare module 'lnd-engine' {
     prepareSwap (hash: SwapHash, amount: string, timeout: Date, finalCltvDelta: number): Promise<void>
     getPaymentChannelNetworkAddress (): Promise<string>
     connectUser (pubkey: string): Promise<void>
-    createChannels (pubkey: string, amount: number): Promise<void>
+    createChannels (pubkey: string, amount: number, options?: { targetTime?: number, privateChan?: boolean }): Promise<void>
     getUncommittedBalance (): Promise<string>
     getTotalChannelBalance (): Promise<string>
     getTotalPendingChannelBalance (): Promise<string>
