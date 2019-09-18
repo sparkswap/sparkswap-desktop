@@ -1,3 +1,4 @@
+import logger from '../../global-shared/logger'
 import { getBalance } from '../domain/main-request'
 import { Asset, Amount, valueToAsset } from '../../global-shared/types'
 import { delay } from '../../global-shared/util'
@@ -30,42 +31,28 @@ export function isUSDXSufficient (usdxQuantity: number): boolean {
   return toCents(usdxQuantity) <= balance.value
 }
 
-export function hasUSDX (): boolean {
-  const balance = balances[Asset.USDX]
-  if (balance instanceof Error) {
-    return false
-  }
-
-  return balance.value > 0
-}
-
 export async function getBalanceState (asset: Asset): Promise<BalanceState> {
-  let update = false
+  const existingBalance = balances[asset]
 
   try {
     const balance = await getBalance(asset)
     if (balance === null) {
       throw new Error(`${asset} engine is not validated`)
     }
-    const existingBalance = balances[asset]
-    if (existingBalance instanceof Error || existingBalance.value !== balance.value) {
-      update = true
-    }
+
     balances[asset] = balance
-  } catch (e) {
-    // update if did not used to be in an error state
-    const existingBalance = balances[asset]
-    if (existingBalance instanceof Error) {
-      update = true
 
-      if (existingBalance.message !== e.message) {
-        console.error(`Error while retrieving balance: ${e.message}`)
-      }
+    if (existingBalance instanceof Error || existingBalance.value !== balance.value) {
+      balanceUpdater.emit('update', asset, balances[asset])
     }
+  } catch (e) {
     balances[asset] = e
-  }
 
-  if (update) balanceUpdater.emit('update', asset, balances[asset])
+    if (!(existingBalance instanceof Error) || existingBalance.message !== e.message) {
+      logger.error(`Error while retrieving balance: ${e}`)
+      balanceUpdater.emit('update', asset, balances[asset])
+    }
+  }
 
   return balances[asset]
 }

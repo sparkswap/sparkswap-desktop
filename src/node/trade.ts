@@ -8,14 +8,15 @@ import {
 } from './data'
 import { prepareSwap, forwardSwap } from './interchain'
 import LndEngine from 'lnd-engine'
-import { AnchorEngine } from '../global-shared/anchor-engine'
+import { AnchorEngine, EscrowStatus } from '../global-shared/anchor-engine'
 import { FWD_DELTA } from '../global-shared/time-locks'
-import { Asset } from '../global-shared/types'
+import { cancelSwapWithRetry } from '../global-shared/retry'
+import { Asset, Engine } from '../global-shared/types'
 import { delay } from '../global-shared/util'
 import allSettled, { PromiseResult, PromiseStatus } from '../global-shared/all-settled'
 import * as server from './server'
 import { Quote, Trade, TradeFailureReason } from '../common/types'
-import { logger } from '../common/utils'
+import logger from '../global-shared/logger'
 import { getChannelsState } from './channels'
 
 const { ExpiredSwapError: LndExpiredSwapError } = LndEngine.ERRORS
@@ -28,8 +29,6 @@ const SWAP_TIMEOUT = 5000
 // This is a rare edge case, but not one we want to completely ignore.
 // 10 minutes.
 const RETRY_DELAY = 600000
-
-type Engine = LndEngine | AnchorEngine
 
 interface Engines {
   BTC: LndEngine,
@@ -50,6 +49,21 @@ function prepareSwapForTrade (engine: LndEngine, trade: Trade): Promise<void> {
   )
 }
 
+async function abortTrade (db: Database, engines: Engines, trade: Trade,
+  reason: TradeFailureReason): Promise<void> {
+  logger.debug(`Marking trade as failed: ${trade.hash}`)
+  await failTrade(db, trade.id, reason)
+
+  const escrowStatus = await engines.USDX.getEscrowStatus(trade.hash)
+  if (escrowStatus === null || escrowStatus === EscrowStatus.canceled) {
+    logger.info(`Canceling inbound BTC invoice with hash ${trade.hash}`)
+    cancelSwapWithRetry(engines.BTC, trade.hash)
+  } else {
+    logger.warn(`Outbound USDX escrow is in status ${escrowStatus}; ` +
+      `cannot cancel inbound BTC invoice with hash ${trade.hash}`)
+  }
+}
+
 async function resolveTrade (db: Database, engines: Engines, trade: Trade): Promise<void> {
   const {
     id: tradeId,
@@ -67,8 +81,8 @@ async function resolveTrade (db: Database, engines: Engines, trade: Trade): Prom
     serverAddress = (await server.getServerAddress(sourceAmount.asset)).address
   } catch (e) {
     logger.error(`Error while executing Trade ID ${tradeId} ` +
-      `with Hash ${hash} on Server`, { error: e.message })
-    failTrade(db, tradeId, TradeFailureReason.SERVER_EXECUTE_ERROR)
+      `with Hash ${hash} on Server: ${e}`)
+    abortTrade(db, engines, trade, TradeFailureReason.SERVER_EXECUTE_ERROR)
     throw e
   }
 
@@ -82,8 +96,8 @@ async function resolveTrade (db: Database, engines: Engines, trade: Trade): Prom
     completeTrade(db, tradeId, hash, preimage)
   } catch (e) {
     logger.error(`Error while forwarding swap for Trade Id ${tradeId} ` +
-      `with Hash ${hash}`, { error: e.message })
-    failTrade(db, tradeId, TradeFailureReason.PERMANENT_FORWARD_ERROR)
+      `with Hash ${hash}: ${e}`)
+    abortTrade(db, engines, trade, TradeFailureReason.PERMANENT_FORWARD_ERROR)
 
     if (e instanceof LndExpiredSwapError) {
       // ExpiredSwapError will be triggered if a channel is pending open and a user tries a swap
@@ -125,8 +139,8 @@ export async function executeTrade (db: Database, engines: Engines, quote: Quote
     await prepareSwapForTrade(engines.BTC, trade)
   } catch (e) {
     logger.error(`Error while preparing swap for Trade ID ${tradeId} ` +
-      `with Hash ${hash}`, { error: e.message })
-    failTrade(db, tradeId, TradeFailureReason.PREPARE_SWAP_ERROR)
+      `with Hash ${hash}: ${e}`)
+    abortTrade(db, engines, trade, TradeFailureReason.PREPARE_SWAP_ERROR)
     throw e
   }
 
@@ -134,22 +148,24 @@ export async function executeTrade (db: Database, engines: Engines, quote: Quote
 }
 
 async function retryPendingTrade (db: Database, engines: Engines, trade: Trade): Promise<void> {
-  try {
-    await prepareSwapForTrade(engines.BTC, trade)
-  } catch (e) {
-    logger.error(`Error while preparing swap for Trade ID ${trade.id} ` +
-      `with Hash ${trade.hash}`, { error: e.message })
+  while (true) {
+    try {
+      await prepareSwapForTrade(engines.BTC, trade)
+      break
+    } catch (e) {
+      logger.error(`Error while preparing swap for Trade ID ${trade.id} ` +
+        `with Hash ${trade.hash}: ${e}`)
+    }
 
     if (Date.now() - trade.startTime.getTime() > FWD_DELTA) {
       logger.error(`IMPORTANT: Swap forward time has expired for Trade ID ${trade.id} ` +
         `with Hash ${trade.hash}. Marking as failed without resolution.`)
-      failTrade(db, trade.id, TradeFailureReason.PREPARE_SWAP_ERROR)
-      throw e
+      abortTrade(db, engines, trade, TradeFailureReason.PREPARE_SWAP_ERROR)
+      throw new Error(`Swap forward time has expired for trade ${trade.id}`)
     }
 
     logger.debug(`Retrying Trade ID ${trade.id} in ${RETRY_DELAY}ms`)
     await delay(RETRY_DELAY)
-    return retryPendingTrade(db, engines, trade)
   }
 
   return resolveTrade(db, engines, trade)

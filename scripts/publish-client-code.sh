@@ -8,11 +8,6 @@ echo ""
 
 TAG=$1
 
-if [[ -z $TAG ]]; then
-    echo "Tag needs to be specified as first argument to publish code"
-    exit 1
-fi
-
 echo "Moving to root directory of satstacker"
 cd "$(dirname "$0")"
 cd "../"
@@ -23,7 +18,6 @@ rm -rf ./publish-client-temp
 echo "Creating working directory 'publish-client-temp' in $(pwd)"
 mkdir -p publish-client-temp
 cd publish-client-temp
-
 
 echo "Setting up git for CI"
 git config --list | grep -q user.email || git config --global user.email "dev@sparkswap.com"
@@ -40,11 +34,11 @@ echo "Preparing satstacker to be copied to client"
     cd satstacker
     rm -f ../shared
     mkdir -p ../shared
-    cp -r ./shared ../shared
+    cp -r ./shared/. ../shared
     git filter-branch --tag-name-filter cat --subdirectory-filter client
     rm -rf ./.git
     rm ./src/global-shared
-    cp -r ../shared ./src/global-shared
+    cp -r ../shared/. ./src/global-shared
 )
 
 echo "Pushing code changes to sparkswap-desktop"

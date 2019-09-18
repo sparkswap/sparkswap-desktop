@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react'
+import logger from '../../global-shared/logger'
 import './App.css'
 import LNDConnect from './LNDConnect'
 import PriceChart from './Prices'
@@ -14,6 +15,7 @@ import {
 } from './Onboarding'
 import Balances from './Balances'
 import { showErrorToast, showSuccessToast, showLoadingToast } from './AppToaster'
+import * as lnd from '../domain/lnd'
 import register from '../domain/register'
 import { getBalanceState } from '../domain/balance'
 import { getAuth, openLinkInBrowser } from '../domain/main-request'
@@ -53,6 +55,14 @@ class App extends React.Component<{}, AppState> {
 
   async register (): Promise<OnboardingStep> {
     try {
+      const lndStatus = await lnd.getStatus()
+      const { VALIDATED, NOT_SYNCED } = lnd.Statuses
+
+      if (lndStatus !== VALIDATED && lndStatus !== NOT_SYNCED) {
+        showErrorToast(`Connect to LND before depositing`)
+        return { stage: OnboardingStage.NONE }
+      }
+
       const { reviewStatus, url } = await register()
 
       switch (reviewStatus) {
@@ -63,7 +73,7 @@ class App extends React.Component<{}, AppState> {
         case ReviewStatus.APPROVED:
           return { stage: OnboardingStage.DEPOSIT, depositUrl: url }
         default:
-          console.debug(`Register returned status: ${reviewStatus}`)
+          logger.debug(`Register returned status: ${reviewStatus}`)
           showErrorToast('Error during identity verification', {
             text: 'Contact support',
             onClick: openBeacon
@@ -71,7 +81,7 @@ class App extends React.Component<{}, AppState> {
           return { stage: OnboardingStage.NONE }
       }
     } catch (e) {
-      console.error(`Register threw an error: ${e.message}`)
+      logger.error(`Register threw an error: ${e}`)
       showErrorToast('Error during identity verification', {
         text: 'Contact support',
         onClick: openBeacon

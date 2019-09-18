@@ -1,3 +1,4 @@
+
 declare module 'lnd-engine' {
   type SwapHash = string
   type SwapPreimage = string
@@ -15,7 +16,8 @@ declare module 'lnd-engine' {
     UNAVAILABLE = 'UNAVAILABLE',
     UNLOCKED = 'UNLOCKED',
     NOT_SYNCED = 'NOT_SYNCED',
-    VALIDATED = 'VALIDATED',
+    OLD_VERSION = 'OLD_VERSION',
+    VALIDATED = 'VALIDATED'
   }
 
   enum Errors {
@@ -23,6 +25,20 @@ declare module 'lnd-engine' {
     CanceledSwapError,
     ExpiredSwapError,
     PermanentSwapError
+  }
+
+  export interface Channel {
+    active?: boolean,
+    capactiy: string,
+    localBalance: string,
+    remoteBalance: string
+  }
+
+  interface LoggerInterface {
+    debug (message: string): void,
+    info (message: string): void,
+    warn (message: string): void,
+    error (message: string): void
   }
 
   class LndEngine {
@@ -34,6 +50,7 @@ declare module 'lnd-engine' {
       UNAVAILABLE: Statuses,
       UNLOCKED: Statuses,
       NOT_SYNCED: Statuses,
+      OLD_VERSION: Statuses,
       VALIDATED: Statuses
     }
 
@@ -44,13 +61,20 @@ declare module 'lnd-engine' {
       PermanentSwapError: typeof PermanentSwapError
     }
 
-    constructor(host: string, symbol: string, options: { tlsCertPath: string, macaroonPath: string })
+    constructor(host: string, symbol: string, options: {
+      tlsCertPath: string,
+      macaroonPath: string,
+      minVersion: string,
+      logger?: LoggerInterface
+    })
 
     host: string
     tlsCertPath: string
     macaroonPath: string
     status: Statuses
     maxChannelBalance: number
+    readonly validated: boolean
+    logger: LoggerInterface
 
     validateEngine (): Promise<void>
     waitForSwapCommitment (hash: SwapHash): Promise<Date>
@@ -62,12 +86,13 @@ declare module 'lnd-engine' {
     prepareSwap (hash: SwapHash, amount: string, timeout: Date, finalCltvDelta: number): Promise<void>
     getPaymentChannelNetworkAddress (): Promise<string>
     connectUser (pubkey: string): Promise<void>
-    createChannels (pubkey: string, amount: number): Promise<void>
+    createChannels (pubkey: string, amount: number, options?: { targetTime?: number, privateChan?: boolean }): Promise<void>
     getUncommittedBalance (): Promise<string>
     getTotalChannelBalance (): Promise<string>
     getTotalPendingChannelBalance (): Promise<string>
     getUncommittedPendingBalance (): Promise<string>
     getStatus (): Promise<Statuses>
+    getChannelsForRemoteAddress (address: string): Promise<Channel[]>
   }
 
   export default LndEngine

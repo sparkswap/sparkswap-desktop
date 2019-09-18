@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { HistoricalDataResponse } from '../../global-shared/types/server'
 import { delay } from '../../global-shared/util'
 import { EVENT_NAMES, WEBSOCKETS_URL } from '../../common/config'
-import { logger } from '../../common/utils'
+import logger from '../../global-shared/logger'
 import { getMarketData } from './server'
 
 // Milliseconds between retries if the WebSocket fails
@@ -67,7 +67,7 @@ export class MarketData extends EventEmitter {
         })
         return
       } catch (e) {
-        logger.debug('failed to retrieve market data, retrying', e.message)
+        logger.debug(`Error retrieving market data, retrying: ${e}`)
         error = e
         await delay(REST_RETRY_DELAY)
       }
@@ -79,7 +79,7 @@ export class MarketData extends EventEmitter {
       try {
         await this.subscribeUpdates()
       } catch (e) {
-        logger.debug('error during websocket stream, restarting', e.message)
+        logger.debug(`Error during websocket stream, restarting: ${e}`)
         await delay(WS_RETRY_DELAY)
       }
     }
@@ -96,7 +96,7 @@ export class MarketData extends EventEmitter {
 
             this.emit('update', { currentPrice: this.currentPrice })
           } catch (e) {
-            logger.debug('failed to update price, faulty data', event.data)
+            logger.debug(`Failed to update price, faulty data: ${event.data}`)
           }
         }
 

@@ -1,12 +1,13 @@
 import request, { RequestMethods } from './request'
-import { SwapHash, SwapPreimage, URL } from '../types'
+import { Amount, Unit, Asset, SwapHash, SwapPreimage, URL, UnknownObject, AnchorRegisterResult } from '../types'
 import { isUnknownJSON } from '../fetch-json'
 
-export const USDX = 'USDx'
+export const USDX = 'USDX'
+export const centsPerUSD = 100
 
 export interface Balance {
   amount: number,
-  currency: 'USDx'
+  currency: 'USDX'
 }
 
 // see: https://www.anchorusd.com/9c0cba91e667a08e467f038b6e23e3c4/api/index.html#/?id=the-account-object
@@ -29,8 +30,7 @@ export interface Escrow {
   created: Date,
   user: string,
   recipient: string,
-  amount: number,
-  currency: 'USDx',
+  amount: Amount,
   status: EscrowStatus,
   timeout: Date,
   hash: SwapHash,
@@ -72,7 +72,7 @@ function resToEscrow (res: unknown): Escrow {
     throw new Error(`Invalid escrow response: ${res}`)
   }
 
-  if (res.currency !== 'USDx') {
+  if (res.currency !== USDX) {
     throw new Error(`Invalid escrow currency: ${res.currency}`)
   }
 
@@ -81,8 +81,11 @@ function resToEscrow (res: unknown): Escrow {
     created: new Date(res.created as number * 1000),
     user: res.user as string,
     recipient: res.recipient as string,
-    amount: res.amount as number,
-    currency: 'USDx',
+    amount: {
+      asset: Asset.USDX,
+      unit: Unit.Cent,
+      value: Math.round((res.amount as number) * centsPerUSD)
+    },
     status: keyToStatus(res.status),
     timeout: new Date(res.timeout as number * 1000),
     hash: hexToBase64(res.hash as string),
@@ -101,16 +104,18 @@ export async function getEscrow (apiKey: string, id: string): Promise<Escrow> {
   return resToEscrow(await request(apiKey, `/api/escrow/${id}`))
 }
 
-async function listEscrowsByHash (apiKey: string, hash: SwapHash, limit = 200): Promise<Escrow[]> {
+async function listEscrows (apiKey: string, hash?: SwapHash, limit?: number): Promise<Escrow[]> {
+  const params = hash ? { hash: base64ToHex(hash) } : {}
+
   const {
     next_page,
     items
-  } = (await request(apiKey, '/api/escrows', { hash: base64ToHex(hash) })) as unknown as ListEscrowsResponse
+  } = (await request(apiKey, '/api/escrows', params)) as unknown as ListEscrowsResponse
 
   // eslint-disable-next-line
   let nextPage = next_page
 
-  while (items.length < limit && nextPage) {
+  while (nextPage && (limit ? items.length < limit : true)) {
     const res = (await request(apiKey, nextPage)) as unknown as ListEscrowsResponse
     items.push(...res.items)
     nextPage = res.next_page
@@ -119,8 +124,26 @@ async function listEscrowsByHash (apiKey: string, hash: SwapHash, limit = 200): 
   return items.slice(0, limit).map(resToEscrow)
 }
 
+export async function getEscrowBalance (apiKey: string): Promise<Amount> {
+  const escrows = await listEscrows(apiKey)
+
+  const value = escrows.reduce((value, escrow) => {
+    if (escrow.status === EscrowStatus.pending &&
+      escrow.amount.asset === Asset.USDX) {
+      return value + escrow.amount.value
+    }
+    return value
+  }, 0)
+
+  return {
+    asset: Asset.USDX,
+    unit: Unit.Cent,
+    value
+  }
+}
+
 export async function getEscrowByHash (apiKey: string, hash: SwapHash, userId?: string, recipientId?: string): Promise<Escrow | null> {
-  const escrows = await listEscrowsByHash(apiKey, hash, 2)
+  const escrows = await listEscrows(apiKey, hash, 2)
   if (escrows.length > 1) {
     throw new Error(`More than one escrow with the provided hash: ${hash}`)
   }
@@ -143,18 +166,18 @@ export async function getEscrowByHash (apiKey: string, hash: SwapHash, userId?: 
 }
 
 export async function cancelEscrow (apiKey: string, id: string): Promise<void> {
-  await request(apiKey, `/api/escrows/${id}`, {}, RequestMethods.DELETE)
+  await request(apiKey, `/api/escrow/${id}`, {}, RequestMethods.DELETE)
 }
 
 export async function createEscrow (apiKey: string, hash: SwapHash, recipientId: string,
-  amount: number, expiration: Date): Promise<Escrow> {
+  amount: Amount, expiration: Date): Promise<Escrow> {
   const res = await request(
     apiKey,
     `/api/escrow`,
     {
       hash: base64ToHex(hash),
       recipient: recipientId,
-      amount,
+      amount: parseFloat((amount.value / centsPerUSD).toFixed(2)),
       timeout: Math.floor(expiration.getTime() / 1000)
     },
     RequestMethods.POST
@@ -198,6 +221,7 @@ export interface AnchorKyc extends Record<string, string> {
 }
 
 export interface RegisterResponse {
+  result: AnchorRegisterResult,
   url: URL,
   account_id: string
 }
@@ -215,3 +239,37 @@ export async function completeEscrow (apiKey: string, id: string, preimage: Swap
   const data = { preimage: base64ToHex(preimage) }
   await request(apiKey, `/api/escrow/${id}/complete`, data, RequestMethods.POST)
 }
+
+// see: https://www.anchorusd.com/docs/api#handle-result
+export const ANCHOR_MESSAGE_TYPE = 'customer_info_status'
+type AnchorMessageType = 'customer_info_status'
+
+export enum AnchorStatus {
+  SUCCESS = 'success',
+  PENDING = 'pending',
+  DENIED = 'denied'
+}
+
+export interface AnchorMessage {
+  type: AnchorMessageType,
+  status: AnchorStatus,
+  [key: string]: AnchorMessageType | AnchorStatus
+}
+
+export function isAnchorMessage (message: UnknownObject): message is AnchorMessage {
+  if (message.type !== ANCHOR_MESSAGE_TYPE) {
+    return false
+  }
+
+  if (message.status === AnchorStatus.SUCCESS ||
+      message.status === AnchorStatus.PENDING ||
+      message.status === AnchorStatus.DENIED) {
+    return true
+  }
+
+  return false
+}
+
+export const ANCHOR_DASHBOARD_PATH = '/dashboard'
+export const ANCHOR_DEPOSIT_PATH = '/dashboard/purchase'
+export const ANCHOR_PHOTO_ID_PATH = '/register/image'

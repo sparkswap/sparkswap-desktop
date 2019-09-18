@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import logger from '../../global-shared/logger'
 import './AppToaster.css'
 import {
   IActionProps,
@@ -31,7 +32,7 @@ function getClassName (props: AppToastProps): string {
 function getAction (props: AppToastProps): React.ReactNode {
   if (props.loading) {
     if (props.action) {
-      console.warn('Action prop will override loading prop in Toast')
+      logger.warn('Action prop will override loading prop in Toast')
     } else {
       return {
         disabled: false,

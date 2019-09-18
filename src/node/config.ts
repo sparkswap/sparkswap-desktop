@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import * as path from 'path'
-import { writeFileSync, readFileSync } from 'fs'
-import { logger } from '../common/utils'
+import { existsSync, writeFileSync, readFileSync } from 'fs'
+import logger from '../global-shared/logger'
 import { Auth, LndConfig } from '../common/types'
 import { UnknownObject } from '../global-shared/types'
 
@@ -43,11 +43,17 @@ function getConfigPath (): string {
 }
 
 function loadConfig (): Config | {} {
-  try {
-    return JSON.parse(readFileSync(getConfigPath(), 'utf8'))
-  } catch (e) {
-    logger.warn('No configuration available at path: ' + getConfigPath())
+  const path = getConfigPath()
+  if (!existsSync(path)) {
+    logger.warn(`No configuration available at path: ${path}`)
     return {}
+  }
+
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'))
+  } catch (e) {
+    logger.error(`Failed to load config file at path: ${path}`)
+    throw e
   }
 }
 

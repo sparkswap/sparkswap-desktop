@@ -5,8 +5,10 @@ export function btoa (str: string): string {
   return Buffer.from(str.toString(), 'binary').toString('base64')
 }
 
-export function delay (ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+// resolves with "true" so that delay can be used in a loop condition that
+// delays between each loop: do { ... } while (condition && await delay(ms))
+export function delay (ms: number): Promise<boolean> {
+  return new Promise((resolve) => setTimeout(() => resolve(true), ms))
 }
 
 export function generateHash (preimage: SwapPreimage): SwapHash {

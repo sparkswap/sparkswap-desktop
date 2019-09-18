@@ -1,3 +1,8 @@
+import LndEngine from 'lnd-engine'
+import { AnchorEngine } from '../anchor-engine'
+
+export type Engine = LndEngine | AnchorEngine
+
 // SwapHashes are 32 byte SHA-256 hashes encoded as Base64 strings
 export type SwapHash = string
 // SwapPreimages are 32 bytes of randomness encoded as Base64 strings
@@ -61,8 +66,17 @@ export enum ReviewStatus {
   REJECTED = 'REJECTED',
 }
 
-const reviewStatuses = Object.values(ReviewStatus)
+const reviewStatuses: string[] = Object.values(ReviewStatus)
 
 export function isReviewStatus (str: string): str is ReviewStatus {
   return reviewStatuses.includes(str)
+}
+
+export interface UnknownObject {
+  [key: string]: unknown
+}
+
+export enum AnchorRegisterResult {
+  SUCCESS = 'success',
+  ADDITIONAL_FIELDS_NEEDED = 'additional_fields_needed'
 }

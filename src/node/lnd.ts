@@ -1,5 +1,7 @@
+import { existsSync } from 'fs'
 import { EventEmitter } from 'events'
 import LndEngine from 'lnd-engine'
+import logger from '../global-shared/logger'
 import { ConnectionConfig, Statuses } from '../global-shared/types/lnd'
 import { Asset } from '../global-shared/types'
 import { addConfig, getConfig } from './config'
@@ -8,7 +10,7 @@ import { LndConfig } from '../common/types'
 import SCAN_CONFIGS from './lnd-configs'
 import { delay } from '../global-shared/util'
 
-const MIN_LND_VERSION = '0.7.0-beta'
+const MIN_LND_VERSION = '0.7.1-beta'
 
 const ASSET = Asset.BTC
 
@@ -48,6 +50,14 @@ class LndClient extends EventEmitter {
   }
 
   manualConnect ({ hostName, port, tlsCertPath, macaroonPath }: ConnectionConfig): void {
+    if (!existsSync(tlsCertPath)) {
+      throw new Error('File does not exist at TLS certificate path')
+    }
+
+    if (!existsSync(macaroonPath)) {
+      throw new Error('File does not exist at macaroon path')
+    }
+
     addConfig('lnd', { hostName, port, tlsCertPath, macaroonPath })
 
     this.connect(this.getConnectionConfig())
@@ -93,10 +103,11 @@ class LndClient extends EventEmitter {
       // the LndEngine constructor will throw if the tlsCert or macaroon do not exist at the
       // specified file locations
       this._engine = new LndEngine(`${hostName}:${port}`, ASSET,
-        { tlsCertPath, macaroonPath, minVersion: MIN_LND_VERSION }) as LndEngine
+        { tlsCertPath, macaroonPath, minVersion: MIN_LND_VERSION, logger }) as
+        LndEngine
       this.engine.validateEngine().then(() => this.emit('connect'))
     } catch (e) {
-      console.error(`Unable to create engine: ${e.message}`)
+      logger.error(`Unable to create engine: ${e}`)
     }
   }
 
@@ -105,10 +116,10 @@ class LndClient extends EventEmitter {
       try {
         const { address } = await getServerAddress(ASSET)
         await this.engine.connectUser(address)
-        console.debug('Successfully connected to server')
+        logger.debug('Successfully connected to server')
         return
       } catch (e) {
-        console.error(`Failed to connect to server: ${e.toString()}`)
+        logger.error(`Failed to connect to server: ${e}`)
         await delay(CONNECT_TO_SERVER_RETRY_MS)
       }
     }

@@ -1,4 +1,5 @@
 import { URL } from 'url'
+import logger from '../global-shared/logger'
 import { getAuth } from './auth'
 import { serverRequest as baseRequest } from '../common/utils'
 import { UnknownJSON } from '../global-shared/fetch-json'
@@ -14,7 +15,7 @@ export function openLink (link: string): void {
   if (url.protocol === 'https:' || url.protocol === 'mailto:') {
     shell.openExternal(link)
   } else {
-    console.warn(`tried to open insecure link: ${link}`)
+    logger.warn(`tried to open insecure link: ${link}`)
   }
 }
 

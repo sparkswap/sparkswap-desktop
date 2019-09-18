@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { logger } from '../common/utils'
+import logger from '../global-shared/logger'
 
 // eslint-disable-next-line
 export function listen (name: string, handler: (_: any) => any): void {
@@ -8,7 +8,7 @@ export function listen (name: string, handler: (_: any) => any): void {
       const response = await handler(payload)
       event.reply(`${name}:${id}`, { response })
     } catch (error) {
-      logger.error(`Encountered error when running ${name}`, error)
+      logger.error(`Encountered error when running ${name}: ${error}`)
       event.reply(`${name}:${id}`, { error: error.message })
     }
   })
@@ -21,7 +21,7 @@ export function listenSync (name: string, handler: (_: any) => any): void {
       const response = handler(payload)
       event.returnValue = { response }
     } catch (e) {
-      logger.error(`Encountered error when running ${name}`, e)
+      logger.error(`Encountered error when running ${name}: ${e}`)
       event.returnValue = { error: e.message }
     }
   })

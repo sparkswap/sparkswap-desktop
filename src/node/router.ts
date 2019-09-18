@@ -1,10 +1,12 @@
 import * as path from 'path'
 import { App } from 'electron'
+import logger from '../global-shared/logger'
 import { listen, listenSync, close as closeListeners } from './main-listener'
 import LndClient from './lnd'
 import LndEngine from 'lnd-engine'
 import { AnchorEngine } from '../global-shared/anchor-engine'
-import { Amount, Asset, Unit, valueToAsset, assetToUnit } from '../global-shared/types'
+import { Amount, Asset, Unit, valueToAsset, assetToUnit, Engine }
+  from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
 import { Quote } from '../common/types'
 import * as store from './data'
@@ -13,8 +15,6 @@ import { AnchorClient } from './anchor'
 import { executeTrade, retryPendingTrades } from './trade'
 import { getAuth } from './auth'
 import { openLink } from './util'
-
-type Engine = LndEngine | AnchorEngine
 
 interface Engines {
   BTC: LndEngine,
@@ -38,7 +38,7 @@ export class Router {
       try {
         await retryPendingTrades(this.db, this.engines)
       } catch (e) {
-        console.error(`Error while retrying pending trades: ${e.message}`)
+        logger.error(`Error while retrying pending trades: ${e}`)
       }
     })
   }

@@ -1,4 +1,5 @@
 import { addConfig, getConfig } from './config'
+import logger from '../global-shared/logger'
 import { URL } from '../global-shared/types'
 import * as server from './server'
 import * as anchor from '../global-shared/anchor-engine/api'
@@ -28,7 +29,7 @@ export class AnchorClient {
     const config = getConfig()
     if (config.anchor.apiKey) {
       this._apiKey = config.anchor.apiKey
-      this._engine = new AnchorEngine(this._apiKey)
+      this._engine = new AnchorEngine(this._apiKey, { logger })
     }
     if (config.anchor.email) {
       this._email = config.anchor.email

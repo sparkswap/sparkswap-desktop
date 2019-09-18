@@ -1,6 +1,7 @@
 import React, { ReactNode, RefObject } from 'react'
 import { ExternalButton, ExternalLink, SpinnerMessage } from './components'
 import { Classes, Button, Dialog, H5, Spinner, IActionProps } from '@blueprintjs/core'
+import logger from '../../global-shared/logger'
 import './Onboarding.css'
 import { getWebviewPreloadPath } from '../domain/main-request'
 import { isPlaidMessage, PlaidMessage, PlaidEvent } from '../domain/plaid'
@@ -233,7 +234,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       this.webviewCSS = await (await fetch(WebviewCSSPath)).text()
       return this.webviewCSS
     } catch (e) {
-      console.error(`Error while loading CSS for injection: ${e.message}`)
+      logger.error(`Error while loading CSS for injection: ${e}`)
     }
   }
 
@@ -256,10 +257,10 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       } else if (isAnchorMessage(message)) {
         this.handleAnchorMessage(message)
       } else {
-        console.debug(`unknown message: ${data}`)
+        logger.debug(`unknown message: ${data}`)
       }
     } catch (e) {
-      console.debug(`Bad format on ipc message: ${data}`)
+      logger.debug(`Bad format on ipc message: ${data}`)
     }
   }
 
@@ -298,7 +299,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
         try {
           await this.waitForAnchorLoad()
         } catch (e) {
-          console.debug(`Error while waiting for anchor to load: ${e.message}`)
+          logger.debug(`Error while waiting for anchor to load: ${e.message}`)
           return this.depositError()
         }
 
@@ -361,7 +362,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       const amountDeposited = await this.getDepositAmount()
       this.props.onDepositDone(amountDeposited)
     } catch (e) {
-      console.debug(`Error while getting deposit amount: ${e.message}`)
+      logger.debug(`Error while getting deposit amount: ${e}`)
       this.depositError()
     }
   }
@@ -385,7 +386,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     const webviewCSS = await this.loadCSS()
 
     if (!webviewCSS) {
-      console.debug(`Error while loading CSS for webview`)
+      logger.debug(`Error while loading CSS for webview`)
       return this.depositError()
     }
 
@@ -414,7 +415,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
   hideAnchorAmount (): void {
     const webviewNode = this.webviewRef.current
     if (!webviewNode) {
-      console.debug(`Error: Webview does not exist`)
+      logger.debug(`Error: Webview does not exist`)
       return this.depositError()
     }
     webviewNode.send('js:hideAnchorAmount')
@@ -423,7 +424,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
   showAnchorAmount (): void {
     const webviewNode = this.webviewRef.current
     if (!webviewNode) {
-      console.debug(`Error: Webview does not exist`)
+      logger.debug(`Error: Webview does not exist`)
       return this.depositError()
     }
     webviewNode.send('js:showAnchorAmount')

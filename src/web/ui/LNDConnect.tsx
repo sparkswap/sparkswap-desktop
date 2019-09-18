@@ -169,13 +169,13 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
 
   handleHostNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({
-      hostName: e.target.value
+      hostName: e.target.value.trim()
     })
   }
 
   handlePortChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({
-      port: e.target.value
+      port: e.target.value.trim()
     })
   }
 
@@ -274,6 +274,11 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
 
     if (!hostName || !port || !tlsCertPath || !macaroonPath) {
       showErrorToast('All fields are required')
+      return
+    }
+
+    if (hostName.includes('/') || hostName.includes(':')) {
+      showErrorToast('Host is invalid; should not contain "/" or ":"')
       return
     }
 

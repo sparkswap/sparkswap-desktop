@@ -1,13 +1,10 @@
-import { logger } from '../common/utils'
+import logger from '../global-shared/logger'
 import { delay } from '../global-shared/util'
-import {
-  AnchorEngine
-} from '../global-shared/anchor-engine'
+import { AnchorEngine } from '../global-shared/anchor-engine'
 import LndEngine from 'lnd-engine'
-import { SwapHash, SwapPreimage } from '../global-shared/types'
+import { cancelSwapWithRetry } from '../global-shared/retry'
+import { Engine, SwapHash, SwapPreimage } from '../global-shared/types'
 import { OUTBOUND_TIME_LOCK, INBOUND_TIME_LOCK } from '../global-shared/time-locks'
-
-type Engine = LndEngine | AnchorEngine
 
 const {
   PermanentSwapError: LndPermanentSwapError,
@@ -56,9 +53,6 @@ interface Payment {
  */
 const RETRY_DELAY = 30000
 
-const CANCEL_NUM_RETRIES = 10
-const CANCEL_RETRY_DELAY = 10000
-
 /**
  * Prepare for a swap by setting up a hold invoice
  * on the inbound chain.
@@ -104,10 +98,8 @@ async function translateIdempotent (
   // resolved while still considering our state "safe" and atomic.
   const maxTime = new Date(committedTime.getTime() + (OUTBOUND_TIME_LOCK * 1000))
 
-  logger.debug(`Sending payment to ${outboundAddress} to translate ${hash}`, {
-    maxTime,
-    outboundAmount
-  })
+  logger.debug(`Sending payment to ${outboundAddress} to translate ${hash} ` +
+    `maxTime=${maxTime.toISOString()} outboundAmount=${outboundAmount}`)
 
   return outboundEngine.translateSwap(
     outboundAddress,
@@ -115,23 +107,6 @@ async function translateIdempotent (
     outboundAmount,
     maxTime
   )
-}
-
-/**
- * Cancel an upstream payment for a swap.
- */
-async function cancelSwapWithRetry (engine: Engine, hash: SwapHash): Promise<void> {
-  for (let i = 0; i < CANCEL_NUM_RETRIES; i++) {
-    try {
-      await engine.cancelSwap(hash)
-      logger.info(`Canceled swap with hash ${hash}`)
-      return
-    } catch (e) {
-      logger.warn(`Error canceling swap with hash ${hash}: ${e.toString()}`)
-      await delay(CANCEL_RETRY_DELAY)
-    }
-  }
-  logger.error(`Failed to cancel swap with hash ${hash}`)
 }
 
 /**
@@ -164,7 +139,7 @@ async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayme
   } catch (e) {
     if (e instanceof outboundErrors.PermanentSwapError) {
       logger.error('Permanent Error encountered while translating swap, ' +
-        'cancelling upstream invoice', { error: e.message, hash })
+        `cancelling upstream invoice for ${hash}: ${e}`)
       cancelSwapWithRetry(inboundEngine, hash)
       throw e
     }
@@ -195,8 +170,8 @@ async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayme
 
     // A temporary (non-permanent) error means we don't know the current state,
     // so we need to restart the whole process
-    logger.error('Temporary Error encountered while forwarding swap',
-      { error: e.stack, hash })
+    logger.error('Temporary Error encountered while forwarding swap with hash ' +
+      `${hash}: ${e}`)
     logger.debug(`Delaying swap forward retry for ${hash} for ${RETRY_DELAY}ms`)
     await delay(RETRY_DELAY)
     logger.debug(`Retrying swap forward for ${hash}`)

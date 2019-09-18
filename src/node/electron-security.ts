@@ -1,5 +1,6 @@
 import * as url from 'url'
 import * as path from 'path'
+import logger from '../global-shared/logger'
 import { App } from 'electron'
 import { injectContentSecurityPolicies } from './content-security-policies'
 import { IS_PRODUCTION } from '../common/config'
@@ -24,20 +25,20 @@ function secureApp (app: App): void {
     contents.on('will-navigate', (event, navigationUrl) => {
       const parsedUrl = new url.URL(navigationUrl)
       if (!NAVIGATION_WHITELIST.includes(parsedUrl.host)) {
-        console.warn(`tried to navigate app to url: ${navigationUrl}`)
+        logger.warn(`tried to navigate app to url: ${navigationUrl}`)
         event.preventDefault()
       }
     })
     // disable new windows
     contents.on('new-window', async (event, navigationUrl) => {
-      console.warn(`tried to create a new window: ${navigationUrl}`)
+      logger.warn(`tried to create a new window: ${navigationUrl}`)
       event.preventDefault()
     })
     // disable webviews
     contents.on('will-attach-webview', (event, webPreferences, params) => {
       const url = new URL(params.src)
       if (!WEBVIEW_URL_WHITELIST.includes(url.origin)) {
-        console.warn(`tried to attach webview with url: ${url.href}`)
+        logger.warn(`tried to attach webview with url: ${url.href}`)
         event.preventDefault()
       }
 

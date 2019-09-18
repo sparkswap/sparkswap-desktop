@@ -1,6 +1,6 @@
 import * as crypto from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
-import { logger } from '../common/utils'
+import logger from '../global-shared/logger'
 import { Auth } from '../common/types'
 import { addConfig, getConfig } from './config'
 

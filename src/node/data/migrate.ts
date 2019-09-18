@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs'
 import Database from 'better-sqlite3'
 import { migrationFilePaths } from './migrations'
-import { logger } from '../../common/utils'
+import logger from '../../global-shared/logger'
 
 function getVersion (db: Database.Database): number {
   // sqlite3 automatically sets this to 0 on its first start,

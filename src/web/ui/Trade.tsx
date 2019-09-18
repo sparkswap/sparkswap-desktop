@@ -11,7 +11,7 @@ import { toaster, showSuccessToast, showErrorToast } from './AppToaster'
 import getQuote from '../domain/quote'
 import executeTrade from '../domain/trade'
 import { isValidQuantity, MIN_QUANTITY, MAX_QUANTITY } from '../domain/quantity'
-import { isUSDXSufficient, hasUSDX, getBalanceState } from '../domain/balance'
+import { isUSDXSufficient, getBalanceState, balances } from '../domain/balance'
 import { centsPerUSD } from '../../common/constants'
 import { formatDollarValue } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
@@ -125,7 +125,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
       const secondsRemaining = this.state.secondsRemaining - 1
 
       if (secondsRemaining <= 0) {
-        showErrorToast(`Price expired, please make another request.`)
+        showErrorToast(`Price expired, please make another request`)
         this.setState({
           secondsRemaining,
           quote: undefined
@@ -161,15 +161,21 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
   startBuy = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
+    const asset = this.state.assetSymbol
+
     if (!marketDataSubscriber.hasLoadedCurrentPrice) {
-      showErrorToast('Wait for prices to load before buying BTC.')
+      showErrorToast(`Wait for prices to load before buying ${asset}`)
       return
     }
 
     const quantity = parseFloat(this.state.quantityStr)
+    const usdBalance = balances[Asset.USDX]
 
-    if (!hasUSDX()) {
-      this.showDepositError(`Deposit USD before purchasing ${this.state.assetSymbol}`)
+    if (usdBalance instanceof Error) {
+      showErrorToast(`Wait for USD balance to load before buying ${asset}`)
+      return
+    } else if (usdBalance.value === 0) {
+      this.showDepositError(`Deposit USD before buying ${asset}`)
       return
     }
 
@@ -189,7 +195,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
     }
 
     if (!isUSDXSufficient(this.state.currentPrice * quantity)) {
-      this.showDepositError(`Insufficient USD to purchase ${quantity} ${this.state.assetSymbol}`)
+      this.showDepositError(`Insufficient USD to purchase ${quantity} ${asset}`)
       return
     }
 
@@ -203,7 +209,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
       this.countdown()
     } catch (e) {
       if (e.statusCode === 403) {
-        showErrorToast('Your account must be approved prior to trading.')
+        showErrorToast('Your account must be approved prior to trading')
       } else {
         showErrorToast('Failed to get price: ' + e.message)
       }

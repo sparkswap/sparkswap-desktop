@@ -1,8 +1,12 @@
 import {
+  Amount,
+  Asset,
+  Unit,
   SwapHash,
   SwapPreimage,
   PaymentChannelNetworkAddress
 } from '../types'
+import { LoggerInterface } from '../logger'
 import { delay, generateHash } from '../util'
 import { MIN_FINAL_DELTA } from '../time-locks'
 
@@ -48,8 +52,14 @@ function assertEscrowTerms (escrow: api.Escrow, terms: SwapInvoiceTerms): void {
   }
 
   // TODO: make currency dynamic
-  if (escrow.currency !== api.USDX || escrow.amount !== terms.amount) {
-    throw new CanceledSwapError(`Swap with hash (${escrow.hash}) has incorrect payment terms.`)
+  if (escrow.amount.asset !== api.USDX) {
+    throw new CanceledSwapError(`Swap with hash (${escrow.hash}) has invalid ` +
+      `currency ${escrow.amount.asset}`)
+  }
+
+  if (escrow.amount.value !== terms.amount) {
+    throw new CanceledSwapError(`Swap with hash (${escrow.hash}) has ` +
+      `incorrect amount ${escrow.amount.value} vs ${terms.amount}`)
   }
 
   const escrowTimelock = Math.floor((escrow.timeout.getTime() - escrow.created.getTime()) / 1000)
@@ -57,7 +67,8 @@ function assertEscrowTerms (escrow: api.Escrow, terms: SwapInvoiceTerms): void {
   // TODO: do we need a minimum time lock here to give ourselves enough room to do the swap?
   // Should we base our calculation on the distance from the present?
   if (escrowTimelock < terms.timelockDelta) {
-    throw new CanceledSwapError(`Swap with hash (${escrow.hash}) has incorrect time lock.`)
+    throw new CanceledSwapError(`Swap with hash (${escrow.hash}) has ` +
+      `incorrect time lock ${escrowTimelock} vs ${terms.timelockDelta}`)
   }
 }
 
@@ -65,24 +76,37 @@ export class AnchorEngine {
   symbol: string
   name: string
   quantumsPerCommon: string
+  logger: LoggerInterface
+
+  static readonly ERRORS = {
+    PermanentSwapError,
+    ExpiredSwapError,
+    CanceledSwapError,
+    SettledSwapError
+  }
 
   private apiKey: string
   private incomingSwaps: Map<SwapHash, SwapInvoiceTerms>
   private accountId?: string
 
-  constructor (apiKey: string) {
-    this.symbol = 'USDX'
+  constructor (apiKey: string, { logger = console as LoggerInterface } = {}) {
+    this.symbol = api.USDX
     this.name = 'AnchorUSD'
     this.quantumsPerCommon = '100'
     this.apiKey = apiKey
     this.incomingSwaps = new Map()
+    this.logger = logger
+  }
+
+  get validated (): boolean {
+    return true
   }
 
   async getPaymentChannelNetworkAddress (): Promise<PaymentChannelNetworkAddress> {
     return accountToAddress(await this.getAccountId())
   }
 
-  private async createEscrowIdempotent (hash: SwapHash, address: PaymentChannelNetworkAddress, amount: number, expiration: Date, finalDelta: number): Promise<api.Escrow> {
+  private async createEscrowIdempotent (hash: SwapHash, address: PaymentChannelNetworkAddress, amount: Amount, expiration: Date, finalDelta: number): Promise<api.Escrow> {
     const fromId = await this.getAccountId()
     const recipientId = addressToAccount(address)
     const escrow = await api.getEscrowByHash(this.apiKey, hash, fromId)
@@ -102,7 +126,9 @@ export class AnchorEngine {
         `timeFromNow: ${timeFromNow}, finalDelta: ${finalDelta}`)
     }
 
-    return api.createEscrow(this.apiKey, hash, recipientId, amount, expiration)
+    const newEscrow = await api.createEscrow(this.apiKey, hash, recipientId, amount, expiration)
+    this.logger.debug(`Escrow for swap (${hash}) created`)
+    return newEscrow
   }
 
   private async waitForEscrowEnd (startedEscrow: api.Escrow): Promise<api.Escrow> {
@@ -121,8 +147,9 @@ export class AnchorEngine {
     return escrow
   }
 
-  async translateSwap (address: PaymentChannelNetworkAddress, hash: SwapHash, amount: string, maxTime: Date, finalDelta = MIN_FINAL_DELTA): Promise<SwapPreimage> {
-    const escrow = await this.createEscrowIdempotent(hash, address, parseFloat(amount), maxTime, finalDelta)
+  async translateSwap (address: PaymentChannelNetworkAddress, hash: SwapHash, value: string, maxTime: Date, finalDelta = MIN_FINAL_DELTA): Promise<SwapPreimage> {
+    const amount = { asset: Asset.USDX, unit: Unit.Cent, value: parseInt(value, 10) }
+    const escrow = await this.createEscrowIdempotent(hash, address, amount, maxTime, finalDelta)
     const endedEscrow = await this.waitForEscrowEnd(escrow)
 
     switch (endedEscrow.status) {
@@ -140,7 +167,7 @@ export class AnchorEngine {
   }
 
   async getSettledSwapPreimage (hash: SwapHash): Promise<SwapPreimage> {
-    console.debug('getSettledSwapPreimage', { hash })
+    this.logger.debug(`getSettledSwapPreimage ${hash}`)
     throw new Error(`UNIMPLEMENTED`)
   }
 
@@ -166,14 +193,19 @@ export class AnchorEngine {
     const recipientId = await this.getAccountId()
     const escrow = await api.getEscrowByHash(this.apiKey, hash, undefined, recipientId)
     if (!escrow) throw new Error(`Escrow not found with hash: ${hash}`)
+    if (escrow.status === api.EscrowStatus.canceled) {
+      this.logger.debug(`Swap has already been canceled ${hash}`)
+      return
+    }
 
     try {
       await api.cancelEscrow(this.apiKey, escrow.id)
+      this.logger.debug(`Canceled swap with hash (${hash})`)
     } catch (e) {
       const updatedEscrow = await api.getEscrow(this.apiKey, escrow.id)
 
       if (updatedEscrow.status === api.EscrowStatus.canceled) {
-        console.debug('Swap has already been cancelled', { hash })
+        this.logger.debug(`Swap has already been canceled ${hash}`)
         return
       }
       throw e
@@ -192,7 +224,7 @@ export class AnchorEngine {
     } catch (e) {
       const updatedEscrow = await api.getEscrow(this.apiKey, escrow.id)
       if (updatedEscrow.status === api.EscrowStatus.complete) {
-        console.debug('Swap has already been settled.', { escrowId: escrow.id })
+        this.logger.debug(`Swap has already been settled: escrow ID ${escrow.id}`)
         return
       }
       throw e
@@ -200,7 +232,8 @@ export class AnchorEngine {
   }
 
   async initiateSwap (address: string, hash: SwapHash, amount: string, maxTimeLock: number, finalDelta: number): Promise<SwapPreimage> {
-    console.debug('initiateSwap', { address, hash, amount, maxTimeLock, finalDelta })
+    const parameters = JSON.stringify({ address, hash, amount, maxTimeLock, finalDelta })
+    this.logger.debug(`initiateSwap ${parameters}`)
     throw new Error('unimplemented')
   }
 
@@ -209,13 +242,20 @@ export class AnchorEngine {
   }
 
   async getTotalChannelBalance (): Promise<string> {
-    const account = await api.getOwnAccount(this.apiKey)
-    const balance = account.balances.find(balance => balance.currency === api.USDX)
-    if (!balance) {
-      // Anchor will only return a balance if the user has ever held USDX
-      return '0'
-    }
-    return (balance.amount * Number(this.quantumsPerCommon)).toString()
+    const [
+      escrowBalance,
+      account
+    ] = await Promise.all([
+      api.getEscrowBalance(this.apiKey),
+      api.getOwnAccount(this.apiKey)
+    ])
+
+    const accountBalance = account.balances.find(balance => balance.currency === api.USDX)
+
+    // Anchor will only return a balance if the user has ever held USDX
+    const accountBalValue = accountBalance ? Math.round(accountBalance.amount * Number(this.quantumsPerCommon)) : 0
+
+    return (accountBalValue + escrowBalance.value).toString()
   }
 
   async getTotalPendingChannelBalance (): Promise<string> {
@@ -238,6 +278,11 @@ export class AnchorEngine {
     throw new ExpiredSwapError(`Swap with hash (${hash}) is expired.`)
   }
 
+  async getEscrowStatus (hash: SwapHash): Promise<api.EscrowStatus | null> {
+    const escrow = await api.getEscrowByHash(this.apiKey, hash)
+    return escrow ? escrow.status : null
+  }
+
   async waitForSwapCommitment (hash: SwapHash): Promise<Date> {
     const terms = this.incomingSwaps.get(hash)
 
@@ -246,6 +291,7 @@ export class AnchorEngine {
     }
 
     const escrow = await this.waitForEscrowStart(hash, terms.expiration)
+    this.logger.debug(`Swap with hash (${hash}) committed`)
 
     switch (escrow.status) {
       case (api.EscrowStatus.complete):

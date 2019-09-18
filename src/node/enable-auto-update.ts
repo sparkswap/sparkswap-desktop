@@ -1,5 +1,6 @@
 import { dialog, App, Notification } from 'electron'
 import { autoUpdater, AppUpdater, UpdateInfo } from 'electron-updater'
+import logger from '../global-shared/logger'
 import { delay } from '../global-shared/util'
 import { IS_WINDOWS, IS_LINUX } from './util'
 import { IS_DEVELOPMENT } from '../common/config'
@@ -77,7 +78,7 @@ function enableAutoUpdate (app: App): void {
   let shouldCheckForUpdates = true
 
   autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
-    console.log(`Installing update for current version: ${autoUpdater.currentVersion}. Newest Version: ${info.version}`)
+    logger.info(`Installing update for current version: ${autoUpdater.currentVersion}. Newest Version: ${info.version}`)
     shouldCheckForUpdates = true
   })
 
@@ -86,7 +87,7 @@ function enableAutoUpdate (app: App): void {
   })
 
   autoUpdater.on('error', (err: Error) => {
-    console.error('Error in auto-updater for sparkswap.', err)
+    logger.error(`Error in auto-updater for sparkswap: ${err}`)
   })
 
   app.on('ready', async function () {
@@ -94,7 +95,7 @@ function enableAutoUpdate (app: App): void {
     // development implementation has bugs that prevent us from testing the code
     // in development.
     if (IS_DEVELOPMENT) {
-      console.debug('Skipping autoUpdater in development')
+      logger.debug('Skipping autoUpdater in development')
       return
     }
 

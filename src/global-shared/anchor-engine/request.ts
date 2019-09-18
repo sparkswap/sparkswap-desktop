@@ -9,9 +9,9 @@ export enum RequestMethods {
   DELETE = 'DELETE'
 }
 
-const ANCHOR_URL = process.env.NODE_ENV === 'development'
-  ? 'https://sandbox-api.anchorusd.com'
-  : 'https://api.anchorusd.com'
+const ANCHOR_URL = process.env.NODE_ENV !== 'development'
+  ? 'https://api.anchorusd.com'
+  : 'https://sandbox-api.anchorusd.com'
 
 export default async function request (apiKey: string, path: string, data: object = {}, method: RequestMethods = RequestMethods.GET, fetchOptions: ResponseOptions = {}): Promise<UnknownJSON> {
   const headers = {
