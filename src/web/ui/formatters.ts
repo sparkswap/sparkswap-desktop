@@ -12,12 +12,17 @@ const BTC_FORMAT_OPTIONS = {
   maximumFractionDigits: 8
 }
 
+const ASSET_DISPLAY_SYMBOL = {
+  [Asset.BTC]: 'BTC',
+  [Asset.USDX]: 'USD'
+}
+
 export function formatDollarValue (value: number): string {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
 export function formatBtcValue (value: number): string {
-  return (value / satoshisPerBTC).toLocaleString('en-US', BTC_FORMAT_OPTIONS)
+  return (value).toLocaleString('en-US', BTC_FORMAT_OPTIONS)
 }
 
 export function formatPercent (value: number): string {
@@ -31,10 +36,14 @@ export function formatDate (date: Date): string {
 export function formatAmount (amount: Amount): string {
   switch (amount.asset) {
     case Asset.BTC:
-      return formatBtcValue(amount.value)
+      return formatBtcValue(amount.value / satoshisPerBTC)
     case Asset.USDX:
       return formatDollarValue(amount.value / centsPerUSD)
     default:
       throw new Error(`Unknown asset type. Cannot format asset ${amount.asset}`)
   }
+}
+
+export function formatAsset (asset: Asset): string {
+  return ASSET_DISPLAY_SYMBOL[asset]
 }

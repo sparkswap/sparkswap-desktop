@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react'
-import { formatAmount } from './formatters'
+import { formatAmount, formatAsset } from './formatters'
 import { Asset } from '../../global-shared/types'
 import { balances, balanceUpdater, BalanceState } from '../domain/balance'
 import { Classes, H4, H5, Button } from '@blueprintjs/core'
@@ -11,37 +11,81 @@ interface BalanceProps {
 }
 
 interface BalancesState {
-  BTC: BalanceState,
-  USDX: BalanceState,
-  [asset: string]: BalanceState
-}
-
-const ASSET_DISPLAY_SYMBOL = {
-  [Asset.BTC]: 'BTC',
-  [Asset.USDX]: 'USD'
+  balances: {
+    BTC: BalanceState,
+    USDX: BalanceState,
+    [asset: string]: BalanceState
+  },
+  updated: {
+    BTC: boolean,
+    USDX: boolean,
+    [asset: string]: boolean
+  }
 }
 
 class Balances extends React.Component<BalanceProps, BalancesState> {
   constructor (props: BalanceProps) {
     super(props)
     this.state = {
-      [Asset.BTC]: balances[Asset.BTC],
-      [Asset.USDX]: balances[Asset.BTC]
+      balances: {
+        [Asset.BTC]: balances[Asset.BTC],
+        [Asset.USDX]: balances[Asset.BTC]
+      },
+      updated: {
+        [Asset.BTC]: false,
+        [Asset.USDX]: false
+      }
     }
+  }
+
+  private isBalanceChange (oldBalance: BalanceState, newBalance: BalanceState): boolean {
+    if (oldBalance instanceof Error || newBalance instanceof Error) {
+      return false
+    }
+    return oldBalance.value !== newBalance.value
   }
 
   componentDidMount (): void {
     balanceUpdater.on('update', () => {
+      const oldBalances = this.state.balances
+      const updatedBTC = this.isBalanceChange(oldBalances[Asset.BTC], balances[Asset.BTC])
+      const updatedUSDX = this.isBalanceChange(oldBalances[Asset.USDX], balances[Asset.USDX])
+
       this.setState({
-        [Asset.BTC]: balances[Asset.BTC],
-        [Asset.USDX]: balances[Asset.USDX]
+        balances: {
+          [Asset.BTC]: balances[Asset.BTC],
+          [Asset.USDX]: balances[Asset.USDX]
+        },
+        updated: {
+          [Asset.BTC]: updatedBTC || this.state.updated[Asset.BTC],
+          [Asset.USDX]: updatedUSDX || this.state.updated[Asset.USDX]
+        }
       })
+
+      // use 2s for removing 1s animation to ensure animation doesnt get cut off
+      if (updatedBTC) {
+        setTimeout(() => this.setState(Object.assign(this.state, {
+          updated: { [Asset.BTC]: false }
+        })), 2000)
+      }
+
+      if (updatedUSDX) {
+        setTimeout(() => this.setState(Object.assign(this.state, {
+          updated: { [Asset.USDX]: false }
+        })), 2000)
+      }
     })
   }
 
-  renderAmount (state: BalanceState): ReactNode {
-    const className = [state instanceof Error ? Classes.SKELETON : '', 'balance-amount'].join(' ')
-    const value = state instanceof Error ? '0.00000000' : formatAmount(state)
+  renderAmount (asset: Asset): ReactNode {
+    const balance = this.state.balances[asset]
+    const className = [
+      balance instanceof Error ? Classes.SKELETON : '',
+      !(balance instanceof Error) && this.state.updated[asset]
+        ? 'PulseBalance' : '',
+      'balance-amount'
+    ].join(' ')
+    const value = balance instanceof Error ? '0.00000000' : formatAmount(balance)
 
     return (
       <span className={className}>
@@ -53,8 +97,8 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
   renderBalance (asset: Asset): ReactNode {
     return (
       <span>
-        {this.renderAmount(this.state[asset])}
-        &nbsp;{ASSET_DISPLAY_SYMBOL[asset]}
+        {this.renderAmount(asset)}
+        &nbsp;{formatAsset(asset)}
       </span>
     )
   }

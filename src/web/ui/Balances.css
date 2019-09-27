@@ -40,3 +40,13 @@
   /* couldn't fine any other way to get this to line up */
   margin-top: -3px;
 }
+
+@keyframes color-change {
+  0% { color: #f5f8fa; }
+  20% { color: #aaaaaa; }
+  100% { color: #f5f8fa; }
+}
+
+.PulseBalance {
+  animation: color-change 1s 1 ease;
+}

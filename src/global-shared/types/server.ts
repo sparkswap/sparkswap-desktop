@@ -25,6 +25,7 @@ export interface MarketDataResponse {
 
 export interface QuoteResponse {
   sourceAmount: Amount,
+  destinationAmount: Amount,
   duration: number,
   hash: SwapHash
 }

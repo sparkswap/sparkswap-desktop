@@ -32,10 +32,11 @@ export async function getQuote (data: object): Promise<QuoteResponse> {
 
   // TODO: use a JSON schema / type guard to check the shape / do conversion
   const sourceAmountRes = res.sourceAmount
+  const destinationAmountRes = res.destinationAmount
   const duration = res.duration as number
   const hash = res.hash as string
 
-  if (!isUnknownJSON(sourceAmountRes)) {
+  if (!isUnknownJSON(sourceAmountRes) || !isUnknownJSON(destinationAmountRes)) {
     throw new Error(`Bad response for quote: ${res}`)
   }
 
@@ -45,8 +46,15 @@ export async function getQuote (data: object): Promise<QuoteResponse> {
     value: sourceAmountRes.value as number
   }
 
+  const destinationAmount = {
+    asset: valueToAsset(destinationAmountRes.asset as string),
+    unit: valueToUnit(destinationAmountRes.unit as string),
+    value: destinationAmountRes.value as number
+  }
+
   return {
     sourceAmount,
+    destinationAmount,
     duration,
     hash
   }

@@ -398,7 +398,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
           >
             <InputGroup
               id="lnd-port"
-              placeholder="11009"
+              placeholder="10009"
               value={port}
               onChange={this.handlePortChange}
             />

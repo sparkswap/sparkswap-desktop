@@ -21,8 +21,13 @@ function getAppId () {
 exports.default = async function (context) {
   const { electronPlatformName, appOutDir } = context
 
+  if (process.env.NOTARIZE !== 'true') {
+    console.log('Skipping notarize, NOTARIZE is not set.')
+    return
+  }
+
   if (electronPlatformName !== 'darwin') {
-    console.log(getAppId())
+    console.log('Skipping notarize for non macOS platform.')
     return
   }
 

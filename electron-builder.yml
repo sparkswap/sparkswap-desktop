@@ -46,6 +46,7 @@ linux:
     Terminal: 'false'
     Type: 'Application'
     Categories: 'Office;Finance'
+    StartupWMClass: 'Sparkswap'
 
 nsis:
   oneClick: false

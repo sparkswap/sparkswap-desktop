@@ -64,15 +64,16 @@
 
 .Trade .TradeForm {
   margin-bottom: 0;
+  position: relative;
 }
 
-@keyframes color-change {
+@keyframes red-color-change {
   0% { color: #f0413b; }
   100% { color: #f5f8fa; }
 }
 
 .PulseRed input {
-  animation: color-change 1s 1;
+  animation: red-color-change 1s 1;
 }
 
 .Trade .TradeForm .bp3-input {
@@ -93,9 +94,36 @@
 
 .Trade .TradeForm .bp3-input-action {
   top: 50%;
-  opacity: 0.5;
 }
 
 .Trade .TradeForm .bp3-input-action .bp3-heading {
   padding-left: 1em;
+}
+
+.TradeForm .quantity-label {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  font-size: 1.5em;
+  font-weight: 300;
+  color: rgba(245,248,250,0.4);
+}
+
+.Trade .TradeForm .switch-asset {
+  margin-left: 10px;
+  margin-top: -0.5em;
+}
+
+.Trade .TradeForm .switch-asset.bp3-control.bp3-switch input ~ .bp3-control-indicator,
+.Trade .TradeForm .switch-asset.bp3-control.bp3-switch input:checked ~ .bp3-control-indicator {
+  background: rgba(16, 22, 26, 0.5);
+}
+
+.Trade .TradeForm .switch-asset.bp3-control.bp3-switch input:checked ~ .bp3-control-indicator::before {
+  box-shadow: 0 0 0 1px rgba(16, 22, 26, 0.4);
+}
+
+.Trade .TradeForm .switch-asset.bp3-control.bp3-switch:hover input ~ .bp3-control-indicator,
+.Trade .TradeForm .switch-asset.bp3-control.bp3-switch:hover input:checked ~ .bp3-control-indicator {
+  background: rgba(16, 22, 26, 0.7);
 }

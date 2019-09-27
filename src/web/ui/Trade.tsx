@@ -3,20 +3,29 @@ import {
   Button,
   FormGroup,
   NumericInput,
-  H6,
   Intent,
-  Classes
+  Classes,
+  Switch
 } from '@blueprintjs/core'
 import { toaster, showSuccessToast, showErrorToast } from './AppToaster'
-import getQuote from '../domain/quote'
+import { getQuote } from '../domain/quote'
 import executeTrade from '../domain/trade'
-import { isValidQuantity, MIN_QUANTITY, MAX_QUANTITY } from '../domain/quantity'
+import {
+  isValidQuantity,
+  isValidAmount,
+  toQuantum,
+  toCommon,
+  MIN_AMOUNT,
+  MAX_AMOUNT,
+  MIN_QUANTITY,
+  MAX_QUANTITY
+} from '../domain/quantity'
 import { isUSDXSufficient, getBalanceState, balances } from '../domain/balance'
-import { centsPerUSD } from '../../common/constants'
-import { formatDollarValue } from './formatters'
+import { centsPerUSD, satoshisPerBTC } from '../../common/constants'
+import { formatAmount, formatAsset } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
 import { QuoteResponse } from '../../global-shared/types/server'
-import { Asset } from '../../global-shared/types'
+import { Amount, Asset, assetToUnit } from '../../global-shared/types'
 import './Trade.css'
 import { delay } from '../../global-shared/util'
 
@@ -28,9 +37,9 @@ interface TradeState {
   isPulsingQuantity: boolean,
   secondsRemaining: number,
   quantityStr: string,
-  assetSymbol: string,
+  quantity?: Amount,
+  asset: Asset,
   currentPrice: number,
-  quantity?: number,
   quote?: QuoteResponse
 }
 
@@ -38,10 +47,23 @@ const initialState: TradeState = {
   isPulsingQuantity: false,
   secondsRemaining: 0,
   quantityStr: '',
-  assetSymbol: 'BTC',
+  quantity: undefined,
+  asset: Asset.USDX,
   currentPrice: 0,
-  quote: undefined,
-  quantity: undefined
+  quote: undefined
+}
+
+function altAsset (asset: Asset): Asset {
+  if (asset === Asset.BTC) return Asset.USDX
+  return Asset.BTC
+}
+
+function altValue (startAsset: Asset, startValue: number, currentPrice: number): number {
+  const quantumPrice = currentPrice * centsPerUSD / satoshisPerBTC
+
+  // The server will round cents in their favor, so we simulate that here
+  if (startAsset === Asset.BTC) return Math.ceil(startValue * quantumPrice)
+  return Math.floor(startValue / quantumPrice)
 }
 
 class Trade extends React.Component<TradeProps, TradeState> {
@@ -50,22 +72,29 @@ class Trade extends React.Component<TradeProps, TradeState> {
     this.state = initialState
   }
 
-  get usdQuantity (): number {
+  get altAmount (): Amount {
     const {
+      quantity,
       quantityStr,
+      asset,
       currentPrice
     } = this.state
 
-    const dollars = currentPrice * parseFloat(quantityStr)
-    // we apply ceil to reproduce the calculation done for quotes on the server
-    const cents = Math.ceil(dollars * centsPerUSD)
-    const usdQuantity = parseFloat((cents / centsPerUSD).toFixed(2))
-
-    if (!isNaN(usdQuantity) && usdQuantity > 0) {
-      return usdQuantity
+    if (this.isQuoteValid && quantity) {
+      return {
+        asset: altAsset(quantity.asset),
+        unit: assetToUnit(altAsset(quantity.asset)),
+        value: altValue(quantity.asset, quantity.value, currentPrice)
+      }
     }
 
-    return 0
+    return {
+      asset: altAsset(asset),
+      unit: assetToUnit(altAsset(asset)),
+      value: parseFloat(quantityStr) > 0
+        ? altValue(asset, toQuantum(asset, parseFloat(quantityStr)), currentPrice)
+        : 0
+    }
   }
 
   get isQuoteValid (): boolean {
@@ -87,31 +116,31 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
   confirmBuy = async (): Promise<void> => {
     const {
-      quantity,
-      quote
+      quote,
+      asset
     } = this.state
 
     if (this.isQuoteValid) {
       this.setState(Object.assign(initialState, {
-        currentPrice: marketDataSubscriber.currentPrice
+        currentPrice: marketDataSubscriber.currentPrice,
+        asset
       }))
 
-      if (quantity == null || quote == null) {
+      if (quote == null) {
         return
       }
 
       try {
-        await executeTrade(quantity, quote)
+        await executeTrade(quote)
       } catch (e) {
         showErrorToast('Failed to execute trade: ' + e.message)
         return
       }
 
-      getBalanceState(Asset.USDX)
-      showSuccessToast('Trade completed')
-
       // This delay is necessary since LND doesn't update balance immediately after executeTrade
-      await delay(50)
+      await delay(200)
+      showSuccessToast('Trade completed')
+      getBalanceState(Asset.USDX)
       getBalanceState(Asset.BTC)
     }
   }
@@ -148,6 +177,18 @@ class Trade extends React.Component<TradeProps, TradeState> {
     })
   }
 
+  switchAsset = (): void => {
+    this.setState({
+      asset: this.altAmount.asset,
+      quantity: this.state.quantity && marketDataSubscriber.hasLoadedCurrentPrice
+        ? this.altAmount
+        : undefined,
+      quantityStr: this.state.quantityStr && marketDataSubscriber.hasLoadedCurrentPrice
+        ? toCommon(this.altAmount.asset, this.altAmount.value).toString()
+        : ''
+    })
+  }
+
   showDepositError (message: string): void {
     toaster.show({
       intent: Intent.DANGER,
@@ -159,43 +200,65 @@ class Trade extends React.Component<TradeProps, TradeState> {
     })
   }
 
+  validateQuantity (): number | null {
+    const { asset, quantityStr } = this.state
+    const quantity = parseFloat(quantityStr)
+
+    if (isValidQuantity(asset, quantity) && isValidAmount(this.altAmount)) {
+      return quantity
+    }
+
+    this.setState({ isPulsingQuantity: true })
+    setTimeout(() => this.setState({ isPulsingQuantity: false }), 1000)
+
+    if (quantity < MIN_QUANTITY[asset] || quantityStr === '') {
+      showErrorToast(`Minimum quantity is ${formatAmount(MIN_AMOUNT[asset])} ${formatAsset(asset)}`)
+    } else if (quantity > MAX_QUANTITY[asset]) {
+      showErrorToast(`Maximum quantity is ${formatAmount(MAX_AMOUNT[asset])} ${formatAsset(asset)}`)
+    } else if (this.altAmount.value < MIN_AMOUNT[this.altAmount.asset].value) {
+      showErrorToast(`Minimum quantity is ${formatAmount(MIN_AMOUNT[this.altAmount.asset])} ${formatAsset(this.altAmount.asset)}`)
+    } else if (this.altAmount.value > MAX_AMOUNT[this.altAmount.asset].value) {
+      showErrorToast(`Maximum quantity is ${formatAmount(MAX_AMOUNT[this.altAmount.asset])} ${formatAsset(this.altAmount.asset)}`)
+    } else {
+      showErrorToast(`Invalid ${formatAsset(asset)} quantity`)
+    }
+
+    return null
+  }
+
   startBuy = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
-    const asset = this.state.assetSymbol
-
     if (!marketDataSubscriber.hasLoadedCurrentPrice) {
-      showErrorToast(`Wait for prices to load before buying ${asset}`)
+      showErrorToast(`Wait for prices to load before buying BTC`)
       return
     }
 
-    const quantity = parseFloat(this.state.quantityStr)
     const usdBalance = balances[Asset.USDX]
 
     if (usdBalance instanceof Error) {
-      showErrorToast(`Wait for USD balance to load before buying ${asset}`)
+      showErrorToast(`Wait for USD balance to load before buying BTC`)
       return
     } else if (usdBalance.value === 0) {
-      this.showDepositError(`Deposit USD before buying ${asset}`)
+      this.showDepositError(`Deposit USD before buying BTC`)
       return
     }
 
-    if (!isValidQuantity(quantity)) {
-      this.setState({ isPulsingQuantity: true })
-      setTimeout(() => this.setState({ isPulsingQuantity: false }), 1000)
-      if (quantity < MIN_QUANTITY || this.state.quantityStr === '') {
-        const minQuantity = MIN_QUANTITY.toFixed(8)
-        showErrorToast(`Minimum quantity is ${minQuantity} BTC`)
-      } else if (quantity > MAX_QUANTITY) {
-        const maxQuantity = MAX_QUANTITY.toFixed(8)
-        showErrorToast(`Maximum quantity is ${maxQuantity} BTC`)
-      } else {
-        showErrorToast(`Invalid BTC quantity`)
-      }
-      return
+    const asset = this.state.asset
+    const value = this.validateQuantity()
+    if (value == null) return
+
+    const quantity = {
+      asset,
+      unit: assetToUnit(asset),
+      value: toQuantum(asset, value)
     }
 
-    if (!isUSDXSufficient(this.state.currentPrice * quantity)) {
-      this.showDepositError(`Insufficient USD to purchase ${quantity} ${asset}`)
+    const usdxQuantity = asset === Asset.USDX
+      ? quantity.value
+      : altValue(asset, quantity.value, this.state.currentPrice)
+
+    if (!isUSDXSufficient(usdxQuantity)) {
+      this.showDepositError(`Insufficient USD`)
       return
     }
 
@@ -227,7 +290,12 @@ class Trade extends React.Component<TradeProps, TradeState> {
   }
 
   renderSubmitButton (): ReactNode {
-    if (!this.isQuoteValid || !this.state.quote) {
+    const {
+      quote,
+      quantity
+    } = this.state
+
+    if (!this.isQuoteValid || !quote || !quantity) {
       const { quantityStr } = this.state
       const { hasLoadedCurrentPrice } = marketDataSubscriber
 
@@ -236,31 +304,35 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
       return (
         <div className="button-container">
-          <pre className="conversion">
-            = <span className={conversionClassName}>{formatDollarValue(this.usdQuantity)}</span>
-          </pre>
-          <Button className="buy" type="submit" icon="layers" fill={true}>Buy {this.state.assetSymbol}</Button>
+          <div className="conversion">
+            = <span className={conversionClassName}>{formatAmount(this.altAmount)} {formatAsset(this.altAmount.asset)}</span>
+          </div>
+          <Button className="buy" type="submit" icon="layers" fill={true}>Buy BTC</Button>
         </div>
       )
     }
 
-    const totalCost = formatDollarValue(this.state.quote.sourceAmount.value / centsPerUSD)
+    const finalAmount = quantity.asset === Asset.BTC
+      ? `Buy for ${formatAmount(quote.sourceAmount)}`
+      : `Buy ${formatAmount(quote.destinationAmount)} BTC`
 
     return (
       <div className="button-container">
-        <Button className="confirm-buy" onClick={this.confirmBuy} icon="layers" fill={true}>Buy for {totalCost}</Button>
+        <Button className="confirm-buy" onClick={this.confirmBuy} icon="layers" fill={true}>{finalAmount}</Button>
         <Button minimal={true} onClick={this.handleCancel}>Cancel</Button>
       </div>
     )
   }
 
   render (): ReactNode {
-    const { quantityStr, assetSymbol } = this.state
-    const placeholder = '0.000'
+    const { quantityStr, asset } = this.state
+    const placeholder = '0.00'
     const inputStr = quantityStr || placeholder
     // Count periods as 0.5 of normal character length
     const inputLength = inputStr.length - (inputStr.split('.').length - 1) * 0.5
-    const padding = Math.max(118 - inputLength * 10, 5)
+    const switchMargin = Math.max(78 - inputLength * 10, 0)
+    const inputDollarLength = inputLength <= 8 ? inputLength * 12 : 96 + ((inputLength - 8) * 20)
+    const dollarRight = Math.min(170 + (inputDollarLength), 320)
 
     return (
       <div className="Trade">
@@ -268,13 +340,24 @@ class Trade extends React.Component<TradeProps, TradeState> {
         <form action="#" onSubmit={this.startBuy} className={this.isQuoteValid ? 'quoted' : ''}>
           {this.maybeRenderCoundown()}
           <FormGroup className="TradeForm">
+            <span className='quantity-label' style={{ right: `${dollarRight}px` }}>{asset === Asset.USDX ? '$' : '₿'}</span>
             <NumericInput
-              className={this.state.isPulsingQuantity ? 'PulseRed' : ''}
+              className={`quantity ${asset} ${this.state.isPulsingQuantity ? 'PulseRed' : ''}`}
               fill={true}
               buttonPosition="none"
               value={quantityStr}
               placeholder={placeholder}
-              rightElement={<H6 style={{ paddingRight: `${padding}px` }}>{assetSymbol}</H6>}
+              rightElement={
+                <Switch
+                  className='switch-asset'
+                  large={true}
+                  checked={asset === Asset.USDX}
+                  innerLabel={formatAsset(Asset.BTC)}
+                  innerLabelChecked={formatAsset(Asset.USDX)}
+                  style={{ marginRight: `${switchMargin}px` }}
+                  onChange={this.switchAsset}
+                />
+              }
               onValueChange={(_, quantityStr) => this.setState({ quantityStr })}
               disabled={this.isQuoteValid}
             />

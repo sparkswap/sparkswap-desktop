@@ -3,7 +3,7 @@ import * as path from 'path'
 import { autoUpdater, BrowserWindow, App, Event } from 'electron'
 import { autoUpdater as electronUpdater } from 'electron-updater'
 import { IS_MACOS } from './util'
-import { IS_DEVELOPMENT, IS_PRODUCTION } from '../common/config'
+import { IS_DEVELOPMENT, IS_PRODUCTION, IS_TEST } from '../common/config'
 import { tradeUpdater } from './data'
 import { delay } from '../global-shared/util'
 import { ProgressInfo } from 'app-builder-lib'
@@ -25,7 +25,7 @@ function createMainWindow (): BrowserWindow {
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
       webviewTag: true,
-      devTools: IS_DEVELOPMENT
+      devTools: IS_DEVELOPMENT || IS_TEST
     },
     icon: IS_DEVELOPMENT
       ? path.join(__dirname, '..', '..', 'public', 'icon.png')
@@ -34,9 +34,11 @@ function createMainWindow (): BrowserWindow {
     show: false
   })
 
-  const startUrl = IS_PRODUCTION
+  const startUrl = IS_PRODUCTION || IS_TEST
     ? url.format({
-      pathname: path.join(__dirname, '..', '..', 'index.html'),
+      pathname: IS_TEST
+        ? path.join(__dirname, '..', '..', 'build', 'index.html')
+        : path.join(__dirname, '..', '..', 'index.html'),
       protocol: 'file:',
       slashes: true
     })
@@ -127,7 +129,7 @@ function manageWindows (app: App): void {
   app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin' || appIsQuitting) {
+    if (process.platform !== 'darwin' || (appIsQuitting || IS_TEST)) {
       app.quit()
     }
   })

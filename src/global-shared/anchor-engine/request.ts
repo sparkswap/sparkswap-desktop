@@ -13,10 +13,23 @@ const ANCHOR_URL = process.env.NODE_ENV !== 'development'
   ? 'https://api.anchorusd.com'
   : 'https://sandbox-api.anchorusd.com'
 
-export default async function request (apiKey: string, path: string, data: object = {}, method: RequestMethods = RequestMethods.GET, fetchOptions: ResponseOptions = {}): Promise<UnknownJSON> {
-  const headers = {
-    Authorization: 'Basic ' + btoa(apiKey + ':'),
-    'Content-Type': 'application/x-www-form-urlencoded'
+export interface RequestOptions {
+  method?: RequestMethods,
+  fetchOptions?: ResponseOptions,
+  headers?: { [key: string]: string }
+}
+
+export default async function request (apiKey: string, path: string, data: object = {}, options: RequestOptions = {}): Promise<UnknownJSON> {
+  const method = options.method || RequestMethods.GET
+  const fetchOptions = options.fetchOptions || {}
+  const requestHeaders = options.headers || {}
+  const headers = Object.assign(requestHeaders, {
+    Authorization: 'Basic ' + btoa(apiKey + ':')
+  })
+
+  const hasContentType = Object.keys(requestHeaders).some(k => k.toLowerCase() === 'content-type')
+  if (!hasContentType) {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded'
   }
 
   const url = `${ANCHOR_URL}${path}`
@@ -25,7 +38,9 @@ export default async function request (apiKey: string, path: string, data: objec
     headers
   }
 
-  const query = querystring.encode(data as querystring.ParsedUrlQueryInput)
+  // If the request includes 'Content-Type' headers, the data object should be
+  // passed in without expectation of modification
+  const query = hasContentType ? data : querystring.encode(data as querystring.ParsedUrlQueryInput)
 
   if (Object.keys(data).length === 0) {
     return fetchJSON(url, httpOptions, fetchOptions)

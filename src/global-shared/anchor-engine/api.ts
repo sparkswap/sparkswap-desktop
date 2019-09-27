@@ -166,7 +166,7 @@ export async function getEscrowByHash (apiKey: string, hash: SwapHash, userId?: 
 }
 
 export async function cancelEscrow (apiKey: string, id: string): Promise<void> {
-  await request(apiKey, `/api/escrow/${id}`, {}, RequestMethods.DELETE)
+  await request(apiKey, `/api/escrow/${id}`, {}, { method: RequestMethods.DELETE })
 }
 
 export async function createEscrow (apiKey: string, hash: SwapHash, recipientId: string,
@@ -180,7 +180,7 @@ export async function createEscrow (apiKey: string, hash: SwapHash, recipientId:
       amount: parseFloat((amount.value / centsPerUSD).toFixed(2)),
       timeout: Math.floor(expiration.getTime() / 1000)
     },
-    RequestMethods.POST
+    { method: RequestMethods.POST }
   )
 
   return resToEscrow(res)
@@ -200,7 +200,9 @@ export async function createDepositIntent (apiKey: string, email: string): Promi
   // create the deposit/return 200 because their deposits require user interaction
   // to be confirmed. Sparkswap needs to send the user to the given URL to complete
   // the deposit interactively."
-  const response = await request(apiKey, '/transfer/deposit', query, RequestMethods.GET, { ignoreCodes: [403] })
+  const response = await request(apiKey, '/transfer/deposit', query, {
+    fetchOptions: { ignoreCodes: [403] }
+  })
   return response as unknown as DepositIntentResponse
 }
 
@@ -226,18 +228,35 @@ export interface RegisterResponse {
   account_id: string
 }
 
+export interface SubmitDocumentResponse {
+  id: string,
+  account_id: string,
+  status: string
+}
+
+export const SUCCESSFUL_UPLOAD_STATUS = 'uploaded'
+
 // note: the apiKey is not required for this request
 export async function register (apiKey: string, identifier: string,
   kycData: AnchorKyc): Promise<RegisterResponse> {
   const data = Object.assign({ identifier }, kycData)
   const response = await request(apiKey, '/api/register',
-    data, RequestMethods.POST)
+    data, { method: RequestMethods.POST })
   return response as unknown as RegisterResponse
+}
+
+export async function submitDocument (apiKey: string, id: string, form: object, headers: { [key: string]: string }): Promise<SubmitDocumentResponse> {
+  const options = {
+    method: RequestMethods.POST,
+    headers
+  }
+  const response = await request(apiKey, `/api/accounts/${id}/documents`, form, options)
+  return response as unknown as SubmitDocumentResponse
 }
 
 export async function completeEscrow (apiKey: string, id: string, preimage: SwapPreimage): Promise<void> {
   const data = { preimage: base64ToHex(preimage) }
-  await request(apiKey, `/api/escrow/${id}/complete`, data, RequestMethods.POST)
+  await request(apiKey, `/api/escrow/${id}/complete`, data, { method: RequestMethods.POST })
 }
 
 // see: https://www.anchorusd.com/docs/api#handle-result
