@@ -25,6 +25,8 @@ function saveConfiguredFlag (): void {
 
 class LndClient extends EventEmitter {
   _engine?: LndEngine
+  validated: boolean
+  onValidated: () => void
 
   get engine (): LndEngine {
     if (!this._engine) {
@@ -42,11 +44,11 @@ class LndClient extends EventEmitter {
     return this._engine.status
   }
 
-  constructor () {
+  constructor ({ onValidated }: { onValidated: () => void }) {
     super()
-    this.on('connect', () => saveConfiguredFlag())
-    this.on('connect', () => this.connectToServer())
     this.connect(this.getConnectionConfig())
+    this.validated = false
+    this.onValidated = onValidated
   }
 
   manualConnect ({ hostName, port, tlsCertPath, macaroonPath }: ConnectionConfig): void {
@@ -68,7 +70,20 @@ class LndClient extends EventEmitter {
       return LndEngine.STATUSES.UNKNOWN
     }
 
-    return this._engine.getStatus()
+    const engineStatus = await this._engine.getStatus()
+    const validated = engineStatus === LndEngine.STATUSES.VALIDATED
+    const becameValidated = !this.validated && validated
+
+    this.validated = validated
+
+    if (becameValidated) {
+      logger.debug(`LndEngine validated`)
+      saveConfiguredFlag()
+      this.connectLNDToServer()
+      this.onValidated()
+    }
+
+    return engineStatus
   }
 
   async scan (): Promise<Statuses> {
@@ -100,26 +115,26 @@ class LndClient extends EventEmitter {
   private connect ({ hostName, port, tlsCertPath, macaroonPath }: ConnectionConfig): void {
     this._engine = undefined
     try {
-      // the LndEngine constructor will throw if the tlsCert or macaroon do not exist at the
-      // specified file locations
+      // the LndEngine constructor will throw if the tlsCert or macaroon do not
+      // exist at the specified file locations
       this._engine = new LndEngine(`${hostName}:${port}`, ASSET,
         { tlsCertPath, macaroonPath, minVersion: MIN_LND_VERSION, logger }) as
         LndEngine
-      this.engine.validateEngine().then(() => this.emit('connect'))
+      this.engine.getStatus()
     } catch (e) {
       logger.error(`Unable to create engine: ${e}`)
     }
   }
 
-  private async connectToServer (): Promise<void> {
+  private async connectLNDToServer (): Promise<void> {
     while (true) {
       try {
         const { address } = await getServerAddress(ASSET)
         await this.engine.connectUser(address)
-        logger.debug('Successfully connected to server')
+        logger.debug('Successfully connected LND to server')
         return
       } catch (e) {
-        logger.error(`Failed to connect to server: ${e}`)
+        logger.error(`Failed to connect LND to server: ${e}`)
         await delay(CONNECT_TO_SERVER_RETRY_MS)
       }
     }

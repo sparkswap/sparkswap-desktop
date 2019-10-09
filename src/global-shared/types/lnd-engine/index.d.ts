@@ -29,6 +29,7 @@ declare module 'lnd-engine' {
 
   export interface Channel {
     active?: boolean,
+    initiator?: boolean,
     capactiy: string,
     localBalance: string,
     remoteBalance: string
@@ -75,8 +76,11 @@ declare module 'lnd-engine' {
     maxChannelBalance: number
     readonly validated: boolean
     logger: LoggerInterface
+    readonly finalHopTimeLock: number
+    readonly retrieveWindowDuration: number
+    readonly claimWindowDuration: number
+    readonly blockBuffer: number
 
-    validateEngine (): Promise<void>
     waitForSwapCommitment (hash: SwapHash): Promise<Date>
     getSettledSwapPreimage (hash: SwapHash): Promise<SwapPreimage>
     translateSwap (address: string, hash: SwapHash, amount: string, maxTime: Date): Promise<SwapPreimage>

@@ -1,46 +1,49 @@
-/**
- * The amount of time, in seconds, that we will use in forwarding
- * this transaction. LND's default value announced on its channels is 24 hours
- * (144 Bitcoin blocks)
- *
- * @todo Make this amount dynamic
- */
-export const FWD_DELTA = 86400
+import { Engine } from './types'
 
-/**
- * The amount of time, in seconds, that the Server expects to
- * receive when settling a swap. BOLT-11 states the default as 90 minutes (9 Bitcoin
- * blocks).
- *
- * @see {@link https://github.com/lightningnetwork/lightning-rfc/blob/master/11-payment-encoding.md}
- * @todo Make this amount dynamic and set by the Server
- */
-export const MIN_FINAL_DELTA = 5400
+// For each leg of the swap, we want a buffer between the enforced
+// timelock on the receiver side, below which they will reject it,
+// and the timelock specified by the sender. If these values are equivalent,
+// the payment may be rejected because time passes (or, in the case of Bitcoin, a block is mined)
+// between when the payment is initiated by the sender and when it is
+// evaluated by the recipient.
+export interface TimeLocks {
+  innerTimeLock: {
+    send: number,
+    receive: number
+  },
+  outerTimeLock: {
+    send: number,
+    receive: number
+  }
+}
 
-/**
- * The amount of time, in seconds, that we'd like to buffer any output timelock
- * by to account for block ticks during a swap This is especially problematic on
- * regtest where we mine blocks every 10 seconds and is a known issue on
- * mainnet.
- *
- * @see {@link https://github.com/lightningnetwork/lnd/issues/535}
- */
-const BLOCK_BUFFER = 1200
+// The outer engine is the engine involved in the initial HTLC/escrow, the one that kicks off the swap process.
+// The inner engine is the engine involved in the second and final HTLC/escrow, and is the first place in the
+// process that the preimage to the shared hash is revealed.
+// The swap transaction completes the same place it begins: at the outer engine with the settlement
+// of the initial HTLC/escrow.
+export function swapTimeLock (outerEngine: Engine, innerEngine: Engine): TimeLocks {
+  const innerTimeLockReceive = innerEngine.finalHopTimeLock
+  // add a buffer to ensure acceptance by the recipient
+  const innerTimeLockSend = innerTimeLockReceive + innerEngine.blockBuffer
 
-/**
- * The minimum time lock (in seconds) on extended HTLCs in order for them to be
- * accepted. This assumes a static route from this node to the Server.
- *
- * @todo Make this value dynamic to accept different routes
- * and different forwarding policies / final cltv deltas
- */
-export const OUTBOUND_TIME_LOCK = MIN_FINAL_DELTA + BLOCK_BUFFER
+  // to enable a swap, the party translating from the origin chain to the destination chain
+  // needs enough time to retrieve the preimage from the destination chain, and publish it
+  // on the origin chain in the case of a contested close.
+  const interchainForwardDelta = innerEngine.retrieveWindowDuration + outerEngine.claimWindowDuration
 
-/**
- * The minimum time lock (in seconds) on inbound HTLCs for us to accept them and
- * be able to forward them on.
- *
- * @todo Make this value dynamic to accept different routes
- * and different forwarding policies / final cltv deltas
- */
-export const INBOUND_TIME_LOCK = OUTBOUND_TIME_LOCK + FWD_DELTA + BLOCK_BUFFER
+  const outerTimeLockReceive = innerTimeLockSend + interchainForwardDelta
+  // add a buffer to ensure acceptance by the recipient
+  const outerTimeLockSend = outerTimeLockReceive + outerEngine.blockBuffer
+
+  return {
+    innerTimeLock: {
+      send: innerTimeLockSend,
+      receive: innerTimeLockReceive
+    },
+    outerTimeLock: {
+      send: outerTimeLockSend,
+      receive: outerTimeLockReceive
+    }
+  }
+}

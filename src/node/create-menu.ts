@@ -1,4 +1,4 @@
-import { App, Menu, MenuItem, MenuItemConstructorOptions } from 'electron'
+import { App, Menu, MenuItem, MenuItemConstructorOptions, Notification } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { openLink, IS_MACOS } from './util'
 import { IS_DEVELOPMENT, IS_TEST } from '../common/config'
@@ -6,6 +6,24 @@ import { IS_DEVELOPMENT, IS_TEST } from '../common/config'
 const SPARKSWAP_URL = 'https://sparkswap.com'
 const SPARKSWAP_PRIVACY_URL = 'https://sparkswap.com/privacy'
 const SPARKSWAP_TERMS_URL = 'https://sparkswap.com/terms'
+
+function checkForUpdates (): void {
+  const removeNotAvailable = (): void => {
+    autoUpdater.removeListener('update-not-available', showNotAvailable)
+  }
+  const showNotAvailable = (): void => {
+    const notification = new Notification({
+      title: 'No updates available',
+      body: 'You are running the latest version of Sparkswap Desktop.'
+    })
+
+    notification.show()
+    autoUpdater.removeListener('update-available', removeNotAvailable)
+  }
+  autoUpdater.once('update-not-available', showNotAvailable)
+  autoUpdater.once('update-available', removeNotAvailable)
+  autoUpdater.checkForUpdates()
+}
 
 function createMenu (_app: App): void {
   const file = new MenuItem({ id: '2', role: 'fileMenu' })
@@ -46,7 +64,7 @@ function createMenu (_app: App): void {
   if (!IS_MACOS) {
     helpSubmenu.unshift({
       label: 'Check for updates',
-      click: () => autoUpdater.checkForUpdates()
+      click: () => checkForUpdates()
     })
   }
 
@@ -67,7 +85,7 @@ function createMenu (_app: App): void {
         { role: 'about' },
         {
           label: 'Check for updates...',
-          click: () => autoUpdater.checkForUpdates()
+          click: () => checkForUpdates()
         },
         { type: 'separator' },
         { role: 'services' },

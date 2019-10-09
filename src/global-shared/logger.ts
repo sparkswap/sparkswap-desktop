@@ -1,3 +1,5 @@
+let fs: any = null // eslint-disable-line
+let logFile: number | null = null
 
 enum LogLevel {
   DEBUG = 'debug',
@@ -12,7 +14,26 @@ function formatLogLine (level: LogLevel, message: string): string {
 }
 
 function printLogLine (level: LogLevel, message: string): void {
-  console[level](formatLogLine(level, message))
+  const line = formatLogLine(level, message)
+  console[level](line)
+  if (logFile) {
+    fs.write(logFile, line + '\n', () => true)
+  }
+}
+
+export async function openLogFile (filepath: string): Promise<void> {
+  // we import dynamically so that we can use this module in the browser
+  return import('fs').then(imported => {
+    fs = imported
+    logFile = fs.openSync(filepath, 'a')
+  })
+}
+
+export function closeLogFile (): void {
+  if (logFile) {
+    fs.closeSync(logFile)
+    logFile = null
+  }
 }
 
 export interface LoggerInterface {

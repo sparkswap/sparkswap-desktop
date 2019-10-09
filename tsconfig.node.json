@@ -17,18 +17,16 @@
     "sourceMap": true,
     "declaration": false,
     "preserveSymlinks": true,
-    "outDir": "build/src",
+    "outDir": "build",
     "typeRoots": [
-        "./node_modules/@types",
-        "./src/global-shared/types"
+      "./node_modules/@types",
+      "./src/global-shared/types"
     ]
   },
   "include": [
     "src/node",
     "src/shared",
-    "src/global-shared"
-  ],
-  "exclude": [
-    "src/global-shared/types"
+    "src/global-shared",
+    "test"
   ]
 }

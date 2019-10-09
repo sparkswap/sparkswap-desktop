@@ -8,7 +8,6 @@ import {
 } from '../types'
 import { LoggerInterface } from '../logger'
 import { delay, generateHash } from '../util'
-import { MIN_FINAL_DELTA } from '../time-locks'
 
 import * as api from './api'
 
@@ -77,6 +76,10 @@ export class AnchorEngine {
   name: string
   quantumsPerCommon: string
   logger: LoggerInterface
+  finalHopTimeLock: number
+  retrieveWindowDuration: number
+  claimWindowDuration: number
+  blockBuffer: number
 
   static readonly ERRORS = {
     PermanentSwapError,
@@ -96,6 +99,10 @@ export class AnchorEngine {
     this.apiKey = apiKey
     this.incomingSwaps = new Map()
     this.logger = logger
+    this.finalHopTimeLock = 30
+    this.retrieveWindowDuration = 2 * 60 * 60
+    this.claimWindowDuration = 2 * 60 * 60
+    this.blockBuffer = 5
   }
 
   get validated (): boolean {
@@ -147,9 +154,9 @@ export class AnchorEngine {
     return escrow
   }
 
-  async translateSwap (address: PaymentChannelNetworkAddress, hash: SwapHash, value: string, maxTime: Date, finalDelta = MIN_FINAL_DELTA): Promise<SwapPreimage> {
+  async translateSwap (address: PaymentChannelNetworkAddress, hash: SwapHash, value: string, maxTime: Date, finalHopTimeLock = this.finalHopTimeLock): Promise<SwapPreimage> {
     const amount = { asset: Asset.USDX, unit: Unit.Cent, value: parseInt(value, 10) }
-    const escrow = await this.createEscrowIdempotent(hash, address, amount, maxTime, finalDelta)
+    const escrow = await this.createEscrowIdempotent(hash, address, amount, maxTime, finalHopTimeLock)
     const endedEscrow = await this.waitForEscrowEnd(escrow)
 
     switch (endedEscrow.status) {

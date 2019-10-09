@@ -4,7 +4,7 @@ import { AnchorEngine } from '../global-shared/anchor-engine'
 import LndEngine from 'lnd-engine'
 import { cancelSwapWithRetry } from '../global-shared/retry'
 import { Engine, SwapHash, SwapPreimage } from '../global-shared/types'
-import { OUTBOUND_TIME_LOCK, INBOUND_TIME_LOCK } from '../global-shared/time-locks'
+import { swapTimeLock } from '../global-shared/time-locks'
 
 const {
   PermanentSwapError: LndPermanentSwapError,
@@ -57,12 +57,14 @@ const RETRY_DELAY = 30000
  * Prepare for a swap by setting up a hold invoice
  * on the inbound chain.
  */
-async function prepareSwap (hash: SwapHash, engine: LndEngine, amount: string, timeout: Date): Promise<void> {
-  await engine.prepareSwap(
+async function prepareSwap (hash: SwapHash, inboundEngine: Engine,
+  outboundEngine: Engine, amount: string, timeout: Date): Promise<void> {
+  const inboundTimeLock = swapTimeLock(inboundEngine, outboundEngine).outerTimeLock.receive
+  await inboundEngine.prepareSwap(
     hash,
     amount,
     timeout,
-    INBOUND_TIME_LOCK
+    inboundTimeLock
   )
 }
 
@@ -93,10 +95,8 @@ async function translateIdempotent (
     throw e
   }
 
-  // add our static time lock to the time the inbound contract was accepted
-  // to arrive at the latest time that our outbound contract can be
-  // resolved while still considering our state "safe" and atomic.
-  const maxTime = new Date(committedTime.getTime() + (OUTBOUND_TIME_LOCK * 1000))
+  const timeLock = swapTimeLock(inboundEngine, outboundEngine).innerTimeLock.send
+  const maxTime = new Date(committedTime.getTime() + timeLock * 1000)
 
   logger.debug(`Sending payment to ${outboundAddress} to translate ${hash} ` +
     `maxTime=${maxTime.toISOString()} outboundAmount=${outboundAmount}`)

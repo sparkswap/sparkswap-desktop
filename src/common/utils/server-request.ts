@@ -1,4 +1,4 @@
-import { Auth } from '../types'
+import { Auth } from '../../global-shared/types'
 import { API_URL } from '../config'
 import { btoa } from '../../global-shared/util'
 import fetchJSON, { UnknownJSON } from '../../global-shared/fetch-json'

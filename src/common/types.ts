@@ -1,11 +1,6 @@
 import { SwapHash, Amount, SwapPreimage } from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
 
-export interface Auth {
-  uuid: string,
-  apiKey: string
-}
-
 export interface LndConfig extends ConnectionConfig {
   configured: boolean
 }

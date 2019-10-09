@@ -80,3 +80,8 @@ export enum AnchorRegisterResult {
   SUCCESS = 'success',
   ADDITIONAL_FIELDS_NEEDED = 'additional_fields_needed'
 }
+
+export interface Auth {
+  uuid: string,
+  apiKey: string
+}

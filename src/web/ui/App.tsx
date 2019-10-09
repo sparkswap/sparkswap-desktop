@@ -14,14 +14,12 @@ import {
   openBeacon
 } from './Onboarding'
 import Balances from './Balances'
-import { showErrorToast, showSuccessToast, showLoadingToast } from './AppToaster'
+import { showErrorToast, showLoadingToast } from './AppToaster'
 import * as lnd from '../domain/lnd'
 import register from '../domain/register'
-import { getBalanceState } from '../domain/balance'
 import { getAuth, openLinkInBrowser } from '../domain/main-request'
-import { ReviewStatus, URL, Asset } from '../../global-shared/types'
+import { ReviewStatus, URL } from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
-import { formatDollarValue } from './formatters'
 import { IActionProps } from '@blueprintjs/core'
 
 interface OnboardingStep {
@@ -147,9 +145,7 @@ class App extends React.Component<{}, AppState> {
     }
   }
 
-  handleDepositDone = (amount: number): void => {
-    showSuccessToast(`Transfer of ${formatDollarValue(amount)} USD initiated.`)
-    getBalanceState(Asset.USDX)
+  handleDepositDone = (): void => {
     this.handleClose()
   }
 

@@ -1,0 +1,12 @@
+.SpinnerSuccess {
+  position: relative;
+}
+
+.SpinnerSuccess .bp3-icon {
+  position: absolute;
+  margin: 0 auto;
+  width: 100%;
+  text-align: center;
+  top: 50%;
+  left: 50%;
+}

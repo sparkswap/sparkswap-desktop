@@ -2,8 +2,8 @@ import { app } from 'electron'
 import * as path from 'path'
 import { existsSync, writeFileSync, readFileSync } from 'fs'
 import logger from '../global-shared/logger'
-import { Auth, LndConfig } from '../common/types'
-import { UnknownObject } from '../global-shared/types'
+import { LndConfig } from '../common/types'
+import { UnknownObject, Auth } from '../global-shared/types'
 
 const CONFIG_NAME = 'sparkswap-config.json'
 

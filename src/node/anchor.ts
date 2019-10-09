@@ -14,7 +14,12 @@ export class AnchorClient {
   private _email?: string
   private _engine?: AnchorEngine
 
-  constructor () {
+  validated: boolean
+  onValidated: () => void
+
+  constructor ({ onValidated }: { onValidated: () => void }) {
+    this.validated = false
+    this.onValidated = onValidated
     this.initialize()
   }
 
@@ -30,6 +35,9 @@ export class AnchorClient {
     if (config.anchor.apiKey) {
       this._apiKey = config.anchor.apiKey
       this._engine = new AnchorEngine(this._apiKey, { logger })
+      logger.debug('AnchorEngine validated')
+      this.validated = this.engine.validated
+      this.onValidated()
     }
     if (config.anchor.email) {
       this._email = config.anchor.email

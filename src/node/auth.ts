@@ -1,7 +1,7 @@
 import * as crypto from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
 import logger from '../global-shared/logger'
-import { Auth } from '../common/types'
+import { Auth } from '../global-shared/types'
 import { addConfig, getConfig } from './config'
 
 let auth: Auth | null = null

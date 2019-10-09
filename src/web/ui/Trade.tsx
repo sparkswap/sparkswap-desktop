@@ -110,8 +110,16 @@ class Trade extends React.Component<TradeProps, TradeState> {
     marketDataSubscriber.removeListener('update', this.onData)
   }
 
+  focus (): void {
+    const input: HTMLElement | null = document.querySelector('.quantity input')
+    if (input) {
+      input.focus()
+    }
+  }
+
   componentDidMount (): void {
     marketDataSubscriber.on('update', this.onData)
+    this.focus()
   }
 
   confirmBuy = async (): Promise<void> => {
@@ -125,6 +133,8 @@ class Trade extends React.Component<TradeProps, TradeState> {
         currentPrice: marketDataSubscriber.currentPrice,
         asset
       }))
+
+      process.nextTick(() => this.focus())
 
       if (quote == null) {
         return
@@ -159,6 +169,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
           secondsRemaining,
           quote: undefined
         })
+        this.focus()
       } else {
         this.setState({ secondsRemaining })
         this.countdown()
@@ -264,10 +275,15 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
     try {
       const quote = await getQuote(quantity)
+      // subtract 5 seconds from the quote duration because if the user clicks
+      // the confirm button right before the countdown hits zero, we still have
+      // to make a network round trip before the client's invoice gets an HTLC,
+      // and this invoice's expiration is set based on the quote duration.
+      const secondsRemaining = Math.max(quote.duration - 5, 1)
       this.setState({
         quantity,
         quote,
-        secondsRemaining: quote.duration
+        secondsRemaining
       })
       this.countdown()
     } catch (e) {
@@ -307,7 +323,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
           <div className="conversion">
             = <span className={conversionClassName}>{formatAmount(this.altAmount)} {formatAsset(this.altAmount.asset)}</span>
           </div>
-          <Button className="buy" type="submit" icon="layers" fill={true}>Buy BTC</Button>
+          <Button tabIndex={2} className="buy" type="submit" icon="layers" fill={true}>Buy BTC</Button>
         </div>
       )
     }
@@ -318,8 +334,8 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
     return (
       <div className="button-container">
-        <Button className="confirm-buy" onClick={this.confirmBuy} icon="layers" fill={true}>{finalAmount}</Button>
-        <Button minimal={true} onClick={this.handleCancel}>Cancel</Button>
+        <Button tabIndex={2} className="confirm-buy" onClick={this.confirmBuy} icon="layers" fill={true}>{finalAmount}</Button>
+        <Button tabIndex={3} minimal={true} onClick={this.handleCancel}>Cancel</Button>
       </div>
     )
   }
@@ -340,8 +356,11 @@ class Trade extends React.Component<TradeProps, TradeState> {
         <form action="#" onSubmit={this.startBuy} className={this.isQuoteValid ? 'quoted' : ''}>
           {this.maybeRenderCoundown()}
           <FormGroup className="TradeForm">
-            <span className='quantity-label' style={{ right: `${dollarRight}px` }}>{asset === Asset.USDX ? '$' : '₿'}</span>
+            <span className='quantity-label' style={{ right: `${dollarRight}px` }}>
+              {asset === Asset.USDX ? '$' : '₿'}
+            </span>
             <NumericInput
+              tabIndex={1}
               className={`quantity ${asset} ${this.state.isPulsingQuantity ? 'PulseRed' : ''}`}
               fill={true}
               buttonPosition="none"
@@ -349,6 +368,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
               placeholder={placeholder}
               rightElement={
                 <Switch
+                  tabIndex={4}
                   className='switch-asset'
                   large={true}
                   checked={asset === Asset.USDX}

@@ -4,6 +4,7 @@ import InlineTooltip from './InlineTooltip'
 import { ExternalButton, ExternalLink } from './ExternalSource'
 import StatusBadge from './StatusBadge'
 import SpinnerMessage from './SpinnerMessage'
+import SpinnerSuccess from './SpinnerSuccess'
 
 export {
   FilePathInput,
@@ -12,5 +13,6 @@ export {
   ExternalButton,
   ExternalLink,
   StatusBadge,
-  SpinnerMessage
+  SpinnerMessage,
+  SpinnerSuccess
 }

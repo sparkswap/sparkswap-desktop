@@ -1,11 +1,19 @@
 import React, { ReactNode, RefObject } from 'react'
-import { ExternalButton, ExternalLink, SpinnerMessage } from './components'
-import { Classes, Button, Dialog, H5, Spinner, IActionProps } from '@blueprintjs/core'
+import { ExternalButton, ExternalLink, SpinnerMessage, SpinnerSuccess } from './components'
+import {
+  Classes,
+  Button,
+  Dialog,
+  H5,
+  Spinner,
+  IActionProps
+} from '@blueprintjs/core'
 import logger from '../../global-shared/logger'
 import './Onboarding.css'
 import { getWebviewPreloadPath } from '../domain/main-request'
+import { balances, getBalanceState, BalanceState } from '../domain/balance'
 import { isPlaidMessage, PlaidMessage, PlaidEvent } from '../domain/plaid'
-import { ANCHOR_PARTITION } from '../../common/constants'
+import { ANCHOR_PARTITION, centsPerUSD } from '../../common/constants'
 import { delay } from '../../global-shared/util'
 import {
   isAnchorMessage,
@@ -18,6 +26,8 @@ import {
 import { WebviewTag, IpcMessageEvent } from 'electron'
 import WebviewCSSPath from './OnboardingWebview.css.txt'
 import { IS_PRODUCTION } from '../../common/config'
+import { formatDollarValue } from './formatters'
+import { Asset } from '../../global-shared/types'
 
 const WEBVIEW_PRELOAD_PATH = getWebviewPreloadPath()
 
@@ -164,14 +174,18 @@ interface DepositDialogProps {
   depositUrl: string,
   onClose: Function,
   isOpen: boolean,
-  onDepositDone: (amount: number) => void,
+  onDepositDone: () => void,
   onDepositError: (message: string, action?: IActionProps) => void
 }
 
 interface DepositDialogState {
   webviewIsLoading: boolean,
   isPlaidOpen: boolean,
-  loadingMessage?: string
+  loadingMessage?: string,
+  isDone: boolean,
+  amountDeposited?: number,
+  instant?: boolean,
+  previousBalance?: BalanceState
 }
 
 async function sendToWebview (wv: WebviewTag, channel: string): Promise<unknown> {
@@ -210,7 +224,11 @@ const CHECK_DOM_TIMEOUT = 10000
 const DepositDialogInitialState: DepositDialogState = {
   webviewIsLoading: true,
   isPlaidOpen: false,
-  loadingMessage: undefined
+  loadingMessage: undefined,
+  isDone: false,
+  amountDeposited: undefined,
+  instant: undefined,
+  previousBalance: undefined
 }
 
 export class DepositDialog extends React.Component<DepositDialogProps, DepositDialogState> {
@@ -359,8 +377,20 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     }
 
     try {
+      const prevBalance = this.state.previousBalance
       const amountDeposited = await this.getDepositAmount()
-      this.props.onDepositDone(amountDeposited)
+      const currBalance = await getBalanceState(Asset.USDX)
+
+      if (currBalance instanceof Error) {
+        throw currBalance
+      }
+
+      const prevBalanceVal = prevBalance instanceof Error || prevBalance === undefined ? 0 : prevBalance.value
+      this.setState({
+        amountDeposited,
+        isDone: true,
+        instant: Math.round(amountDeposited * centsPerUSD) === currBalance.value - prevBalanceVal
+      })
     } catch (e) {
       logger.debug(`Error while getting deposit amount: ${e}`)
       this.depositError()
@@ -393,6 +423,16 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     webviewNode.insertCSS(webviewCSS)
     await delay(INSERT_CSS_DELAY)
     this.setState({ webviewIsLoading: false })
+  }
+
+  handleOpen = (): void => {
+    this.handleWebview()
+
+    // retrieve our current balance when the dialog is opened
+    // so we know if the deposit was instant
+    this.setState({
+      previousBalance: balances[Asset.USDX]
+    })
   }
 
   handleWebview = (): void => {
@@ -438,6 +478,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     return [
       'DepositDialog',
       this.state.webviewIsLoading ? 'webview-loading' : '',
+      this.state.isDone ? 'done' : '',
       this.state.isPlaidOpen ? 'plaid' : ''
     ].filter(Boolean).join(' ')
   }
@@ -447,8 +488,37 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
   }
 
   renderNonWebviewContent (): ReactNode {
+    if (this.state.isDone) {
+      const amountDeposited = this.state.amountDeposited || 0
+
+      if (this.state.instant) {
+        return (
+          <React.Fragment>
+            <SpinnerSuccess
+              size={Spinner.SIZE_LARGE}
+              className='AnchorSpinner'
+            />
+            <p>Your ACH transfer of {formatDollarValue(amountDeposited)} USD has been credited to your account.</p>
+          </React.Fragment>
+        )
+      }
+
+      return (
+        <React.Fragment>
+          <p>Your ACH transfer of {formatDollarValue(amountDeposited)} USD has been initiated and will be posted to your account in a few days.</p>
+          <p>You will receive an email from AnchorUSD once the transfer has been posted. Please <Button className="link-button" minimal={true} onClick={openBeacon}>contact us</Button> for more information.</p>
+        </React.Fragment>
+      )
+    }
+
     if (this.state.webviewIsLoading) {
-      return <SpinnerMessage size={Spinner.SIZE_LARGE} className='AnchorSpinner' message={this.state.loadingMessage} />
+      return (
+        <SpinnerMessage
+          size={Spinner.SIZE_LARGE}
+          className='AnchorSpinner'
+          message={this.state.loadingMessage}
+        />
+      )
     }
 
     return (
@@ -481,7 +551,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
         title="Deposit USD"
         isOpen={this.props.isOpen}
         onClose={() => this.props.onClose()}
-        onOpened={this.handleWebview}
+        onOpened={this.handleOpen}
         onClosed={this.handleCloseWebview}
       >
         <div className={Classes.DIALOG_BODY}>
@@ -495,6 +565,22 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
             preload={`file://${WEBVIEW_PRELOAD_PATH}`}
           />
         </div>
+        {this.state.isDone
+          ? (
+            <div className={Classes.DIALOG_FOOTER}>
+              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+                <Button
+                  text="Done"
+                  onClick={this.props.onDepositDone}
+                  className='DoneButton'
+                  fill={true}
+                />
+              </div>
+            </div>
+          )
+          : ''
+        }
+
       </Dialog>
     )
   }

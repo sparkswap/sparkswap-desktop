@@ -11,6 +11,10 @@
   opacity: 0;
 }
 
+.DepositDialog.done #AnchorDepositIFrame {
+  display: none;
+}
+
 .bp3-overlay-backdrop.plaid {
   background-color: rgba(16, 22, 26, 0);
   transition: background-color ease 350ms;
@@ -37,11 +41,12 @@
   min-height: 536px;
 }
 
-.AnchorSpinner {
-  width: 100%;
-  height: 100%;
+.bp3-dialog-body > .AnchorSpinner {
+  width: 100px;
+  height: 100px;
   position: absolute;
-  top: 0;
-  left: 0;
-  margin-bottom: -100px;
+  top: 50%;
+  left: 50%;
+  margin-top: -50px;
+  margin-left: -50px;
 }

@@ -3,7 +3,7 @@ import { Spinner, ISpinnerProps } from '@blueprintjs/core'
 import './SpinnerMessage.css'
 
 interface SpinnerMessageProps extends ISpinnerProps {
-  message?: string
+  message?: ReactNode
 }
 
 class SpinnerMessage extends React.Component<SpinnerMessageProps, {}> {

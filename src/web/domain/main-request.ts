@@ -1,5 +1,5 @@
-import { Amount, Asset, URL, UnknownObject } from '../../global-shared/types'
-import { Auth, Quote, Trade, TradeStatus } from '../../common/types'
+import { Auth, Amount, Asset, URL, UnknownObject } from '../../global-shared/types'
+import { Quote, Trade, TradeStatus } from '../../common/types'
 import { ipcRenderer } from '../electron'
 
 let counter = 1

@@ -15,6 +15,9 @@ import { AnchorClient } from './anchor'
 import { executeTrade, retryPendingTrades } from './trade'
 import { getAuth } from './auth'
 import { openLink } from './util'
+import { delay } from '../global-shared/util'
+
+const RETRY_TRADE_DELAY = 10000
 
 interface Engines {
   BTC: LndEngine,
@@ -31,16 +34,34 @@ export class Router {
 
   constructor () {
     this.db = store.initialize()
-    this.lndClient = new LndClient()
-    this.anchorClient = new AnchorClient()
+    const onValidated = (): void => { this.tryRetryPendingTrades() }
+    this.anchorClient = new AnchorClient({ onValidated })
+    this.lndClient = new LndClient({ onValidated })
+  }
 
-    this.lndClient.on('connect', async () => {
+  private async tryRetryPendingTrades (): Promise<void> {
+    if (!this.anchorClient || !this.lndClient) {
+      logger.debug('Engine clients have not been initialized yet.')
+      return
+    }
+
+    if (!this.anchorClient.validated || !this.lndClient.validated) {
+      logger.debug('Waiting to retry pending trades. Not all engines are ' +
+        `validated. LND: ${this.lndClient.validated} ANCHOR: ${this.anchorClient.validated}`)
+      return
+    }
+
+    // We loop and continually retry pending trades because the engine can go
+    // to a NOT_SYNCED state after validation.
+    while (true) {
       try {
         await retryPendingTrades(this.db, this.engines)
+        return
       } catch (e) {
         logger.error(`Error while retrying pending trades: ${e}`)
+        await delay(RETRY_TRADE_DELAY)
       }
-    })
+    }
   }
 
   // using a switch allows the engines getter to work even if one of the
