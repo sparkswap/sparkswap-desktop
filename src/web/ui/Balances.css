@@ -4,6 +4,7 @@
 
 .Balances .balances-row {
   display: flex;
+  min-height: 3.5em;
 }
 
 .Balances .single-balance {
@@ -32,6 +33,11 @@
 
 .Balances .single-balance:first-child>span {
   text-align: left;
+}
+
+.Balances .single-balance .subtitle {
+  margin-left: 0;
+  display: block;
 }
 
 .Balances .single-balance>.bp3-button {

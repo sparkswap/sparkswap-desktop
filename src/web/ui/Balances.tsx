@@ -2,6 +2,8 @@ import React, { ReactNode } from 'react'
 import { formatAmount, formatAsset } from './formatters'
 import { Asset } from '../../global-shared/types'
 import { balances, balanceUpdater, BalanceState } from '../domain/balance'
+import { marketDataSubscriber } from '../domain/market-data'
+import { altAmount, altAsset } from '../domain/convert-amount'
 import { Classes, H4, H5, Button } from '@blueprintjs/core'
 import './Balances.css'
 
@@ -20,7 +22,8 @@ interface BalancesState {
     BTC: boolean,
     USDX: boolean,
     [asset: string]: boolean
-  }
+  },
+  currentPrice: number | null
 }
 
 class Balances extends React.Component<BalanceProps, BalancesState> {
@@ -34,7 +37,8 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
       updated: {
         [Asset.BTC]: false,
         [Asset.USDX]: false
-      }
+      },
+      currentPrice: marketDataSubscriber.currentPrice
     }
   }
 
@@ -45,7 +49,17 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
     return oldBalance.value !== newBalance.value
   }
 
+  onData = (): void => {
+    const { currentPrice } = marketDataSubscriber
+    this.setState({ currentPrice })
+  }
+
+  componentWillUnmount (): void {
+    marketDataSubscriber.removeListener('update', this.onData)
+  }
+
   componentDidMount (): void {
+    marketDataSubscriber.on('update', this.onData)
     balanceUpdater.on('update', () => {
       const oldBalances = this.state.balances
       const updatedBTC = this.isBalanceChange(oldBalances[Asset.BTC], balances[Asset.BTC])
@@ -75,6 +89,22 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
         })), 2000)
       }
     })
+  }
+
+  renderConverted (asset: Asset): ReactNode {
+    const balance = this.state.balances[asset]
+    const currentPrice = this.state.currentPrice
+
+    if (balance instanceof Error || currentPrice === null) {
+      return
+    }
+
+    return (
+      <span className='subtitle'>
+        &asymp;&nbsp;{formatAmount(altAmount(balance, currentPrice))}
+        &nbsp;{formatAsset(altAsset(asset))}
+      </span>
+    )
   }
 
   renderAmount (asset: Asset): ReactNode {
@@ -110,6 +140,7 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
         <div className='balances-row'>
           <H5 className='single-balance'>
             {this.renderBalance(Asset.BTC)}
+            {this.renderConverted(Asset.BTC)}
           </H5>
           <H5 className='single-balance'>
             {this.renderBalance(Asset.USDX)}

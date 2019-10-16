@@ -21,55 +21,60 @@ import {
   MAX_QUANTITY
 } from '../domain/quantity'
 import { isUSDXSufficient, getBalanceState, balances } from '../domain/balance'
-import { centsPerUSD, satoshisPerBTC } from '../../common/constants'
+import { altAmount, altAsset, altValue } from '../domain/convert-amount'
 import { formatAmount, formatAsset } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
 import { QuoteResponse } from '../../global-shared/types/server'
 import { Amount, Asset, assetToUnit } from '../../global-shared/types'
 import './Trade.css'
+import logger from '../../global-shared/logger'
 import { delay } from '../../global-shared/util'
+import { getNetworkTime } from '../domain/main-request'
+import { BLOCK_BUFFER } from '../../global-shared/anchor-engine/anchor-engine'
 
 interface TradeProps {
   onDeposit: Function
 }
 
 interface TradeState {
+  isClockSynced: boolean,
   isPulsingQuantity: boolean,
   secondsRemaining: number,
   quantityStr: string,
   quantity?: Amount,
   asset: Asset,
-  currentPrice: number,
+  currentPrice: number | null,
   quote?: QuoteResponse
 }
 
 const initialState: TradeState = {
+  isClockSynced: true,
   isPulsingQuantity: false,
   secondsRemaining: 0,
   quantityStr: '',
   quantity: undefined,
   asset: Asset.USDX,
-  currentPrice: 0,
+  currentPrice: marketDataSubscriber.currentPrice,
   quote: undefined
-}
-
-function altAsset (asset: Asset): Asset {
-  if (asset === Asset.BTC) return Asset.USDX
-  return Asset.BTC
-}
-
-function altValue (startAsset: Asset, startValue: number, currentPrice: number): number {
-  const quantumPrice = currentPrice * centsPerUSD / satoshisPerBTC
-
-  // The server will round cents in their favor, so we simulate that here
-  if (startAsset === Asset.BTC) return Math.ceil(startValue * quantumPrice)
-  return Math.floor(startValue / quantumPrice)
 }
 
 class Trade extends React.Component<TradeProps, TradeState> {
   constructor (props: TradeProps) {
     super(props)
     this.state = initialState
+    this.checkClockSynced()
+    setInterval(() => this.checkClockSynced(), 60 * 60 * 1000)
+  }
+
+  async checkClockSynced (): Promise<void> {
+    try {
+      const date = await getNetworkTime()
+      const delta = ((new Date()).getTime() - date.getTime()) / 1000
+      logger.debug(`NTP clock delta ${delta}s`)
+      this.setState({ isClockSynced: Math.abs(delta) <= BLOCK_BUFFER })
+    } catch (e) {
+      logger.warn(`Unable to retrieve NTP time`)
+    }
   }
 
   get altAmount (): Amount {
@@ -80,21 +85,27 @@ class Trade extends React.Component<TradeProps, TradeState> {
       currentPrice
     } = this.state
 
-    if (this.isQuoteValid && quantity) {
+    if (currentPrice === null) {
       return {
-        asset: altAsset(quantity.asset),
-        unit: assetToUnit(altAsset(quantity.asset)),
-        value: altValue(quantity.asset, quantity.value, currentPrice)
+        asset: altAsset(asset),
+        unit: assetToUnit(altAsset(asset)),
+        value: 0
       }
     }
 
-    return {
-      asset: altAsset(asset),
-      unit: assetToUnit(altAsset(asset)),
+    if (this.isQuoteValid && quantity) {
+      return altAmount(quantity, currentPrice)
+    }
+
+    const currentAmount = {
+      asset,
+      unit: assetToUnit(asset),
       value: parseFloat(quantityStr) > 0
-        ? altValue(asset, toQuantum(asset, parseFloat(quantityStr)), currentPrice)
+        ? toQuantum(asset, parseFloat(quantityStr))
         : 0
     }
+
+    return altAmount(currentAmount, currentPrice)
   }
 
   get isQuoteValid (): boolean {
@@ -191,10 +202,10 @@ class Trade extends React.Component<TradeProps, TradeState> {
   switchAsset = (): void => {
     this.setState({
       asset: this.altAmount.asset,
-      quantity: this.state.quantity && marketDataSubscriber.hasLoadedCurrentPrice
+      quantity: this.state.quantity && this.state.currentPrice !== null
         ? this.altAmount
         : undefined,
-      quantityStr: this.state.quantityStr && marketDataSubscriber.hasLoadedCurrentPrice
+      quantityStr: this.state.quantityStr && this.state.currentPrice !== null
         ? toCommon(this.altAmount.asset, this.altAmount.value).toString()
         : ''
     })
@@ -239,7 +250,21 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
   startBuy = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
-    if (!marketDataSubscriber.hasLoadedCurrentPrice) {
+    if (!this.state.isClockSynced) {
+      await this.checkClockSynced()
+      if (!this.state.isClockSynced) {
+        showErrorToast('The system clock is inaccurate, ' +
+          'please update the time and try again')
+        return
+      }
+    }
+
+    const {
+      currentPrice,
+      asset
+    } = this.state
+
+    if (currentPrice === null) {
       showErrorToast(`Wait for prices to load before buying BTC`)
       return
     }
@@ -254,7 +279,6 @@ class Trade extends React.Component<TradeProps, TradeState> {
       return
     }
 
-    const asset = this.state.asset
     const value = this.validateQuantity()
     if (value == null) return
 
@@ -266,7 +290,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
     const usdxQuantity = asset === Asset.USDX
       ? quantity.value
-      : altValue(asset, quantity.value, this.state.currentPrice)
+      : altValue(asset, quantity.value, currentPrice)
 
     if (!isUSDXSufficient(usdxQuantity)) {
       this.showDepositError(`Insufficient USD`)
@@ -312,10 +336,9 @@ class Trade extends React.Component<TradeProps, TradeState> {
     } = this.state
 
     if (!this.isQuoteValid || !quote || !quantity) {
-      const { quantityStr } = this.state
-      const { hasLoadedCurrentPrice } = marketDataSubscriber
+      const { quantityStr, currentPrice } = this.state
 
-      const shouldUseSkeleton = !(hasLoadedCurrentPrice || quantityStr === '')
+      const shouldUseSkeleton = currentPrice === null && quantityStr !== ''
       const conversionClassName = shouldUseSkeleton ? Classes.SKELETON : ''
 
       return (

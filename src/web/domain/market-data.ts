@@ -29,21 +29,13 @@ function formatHistoricalData (res: HistoricalDataResponse): PricePoint[] {
 const isValidPrice = (price: number): boolean => !isNaN(price) && price > 0
 
 export class MarketData extends EventEmitter {
-  currentPrice: number
+  currentPrice: number | null
   historicalData: PricePoint[]
-  hasLoadedCurrentPrice: boolean
 
   constructor () {
     super()
-    this.currentPrice = 0
+    this.currentPrice = null
     this.historicalData = []
-    this.hasLoadedCurrentPrice = false
-
-    this.on('update', () => {
-      if (!this.hasLoadedCurrentPrice && isValidPrice(this.currentPrice)) {
-        this.hasLoadedCurrentPrice = true
-      }
-    })
 
     this.retrieveMarketData()
     this.retrySubscribeUpdatesForever()
@@ -59,7 +51,7 @@ export class MarketData extends EventEmitter {
         } = await getMarketData()
 
         this.historicalData = formatHistoricalData(rawHistoricalData)
-        this.currentPrice = rawCurrentPrice || 0
+        this.currentPrice = rawCurrentPrice !== null && isValidPrice(rawCurrentPrice) ? rawCurrentPrice : null
 
         this.emit('update', {
           historicalData: this.historicalData,
@@ -92,7 +84,8 @@ export class MarketData extends EventEmitter {
         const ws = new WebSocket(`${WEBSOCKETS_URL}${EVENT_NAMES.MARKET_PRICE}`)
         ws.onmessage = (event: MessageEvent) => {
           try {
-            this.currentPrice = Number(event.data)
+            const rawCurrentPrice = Number(event.data)
+            this.currentPrice = isValidPrice(rawCurrentPrice) ? rawCurrentPrice : null
 
             this.emit('update', { currentPrice: this.currentPrice })
           } catch (e) {

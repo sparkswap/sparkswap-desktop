@@ -8,11 +8,11 @@ import DownloadProgress from './DownloadProgress'
 import Trade from './Trade'
 import {
   getRegistrationURL,
-  DepositDialog,
-  OnboardingStage,
   RegisterDialog,
-  openBeacon
-} from './Onboarding'
+  DepositDialog,
+  OnboardingStage
+} from './onboarding'
+import { openBeacon } from './beacon'
 import Balances from './Balances'
 import { showErrorToast, showLoadingToast } from './AppToaster'
 import * as lnd from '../domain/lnd'
@@ -20,7 +20,7 @@ import register from '../domain/register'
 import { getAuth, openLinkInBrowser } from '../domain/main-request'
 import { ReviewStatus, URL } from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
-import { IActionProps } from '@blueprintjs/core'
+import { Button, IActionProps } from '@blueprintjs/core'
 
 interface OnboardingStep {
   stage: OnboardingStage,
@@ -200,6 +200,7 @@ class App extends React.Component<{}, AppState> {
             <TradeHistory />
           </div>
         </div>
+        <Button className='help-link' icon='help' minimal={true} onClick={openBeacon} />
       </div>
     )
   }

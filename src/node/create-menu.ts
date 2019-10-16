@@ -1,7 +1,7 @@
 import { App, Menu, MenuItem, MenuItemConstructorOptions, Notification } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { openLink, IS_MACOS } from './util'
-import { IS_DEVELOPMENT, IS_TEST } from '../common/config'
+import { IS_PRODUCTION } from '../common/config'
 
 const SPARKSWAP_URL = 'https://sparkswap.com'
 const SPARKSWAP_PRIVACY_URL = 'https://sparkswap.com/privacy'
@@ -40,7 +40,7 @@ function createMenu (_app: App): void {
     { role: 'togglefullscreen' }
   ]
 
-  if (!IS_DEVELOPMENT && !IS_TEST) {
+  if (IS_PRODUCTION) {
     viewSubmenu.splice(viewSubmenu.findIndex(({ role }) => role === 'toggleDevTools'), 1)
   }
 

@@ -77,4 +77,8 @@ export function getWebviewPreloadPath (): string {
   return mainRequestSync('getWebviewPreloadPath') as string
 }
 
+export async function getNetworkTime (): Promise<Date> {
+  return new Date(await mainRequest('ntp:getTime') as Date)
+}
+
 export default mainRequest

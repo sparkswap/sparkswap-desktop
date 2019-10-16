@@ -35,6 +35,16 @@ declare module 'lnd-engine' {
     remoteBalance: string
   }
 
+  interface Transaction {
+    type: string,
+    amount: string,
+    transactionHash: string,
+    blockHeight: number,
+    timestamp: string,
+    fees: string,
+    pending: boolean
+  }
+
   interface LoggerInterface {
     debug (message: string): void,
     info (message: string): void,
@@ -97,6 +107,7 @@ declare module 'lnd-engine' {
     getUncommittedPendingBalance (): Promise<string>
     getStatus (): Promise<Statuses>
     getChannelsForRemoteAddress (address: string): Promise<Channel[]>
+    getChainTransactions (): Promise<Transaction[]>
   }
 
   export default LndEngine

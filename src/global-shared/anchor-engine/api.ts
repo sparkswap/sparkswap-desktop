@@ -171,6 +171,10 @@ export async function cancelEscrow (apiKey: string, id: string): Promise<void> {
 
 export async function createEscrow (apiKey: string, hash: SwapHash, recipientId: string,
   amount: Amount, expiration: Date): Promise<Escrow> {
+  const duration = Math.floor((expiration.getTime() - (new Date()).getTime()) / 1000)
+  if (duration <= 0) {
+    throw new Error(`Escrow duration is too short (${duration}s)`)
+  }
   const res = await request(
     apiKey,
     `/api/escrow`,
@@ -178,7 +182,7 @@ export async function createEscrow (apiKey: string, hash: SwapHash, recipientId:
       hash: base64ToHex(hash),
       recipient: recipientId,
       amount: parseFloat((amount.value / centsPerUSD).toFixed(2)),
-      timeout: Math.floor(expiration.getTime() / 1000)
+      timeout_duration_from_creation: duration // eslint-disable-line
     },
     { method: RequestMethods.POST }
   )

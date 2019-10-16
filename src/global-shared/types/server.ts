@@ -33,3 +33,7 @@ export interface QuoteResponse {
 export interface KYCResponse {
   url: URL
 }
+
+export interface LocationWhitelistResponse {
+  regions: string[]
+}

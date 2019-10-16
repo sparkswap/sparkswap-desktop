@@ -76,8 +76,7 @@ function createGradient (el: HTMLCanvasElement): CanvasGradient | null {
 
 interface PriceChartState {
   historicalData: PricePoint[],
-  currentPrice: number,
-  hasLoadedCurrentPrice: boolean
+  currentPrice: number | null
 }
 
 class PriceChart extends React.Component<{}, PriceChartState> {
@@ -85,8 +84,7 @@ class PriceChart extends React.Component<{}, PriceChartState> {
     super(props)
     this.state = {
       historicalData: marketDataSubscriber.historicalData,
-      currentPrice: marketDataSubscriber.currentPrice,
-      hasLoadedCurrentPrice: marketDataSubscriber.hasLoadedCurrentPrice
+      currentPrice: marketDataSubscriber.currentPrice
     }
   }
 
@@ -101,14 +99,12 @@ class PriceChart extends React.Component<{}, PriceChartState> {
   handleData = (): void => {
     const {
       currentPrice,
-      historicalData,
-      hasLoadedCurrentPrice
+      historicalData
     } = marketDataSubscriber
 
     this.setState({
       currentPrice,
-      historicalData,
-      hasLoadedCurrentPrice
+      historicalData
     })
   }
 
@@ -146,25 +142,29 @@ class PriceChart extends React.Component<{}, PriceChartState> {
     return <div className='chart-wrapper'><Line data={chartData} options={CHART_OPTIONS} /></div>
   }
 
-  getClassName = (): string => this.state.hasLoadedCurrentPrice ? '' : Classes.SKELETON
+  getClassName = (): string => this.state.currentPrice !== null ? '' : Classes.SKELETON
 
-  renderDelta (currentPrice: number, oldestClose: number): ReactNode {
-    // Used for sizing the skeleton outline while price is loading
-    const PLACEHOLDER_DELTA = '+ $1,000.00 (10.00%)'
+  renderDelta (currentPrice: number | null, oldestClose: number): ReactNode {
+    if (currentPrice === null) {
+      // Used for sizing the skeleton outline while price is loading
+      return (
+        <H3 className='price-change'>
+          <span className={this.getClassName()}>
+            + $1,000.00 (10.00%)
+          </span>
+        </H3>
+      )
+    }
 
     const delta = (currentPrice - oldestClose)
     // Check if oldestClose is 0 to avoid divide by zero error while data is loading
     const percentGrowth = oldestClose === 0 ? 0 : (delta / oldestClose)
     const prefix = delta >= 0 ? '+ ' : '- '
 
-    const renderedDelta = this.state.hasLoadedCurrentPrice
-      ? `${prefix} ${formatDollarValue(delta)} (${formatPercent(percentGrowth)})`
-      : PLACEHOLDER_DELTA
-
     return (
       <H3 className='price-change' style={{ color: delta >= 0 ? Colors.GREEN4 : Colors.RED4 }}>
         <span className={this.getClassName()}>
-          {renderedDelta}
+          {prefix} {formatDollarValue(delta)} ({formatPercent(percentGrowth)})
         </span>
       </H3>
     )
@@ -174,7 +174,7 @@ class PriceChart extends React.Component<{}, PriceChartState> {
     // Used for sizing the skeleton outline while price is loading
     const PLACEHOLDER_PRICE = 10000
 
-    const renderedPrice = this.state.hasLoadedCurrentPrice ? this.state.currentPrice : PLACEHOLDER_PRICE
+    const renderedPrice = this.state.currentPrice !== null ? this.state.currentPrice : PLACEHOLDER_PRICE
     return <span className={this.getClassName()}>{formatDollarValue(renderedPrice)}</span>
   }
 

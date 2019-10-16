@@ -9,7 +9,7 @@ export enum RequestMethods {
   DELETE = 'DELETE'
 }
 
-const ANCHOR_URL = process.env.NODE_ENV !== 'development'
+const ANCHOR_URL = process.env.NODE_ENV !== 'development' && process.env.REACT_APP_ENV !== 'test'
   ? 'https://api.anchorusd.com'
   : 'https://sandbox-api.anchorusd.com'
 

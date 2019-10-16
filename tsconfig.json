@@ -27,7 +27,7 @@
   },
   "include": [
     "src/web",
-    "src/shared",
+    "src/common",
     "src/global-shared"
   ]
 }

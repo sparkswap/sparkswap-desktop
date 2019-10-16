@@ -17,7 +17,7 @@
     "sourceMap": true,
     "declaration": false,
     "preserveSymlinks": true,
-    "outDir": "build",
+    "outDir": "build/src",
     "typeRoots": [
       "./node_modules/@types",
       "./src/global-shared/types"
@@ -25,8 +25,7 @@
   },
   "include": [
     "src/node",
-    "src/shared",
-    "src/global-shared",
-    "test"
+    "src/common",
+    "src/global-shared"
   ]
 }

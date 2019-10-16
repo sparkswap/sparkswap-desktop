@@ -50,6 +50,12 @@ body.sparkswap {
   cursor: pointer;
 }
 
+.App .help-link {
+  margin-top: 10px;
+  margin-bottom: -10px;
+  float: right;
+}
+
 .app-content {
   display: flex;
   flex-direction: row;

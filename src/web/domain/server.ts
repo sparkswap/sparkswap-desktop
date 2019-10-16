@@ -5,7 +5,8 @@ import { valueToAsset, valueToUnit } from '../../global-shared/types'
 import {
   MarketDataResponse,
   RegisterResponse,
-  QuoteResponse
+  QuoteResponse,
+  LocationWhitelistResponse
 } from '../../global-shared/types/server'
 import { UnknownJSON, isUnknownJSON } from '../../global-shared/fetch-json'
 
@@ -58,4 +59,9 @@ export async function getQuote (data: object): Promise<QuoteResponse> {
     duration,
     hash
   }
+}
+
+export async function getApprovedLocations (): Promise<LocationWhitelistResponse> {
+  const res = await serverRequest(API_ENDPOINTS.LOCATION_WHITELIST)
+  return res as unknown as LocationWhitelistResponse
 }

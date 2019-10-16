@@ -16,6 +16,8 @@ const ANCHOR_ADDRESS_PREFIX = 'anchor:'
 // Milliseconds between polling attempts of escrow status
 const SUBSCRIBE_ESCROW_DELAY = 100
 
+export const BLOCK_BUFFER = 5
+
 interface SwapInvoiceTerms {
   // USDX amount to use
   amount: number,
@@ -102,7 +104,7 @@ export class AnchorEngine {
     this.finalHopTimeLock = 30
     this.retrieveWindowDuration = 2 * 60 * 60
     this.claimWindowDuration = 2 * 60 * 60
-    this.blockBuffer = 5
+    this.blockBuffer = BLOCK_BUFFER
   }
 
   get validated (): boolean {

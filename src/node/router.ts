@@ -16,6 +16,7 @@ import { executeTrade, retryPendingTrades } from './trade'
 import { getAuth } from './auth'
 import { openLink } from './util'
 import { delay } from '../global-shared/util'
+import { getNetworkTime } from './data/ntp'
 
 const RETRY_TRADE_DELAY = 10000
 
@@ -132,6 +133,7 @@ export class Router {
     listen('auth:getAuth', () => getAuth())
     listen('anchor:startDeposit', () => this.anchorClient.startDeposit())
     listenSync('getWebviewPreloadPath', () => path.join(__dirname, 'webview-preload.js'))
+    listen('ntp:getTime', () => getNetworkTime())
   }
 
   close (): void {
