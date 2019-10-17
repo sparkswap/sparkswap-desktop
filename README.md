@@ -6,7 +6,7 @@ Buy Bitcoin instantly on the Lightning Network.
 
 ### Download Sparkswap Desktop
 
-Navigate to Sparkswap Desktop's [Latest Release](./releases/latest) and download the file for your specific platform.
+Navigate to Sparkswap Desktop's [Latest Release](https://github.com/sparkswap/sparkswap-desktop/releases/latest) and download the file for your specific platform.
 
 - `.dmg` (macOS)
 - `.exe` (Windows 8/10)
