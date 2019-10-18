@@ -34,6 +34,10 @@ export interface KYCResponse {
   url: URL
 }
 
+export interface KYCUploadResponse {
+  approved: boolean
+}
+
 export interface LocationWhitelistResponse {
   regions: string[]
 }

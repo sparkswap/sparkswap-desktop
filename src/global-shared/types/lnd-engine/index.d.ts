@@ -2,6 +2,7 @@
 declare module 'lnd-engine' {
   type SwapHash = string
   type SwapPreimage = string
+  type PaymentPreimage = string
 
   class SettledSwapError extends Error {}
   class CanceledSwapError extends Error {}
@@ -50,6 +51,11 @@ declare module 'lnd-engine' {
     info (message: string): void,
     warn (message: string): void,
     error (message: string): void
+  }
+
+  interface Invoice {
+    numSatoshis: string,
+    destination: string
   }
 
   class LndEngine {
@@ -108,6 +114,8 @@ declare module 'lnd-engine' {
     getStatus (): Promise<Statuses>
     getChannelsForRemoteAddress (address: string): Promise<Channel[]>
     getChainTransactions (): Promise<Transaction[]>
+    payInvoice (paymentRequest: string): Promise<PaymentPreimage>
+    getInvoice (paymentRequest: string): Promise<Invoice>
   }
 
   export default LndEngine

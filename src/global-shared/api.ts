@@ -9,6 +9,7 @@ export const API_ENDPOINTS: { [key: string]: string } = {
   EXECUTE: '/execute',
   ADDRESS: '/address',
   SUBMIT_KYC: '/submit-kyc',
+  UPLOAD_KYC: '/upload-kyc',
   EMAIL: '/email',
   LOCATION_WHITELIST: '/location-whitelist'
 }

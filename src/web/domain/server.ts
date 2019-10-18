@@ -6,7 +6,8 @@ import {
   MarketDataResponse,
   RegisterResponse,
   QuoteResponse,
-  LocationWhitelistResponse
+  LocationWhitelistResponse,
+  KYCUploadResponse
 } from '../../global-shared/types/server'
 import { UnknownJSON, isUnknownJSON } from '../../global-shared/fetch-json'
 
@@ -26,6 +27,11 @@ export async function register (data: object): Promise<RegisterResponse> {
 
   // TODO: use a JSON schema / type guard to check the shape
   return res as unknown as RegisterResponse
+}
+
+export async function uploadKYC (data: object): Promise<KYCUploadResponse> {
+  const res = await serverRequest(API_ENDPOINTS.UPLOAD_KYC, data)
+  return res as unknown as KYCUploadResponse
 }
 
 export async function getQuote (data: object): Promise<QuoteResponse> {

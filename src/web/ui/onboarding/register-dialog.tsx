@@ -6,6 +6,7 @@ import { showErrorToast } from '../AppToaster'
 import { SubscribeForm } from './subscribe-form'
 import { REGIONS } from './regions'
 import { RegisterAbacus } from './register-abacus'
+import { RegisterSparkswapKYC } from './register-sparkswap-kyc'
 
 const RegionSelect = Select.ofType<string>()
 
@@ -171,8 +172,11 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
   }
 
   renderRegistration (): ReactNode {
+    if (process.env.REACT_APP_SPARKSWAP_KYC === 'true') {
+      return <RegisterSparkswapKYC region={this.state.userRegionFromSelection} isOpen={this.props.isOpen} onClose={this.props.onClose} />
+    }
     return (
-      <RegisterAbacus onProceed={this.props.onProceed} onClose={this.props.onClose} isOpen={this.props.isOpen} />
+      <RegisterAbacus uuid={this.props.uuid} onProceed={this.props.onProceed} onClose={this.props.onClose} isOpen={this.props.isOpen} />
     )
   }
 
