@@ -5,6 +5,7 @@ import { balances, balanceUpdater, BalanceState } from '../domain/balance'
 import { marketDataSubscriber } from '../domain/market-data'
 import { altAmount, altAsset } from '../domain/convert-amount'
 import { Classes, H4, H5, Button } from '@blueprintjs/core'
+import PayInvoice from './PayInvoice'
 import './Balances.css'
 
 interface BalanceProps {
@@ -140,6 +141,7 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
         <div className='balances-row'>
           <H5 className='single-balance'>
             {this.renderBalance(Asset.BTC)}
+            <PayInvoice />
             {this.renderConverted(Asset.BTC)}
           </H5>
           <H5 className='single-balance'>

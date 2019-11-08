@@ -2,7 +2,6 @@ import React, { ReactNode } from 'react'
 import { Alignment, Button, Classes, Dialog, MenuItem } from '@blueprintjs/core'
 import { Select, ItemRenderer, ItemPredicate } from '@blueprintjs/select'
 import { getLocation, isApprovedLocation } from '../../domain/location'
-import { showErrorToast } from '../AppToaster'
 import { SubscribeForm } from './subscribe-form'
 import { REGIONS } from './regions'
 import { RegisterAbacus } from './register-abacus'
@@ -44,10 +43,9 @@ const regionSelectProps = {
 interface RegisterDialogState {
   hasClickedRegister: boolean,
   loading: boolean,
-  userRegionFromIp?: string,
-  userRegionFromSelection: string,
+  region: string,
   isApprovedRegion?: boolean,
-  userConfirmedRegion: boolean
+  didUserConfirmRegion: boolean
 }
 
 interface RegisterDialogProps {
@@ -63,8 +61,8 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
     this.state = {
       hasClickedRegister: false,
       loading: false,
-      userRegionFromSelection: '',
-      userConfirmedRegion: false
+      region: '',
+      didUserConfirmRegion: false
     }
   }
 
@@ -77,38 +75,23 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
     if (!locationResponse) return
 
     const { region } = locationResponse
-    this.setState({
-      userRegionFromIp: region
-    })
+    if (REGIONS.includes(region)) {
+      this.setState({ region })
+    }
   }
 
   handleRegionSelection = (region: string): void => {
-    this.setState({ userRegionFromSelection: region })
+    this.setState({ region: region })
   }
 
   handleRegionSubmission = async (): Promise<void> => {
-    const { userRegionFromSelection, userRegionFromIp } = this.state
-    const regionToVerify = userRegionFromSelection || userRegionFromIp
+    const { region } = this.state
 
-    if (!regionToVerify) {
-      showErrorToast('You must select your region to continue')
-      return
-    }
-
-    const isApprovedRegion = await isApprovedLocation(regionToVerify)
+    const isApprovedRegion = await isApprovedLocation(region)
     this.setState({
       isApprovedRegion,
-      userConfirmedRegion: true
+      didUserConfirmRegion: true
     })
-  }
-
-  getLocationText (): string | null {
-    const { userRegionFromSelection, userRegionFromIp } = this.state
-
-    if (userRegionFromSelection) return userRegionFromSelection
-    if (userRegionFromIp && REGIONS.includes(userRegionFromIp)) return userRegionFromIp
-
-    return null
   }
 
   renderLocationSelection (): ReactNode {
@@ -126,12 +109,12 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
               {...regionSelectProps}
               filterable={false}
               onItemSelect={this.handleRegionSelection}
-              activeItem={this.getLocationText()}
+              activeItem={this.state.region || null}
             >
               <span className="state-label">State</span>
               <Button
                 className="select-button"
-                text={this.getLocationText() || 'Select your region'}
+                text={this.state.region || 'Select your region'}
                 alignText={Alignment.LEFT}
                 rightIcon="caret-down"
               />
@@ -149,6 +132,7 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
               text="Continue"
               rightIcon='double-chevron-right'
               onClick={this.handleRegionSubmission}
+              disabled={!this.state.region}
               className='RegisterButton'
               fill={true}
               loading={this.state.loading}
@@ -160,20 +144,21 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
   }
 
   renderUnapprovedLocation (): ReactNode {
-    const { userRegionFromSelection } = this.state
+    const { region } = this.state
 
     return (
       <SubscribeForm
         onClose={this.props.onClose}
         isOpen={this.props.isOpen}
-        userRegionFromSelection={userRegionFromSelection}
+        region={region}
       />
     )
   }
 
   renderRegistration (): ReactNode {
     if (process.env.REACT_APP_SPARKSWAP_KYC === 'true') {
-      return <RegisterSparkswapKYC region={this.state.userRegionFromSelection} isOpen={this.props.isOpen} onClose={this.props.onClose} />
+      return <RegisterSparkswapKYC onProceed={this.props.onProceed} jurisdiction={this.state.region}
+        isOpen={this.props.isOpen} onClose={this.props.onClose} />
     }
     return (
       <RegisterAbacus uuid={this.props.uuid} onProceed={this.props.onProceed} onClose={this.props.onClose} isOpen={this.props.isOpen} />
@@ -188,7 +173,7 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
   }
 
   render (): ReactNode {
-    const { userConfirmedRegion } = this.state
-    return !userConfirmedRegion ? this.renderLocationSelection() : this.maybeRenderRegistration()
+    const { didUserConfirmRegion } = this.state
+    return !didUserConfirmRegion ? this.renderLocationSelection() : this.maybeRenderRegistration()
   }
 }

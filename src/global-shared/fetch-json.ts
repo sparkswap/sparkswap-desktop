@@ -33,7 +33,7 @@ export function isUnknownJSON (obj: unknown): obj is UnknownJSON {
 }
 
 function getErrorMessage (json: UnknownJSON): string {
-  const error = json.error || ''
+  const error = json.error || JSON.stringify(json)
   return json.reason ? `${error} (${json.reason})` : error
 }
 
@@ -63,7 +63,9 @@ export default async function fetchJSON (url: string, httpOptions: RequestInit, 
     httpOptions.headers.set('Content-Type', 'application/json')
   }
 
-  httpOptions.headers.set('Accepts', 'application/json')
+  if (!httpOptions.headers.get('Accept')) {
+    httpOptions.headers.set('Accept', 'application/json')
+  }
 
   const { ok, status, json } = await getJSON(url, httpOptions)
 

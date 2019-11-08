@@ -5,11 +5,13 @@ export const EVENT_NAMES: { [key: string]: string } = {
 export const API_ENDPOINTS: { [key: string]: string } = {
   MARKET_DATA: '/market-data',
   REGISTER: '/register',
+  STATUS: '/status',
   QUOTE: '/quote',
   EXECUTE: '/execute',
   ADDRESS: '/address',
   SUBMIT_KYC: '/submit-kyc',
   UPLOAD_KYC: '/upload-kyc',
   EMAIL: '/email',
-  LOCATION_WHITELIST: '/location-whitelist'
+  LOCATION_WHITELIST: '/location-whitelist',
+  VERIFY_PHONE: '/verify-phone'
 }

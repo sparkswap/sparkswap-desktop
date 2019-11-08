@@ -12,13 +12,13 @@ interface SubscribeFormState {
 interface SubscribeFormProps {
   onClose: Function,
   isOpen: boolean,
-  userRegionFromSelection: string
+  region: string
 }
 
 export class SubscribeForm extends React.Component<SubscribeFormProps, SubscribeFormState> {
   constructor (props: SubscribeFormProps) {
     super(props)
-    const defaultRegion = props.userRegionFromSelection === OTHER_REGION ? '' : props.userRegionFromSelection
+    const defaultRegion = props.region === OTHER_REGION ? '' : props.region
 
     this.state = {
       email: '',
@@ -27,13 +27,13 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
   }
 
   get unapprovedLocationText (): ReactNode {
-    const { userRegionFromSelection } = this.props
-    const outsideUnitedStates = userRegionFromSelection === OTHER_REGION
+    const { region } = this.props
+    const outsideUnitedStates = region === OTHER_REGION
 
     const unapprovedState = (
       <React.Fragment>
-        <p>We do not currently support users in {userRegionFromSelection}.</p>
-        <p>Get notified when we expand to serve {userRegionFromSelection}.</p>
+        <p>We do not currently support users in {region}.</p>
+        <p>Get notified when we expand to serve {region}.</p>
       </React.Fragment>
     )
 
@@ -80,7 +80,7 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
 
   render (): ReactNode {
     const { email, region } = this.state
-    const regionLabel = this.props.userRegionFromSelection === OTHER_REGION ? 'Country' : 'State'
+    const regionLabel = this.props.region === OTHER_REGION ? 'Country' : 'State'
 
     return (
       <Dialog

@@ -126,6 +126,8 @@ export class Router {
     listen('lnd:getStatus', () => this.lndClient.getStatus())
     listenSync('lnd:getConnectionConfig', () => this.lndClient.getConnectionConfig())
     listen('lnd:getPaymentChannelNetworkAddress', () => this.lndClient.engine.getPaymentChannelNetworkAddress())
+    listen('lnd:payInvoice', (request: string) => this.lndClient.engine.payInvoice(request))
+    listen('lnd:getInvoice', (request: string) => this.lndClient.engine.getInvoice(request))
     listen('getBalance', (asset: string) => this.getBalance(valueToAsset(asset)))
     listen('openLink', ({ link }: { link: string}) => openLink(link))
     listen('trade:execute', (quote: Quote) => executeTrade(this.db, this.engines, quote))

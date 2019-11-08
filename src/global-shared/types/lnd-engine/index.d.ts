@@ -53,7 +53,7 @@ declare module 'lnd-engine' {
     error (message: string): void
   }
 
-  interface Invoice {
+  export interface Invoice {
     numSatoshis: string,
     destination: string
   }

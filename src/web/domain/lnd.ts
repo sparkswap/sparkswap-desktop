@@ -1,4 +1,5 @@
 import mainRequest, { mainRequestSync } from './main-request'
+import { Invoice } from 'lnd-engine'
 import {
   ConnectionConfig,
   Statuses
@@ -27,6 +28,15 @@ export async function getPaymentChannelNetworkAddress (): Promise<string> {
 export async function scan (): Promise<Statuses> {
   const status = await mainRequest('lnd:scan')
   return status as Statuses
+}
+
+export async function payInvoice (request: string): Promise<void> {
+  await mainRequest('lnd:payInvoice', request)
+}
+
+export async function getInvoice (request: string): Promise<Invoice> {
+  const invoice = await mainRequest('lnd:getInvoice', request)
+  return invoice as Invoice
 }
 
 export {

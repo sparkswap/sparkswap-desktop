@@ -9,14 +9,38 @@ interface HistoryRowProps {
   trade: Trade
 }
 
+const STATUS_CLASS_NAMES = Object.freeze({
+  [TradeStatus.UNKNOWN]: 'text-muted',
+  [TradeStatus.PENDING]: 'text-muted',
+  [TradeStatus.COMPLETE]: '',
+  [TradeStatus.FAILED]: 'error text-muted'
+})
+
+function addMutedSpan (text: string): ReactNode {
+  const reversed = text.split('').reverse().join('')
+  let reverseIndex = 0
+
+  while (reversed[reverseIndex] === '0' || reversed[reverseIndex] === '.') {
+    reverseIndex++
+  }
+
+  const index = text.length - reverseIndex
+
+  return (
+    <React.Fragment>
+      {text.slice(0, index)}<span className='text-muted'>{text.slice(index)}</span>
+    </React.Fragment>
+  )
+}
+
 class HistoryRow extends React.PureComponent<HistoryRowProps> {
   render (): ReactNode {
     const { trade } = this.props
-    const className = trade.status === TradeStatus.COMPLETE ? undefined : 'text-muted'
 
     // Assumes buying BTC
-    const amountBtc = formatAmount(trade.destinationAmount)
-    const amountUsd = formatAmount(trade.sourceAmount)
+    const amountBtc = addMutedSpan(formatAmount(trade.destinationAmount))
+    // remove dollar sign, we'll apply in styles
+    const amountUsd = addMutedSpan(formatAmount(trade.sourceAmount).slice(1))
 
     const dateField =
       trade.status === TradeStatus.PENDING
@@ -24,9 +48,9 @@ class HistoryRow extends React.PureComponent<HistoryRowProps> {
         : formatDate(trade.endTime || trade.startTime)
 
     return (
-      <tr>
-        <td className={className}>{amountBtc}</td>
-        <td className={className}>{amountUsd}</td>
+      <tr className={STATUS_CLASS_NAMES[trade.status]}>
+        <td className='trade-amount'>{amountBtc}</td>
+        <td className='trade-amount usd'>{amountUsd}</td>
         <td className='text-muted DateColumn'>{dateField}</td>
       </tr>
     )

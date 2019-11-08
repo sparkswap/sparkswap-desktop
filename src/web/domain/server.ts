@@ -4,10 +4,12 @@ import { API_ENDPOINTS } from '../../common/config'
 import { valueToAsset, valueToUnit } from '../../global-shared/types'
 import {
   MarketDataResponse,
-  RegisterResponse,
+  StatusResponse,
   QuoteResponse,
   LocationWhitelistResponse,
-  KYCUploadResponse
+  KYCUploadRequest,
+  KYCUploadResponse,
+  VerifyPhoneResponse
 } from '../../global-shared/types/server'
 import { UnknownJSON, isUnknownJSON } from '../../global-shared/fetch-json'
 
@@ -22,16 +24,24 @@ export async function getMarketData (): Promise<MarketDataResponse> {
   return res as unknown as MarketDataResponse
 }
 
-export async function register (data: object): Promise<RegisterResponse> {
-  const res = await serverRequest(API_ENDPOINTS.REGISTER, data)
-
-  // TODO: use a JSON schema / type guard to check the shape
-  return res as unknown as RegisterResponse
+export async function register (data: object): Promise<void> {
+  await serverRequest(API_ENDPOINTS.REGISTER, data)
 }
 
-export async function uploadKYC (data: object): Promise<KYCUploadResponse> {
+export async function getStatus (): Promise<StatusResponse> {
+  const res = await serverRequest(API_ENDPOINTS.STATUS)
+  // TODO: use a JSON schema / type guard to check the shape
+  return res as unknown as StatusResponse
+}
+
+export async function uploadKYC (data: KYCUploadRequest): Promise<KYCUploadResponse> {
   const res = await serverRequest(API_ENDPOINTS.UPLOAD_KYC, data)
   return res as unknown as KYCUploadResponse
+}
+
+export async function submitPhoneVerificationCode (data: object): Promise<VerifyPhoneResponse> {
+  const res = await serverRequest(API_ENDPOINTS.VERIFY_PHONE, data)
+  return res as unknown as VerifyPhoneResponse
 }
 
 export async function getQuote (data: object): Promise<QuoteResponse> {

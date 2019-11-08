@@ -37,3 +37,13 @@ export async function getQuote (amount: Amount): Promise<QuoteResponse> {
 
   return quoteFns[amount.asset](amount)
 }
+
+// Calculates the amount of time remaining for a human to act
+// on a quote
+export function getQuoteUserDuration (quote: QuoteResponse): number {
+  // subtract 5 seconds from the quote duration because if the user clicks
+  // the confirm button right before the countdown hits zero, we still have
+  // to make a network round trip before the client's invoice gets an HTLC,
+  // and this invoice's expiration is set based on the quote duration.
+  return Math.max(quote.duration - 5, 0)
+}

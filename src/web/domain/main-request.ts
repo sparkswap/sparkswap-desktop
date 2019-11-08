@@ -81,4 +81,12 @@ export async function getNetworkTime (): Promise<Date> {
   return new Date(await mainRequest('ntp:getTime') as Date)
 }
 
+type paymentUriHandler = (message: { paymentRequest: string }) => void
+
+export function handleLightningPaymentUri (fn: paymentUriHandler): void {
+  ipcRenderer.on('lightningPaymentUri', (_event, message): void => {
+    fn(message)
+  })
+}
+
 export default mainRequest

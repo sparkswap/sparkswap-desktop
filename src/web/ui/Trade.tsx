@@ -8,7 +8,7 @@ import {
   Switch
 } from '@blueprintjs/core'
 import { toaster, showSuccessToast, showErrorToast } from './AppToaster'
-import { getQuote } from '../domain/quote'
+import { getQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
 import {
   isValidQuantity,
@@ -299,11 +299,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
     try {
       const quote = await getQuote(quantity)
-      // subtract 5 seconds from the quote duration because if the user clicks
-      // the confirm button right before the countdown hits zero, we still have
-      // to make a network round trip before the client's invoice gets an HTLC,
-      // and this invoice's expiration is set based on the quote duration.
-      const secondsRemaining = Math.max(quote.duration - 5, 1)
+      const secondsRemaining = getQuoteUserDuration(quote)
       this.setState({
         quantity,
         quote,

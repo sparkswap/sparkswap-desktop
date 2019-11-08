@@ -23,10 +23,7 @@ module.exports = {
       ecmaFeatures: { jsx: true },
       warnOnUnsupportedTypeScriptVersion: true,
     },
-    plugins: ['@typescript-eslint'],
-    rules: {
-      "@typescript-eslint/no-angle-bracket-type-assertion": "off",
-    }
+    plugins: ['@typescript-eslint']
   }],
   "rules": {
     "no-restricted-imports": ["error", {
@@ -58,7 +55,8 @@ module.exports = {
     }],
     "camelcase": "off",
     "@typescript-eslint/camelcase": ["error", {
-      "ignoreDestructuring": true
+      "ignoreDestructuring": true,
+      "properties": "never"
     }],
     "@typescript-eslint/ban-ts-ignore": "off"
   }

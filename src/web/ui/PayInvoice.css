@@ -1,0 +1,25 @@
+.PayInvoice .bp3-dialog-body p {
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.PayInvoice .bp3-dialog-body .SpinnerSuccess {
+  margin-top: 110px;
+}
+
+.PayInvoice .bp3-dialog-body .SpinnerSuccess + p {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.PayInvoice .below-payment-request {
+  display: flex;
+}
+
+.PayInvoice .below-payment-request .error {
+  font-size: 0.9em;
+  padding-left: 1em;
+  display: inline-block;
+  flex: 1;
+  text-align: right;
+}

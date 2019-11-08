@@ -23,7 +23,6 @@ import { Asset } from '../../global-shared/types'
 import { getBalanceState } from '../domain/balance'
 import LNDGraphic from './assets/sparkswap-lnd.svg'
 import ZapLogo from './assets/zap.svg'
-import LNAppLogo from './assets/lightning-app.svg'
 import LPULogo from './assets/lightning-power.png'
 
 interface LNDConnectState {
@@ -489,13 +488,6 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
                   <ExternalLink href="https://zap.jackmallers.com">
                     <img src={ZapLogo} alt="Zap Desktop" />
                     Zap
-                  </ExternalLink>
-                </li>
-                <li><Divider /></li>
-                <li>
-                  <ExternalLink href="https://github.com/lightninglabs/lightning-app/releases">
-                    <img src={LNAppLogo} alt="Lightning App" />
-                    Lightning App
                   </ExternalLink>
                 </li>
                 <li><Divider /></li>

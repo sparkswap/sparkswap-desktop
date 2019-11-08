@@ -56,6 +56,14 @@ body.sparkswap {
   float: right;
 }
 
+.bp3-dark.sparkswap .error {
+  color: #DB3737;
+}
+
+.bp3-dark.sparkswap .error.text-muted {
+  color: rgba(255, 115, 115, 0.5)
+}
+
 .app-content {
   display: flex;
   flex-direction: row;
@@ -107,20 +115,18 @@ body.sparkswap {
 }
 
 /* Buttons */
-.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]),
-.bp3-dark.sparkswap .bp3-button:not([class*='bp3-disabled']) {
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"], [class="bp3-disabled"]) {
   box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
 }
 
-.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):hover,
-.bp3-dark.sparkswap .bp3-button:not([class*='bp3-disabled']):hover {
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"], [class="bp3-disabled"]):hover {
   box-shadow: 0 0 10px 0 rgba(16, 22, 26, 0.1);
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
   background-color: #546879;
 }
 
-.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"]):active {
+.bp3-dark.sparkswap .bp3-button:not([class*="bp3-intent-"], [class="bp3-disabled"]):active {
   background-color: #374754;
   box-shadow: none;
 }
@@ -188,6 +194,14 @@ body.sparkswap {
 
 .sparkswap .bp3-dialog .bp3-dialog-footer>.bp3-button.bp3-minimal {
   padding-left: 1px;
+  padding-right: 1px;
+}
+
+.sparkswap .bp3-dialog .bp3-dialog-footer>.bp3-button.bp3-minimal:last-of-type {
+  float: right;
+}
+.sparkswap .bp3-dialog .bp3-dialog-footer>.bp3-button.bp3-minimal:first-child {
+  float: none;
 }
 
 .sparkswap .bp3-dialog .bp3-dialog-footer-actions .bp3-button {

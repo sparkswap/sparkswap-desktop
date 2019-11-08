@@ -7,6 +7,8 @@ import { IS_DEVELOPMENT, IS_PRODUCTION, IS_TEST } from '../common/config'
 import { tradeUpdater } from './data'
 import { delay } from '../global-shared/util'
 import { ProgressInfo } from 'app-builder-lib'
+import logger from '../global-shared/logger'
+import { Nullable } from '../global-shared/types'
 
 const DOWNLOAD_RESTART_DELAY_MS = 5000
 
@@ -84,6 +86,29 @@ function createMainWindow (): BrowserWindow {
 function manageWindows (app: App): void {
   const windows: Set<BrowserWindow> = new Set()
   let appIsQuitting = false
+  let protocolUrl: Nullable<string> = null
+
+  // handle url events by either sending to the app,
+  // or holding them in memory until the app is ready
+  function handleOpenUrl (urlToOpen: string): void {
+    logger.debug(`handling open url: ${urlToOpen}`)
+    if (windows.size !== 0) {
+      handleLightningLink(urlToOpen)
+    } else {
+      protocolUrl = urlToOpen
+    }
+  }
+
+  // Handles URIs for https://github.com/lightningnetwork/lightning-rfc/blob/master/11-payment-encoding.md#encoding-overview
+  function handleLightningLink (input: string): void {
+    // remove `lightning:` from the string
+    const paymentRequest = input.split(':')[1]
+    // show our main window, which should be the first
+    // in the Set
+    const mainWindow = windows.values().next().value
+    mainWindow.webContents.send('lightningPaymentUri', { paymentRequest })
+    mainWindow.show()
+  }
 
   function addWindow (): void {
     // if our app is still active, but doesn't have any
@@ -92,6 +117,17 @@ function manageWindows (app: App): void {
     if (windows.size === 0) {
       const mainWindow = createMainWindow()
       windows.add(mainWindow)
+
+      mainWindow.webContents.on('did-finish-load', () => {
+        // Check to see if we have a protocol link to handle from app startup time.
+        // On the mac, `protocolUrl` will be set as a result of us trying to process the link from the `open-url` handler.
+        // On windows/linux the link will be passed to electron as the first process argument.
+        const urlToOpen = process.platform === 'darwin' ? protocolUrl : protocolUrl || process.argv.slice(1)[0]
+        if (urlToOpen) {
+          handleLightningLink(urlToOpen)
+          protocolUrl = null
+        }
+      })
 
       mainWindow.on('close', function (event: Event) {
         // on OSX we want to just hide the window unless
@@ -133,6 +169,15 @@ function manageWindows (app: App): void {
       app.quit()
     }
   })
+
+  app.on('will-finish-launching', function () {
+    app.on('open-url', (event, urlToOpen) => {
+      event.preventDefault()
+      handleOpenUrl(urlToOpen)
+    })
+  })
+
+  app.setAsDefaultProtocolClient('lightning')
 }
 
 export default manageWindows

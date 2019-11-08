@@ -10,7 +10,7 @@ export interface ServerAddressResponse {
   address: PaymentChannelNetworkAddress
 }
 
-export interface RegisterResponse {
+export interface StatusResponse {
   reviewStatus: ReviewStatus
 }
 
@@ -34,8 +34,35 @@ export interface KYCResponse {
   url: URL
 }
 
+export interface Address {
+  street: string,
+  city: string,
+  state: string,
+  postalCode: string,
+  country: string
+}
+
+export interface Name {
+  firstName: string,
+  lastName: string
+}
+
+export interface KYCUploadRequest {
+  name?: Name,
+  email?: string,
+  jurisdiction?: string,
+  phone?: string,
+  address?: Address,
+  birthdate?: string,
+  ssn?: string
+}
+
 export interface KYCUploadResponse {
-  approved: boolean
+  status: ReviewStatus
+}
+
+export interface VerifyPhoneResponse {
+  verified: boolean
 }
 
 export interface LocationWhitelistResponse {
