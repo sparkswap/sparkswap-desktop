@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import logger from '../../global-shared/logger'
+import { openBeacon } from './beacon'
 import './AppToaster.css'
 import {
   IActionProps,
@@ -79,8 +80,15 @@ export function showErrorToast (message: string, action?: IActionProps): void {
   toaster.show({ message, intent: Intent.DANGER, action })
 }
 
-export function showSuccessToast (message: string): void {
-  toaster.show({ message, intent: Intent.SUCCESS })
+export function showSupportToast (message: string): void {
+  showErrorToast(message, {
+    text: 'Contact support',
+    onClick: openBeacon
+  })
+}
+
+export function showSuccessToast (message: string, action?: IActionProps): void {
+  toaster.show({ message, intent: Intent.SUCCESS, action })
 }
 
 export function showLoadingToast (message: string): () => void {

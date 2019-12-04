@@ -57,7 +57,7 @@ interface DepositDialogState {
   previousBalance?: BalanceState
 }
 
-async function sendToWebview (webview: WebviewTag, channel: string): Promise<unknown> {
+function sendToWebview (webview: WebviewTag, channel: string): Promise<unknown> {
   return new Promise((resolve) => {
     const listener = (event: IpcMessageEvent): void => {
       if (event.channel !== channel) return
@@ -69,7 +69,7 @@ async function sendToWebview (webview: WebviewTag, channel: string): Promise<unk
   })
 }
 
-async function waitForWebviewPath (webview: WebviewTag, path: string, timeout = 10000): Promise<void> {
+function waitForWebviewPath (webview: WebviewTag, path: string, timeout = 10000): Promise<void> {
   return new Promise((resolve, reject) => {
     if (new URL(webview.getURL()).pathname === path) {
       resolve()
@@ -85,7 +85,7 @@ async function waitForWebviewPath (webview: WebviewTag, path: string, timeout = 
   })
 }
 
-async function checkForReviewMessage (webview: WebviewTag, timeout = 10000): Promise<boolean> {
+function checkForReviewMessage (webview: WebviewTag, timeout = 10000): Promise<boolean> {
   return new Promise((resolve, reject) => {
     setTimeout(() => reject(new Error('Timeout while waiting for webview review message')), timeout)
     const foundInPageListener = (event: FoundInPageEvent): void => {

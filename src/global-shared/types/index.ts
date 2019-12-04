@@ -3,6 +3,10 @@ import { AnchorEngine } from '../anchor-engine'
 
 export type Nullable<T> = null | T
 
+export function isNotNull<T> (value: T): value is Exclude<T, null> {
+  return value !== null
+}
+
 export type Engine = LndEngine | AnchorEngine
 
 // SwapHashes are 32 byte SHA-256 hashes encoded as Base64 strings

@@ -8,7 +8,7 @@ export function serverRequest (path: string, data: object = {}): Promise<Unknown
   return baseRequest(path, data, getAuth)
 }
 
-export async function getPaymentChannelNetworkAddress (asset: Asset): Promise<string> {
+export function getPaymentChannelNetworkAddress (asset: Asset): Promise<string> {
   if (asset === Asset.BTC) {
     return lnd.getPaymentChannelNetworkAddress()
   }

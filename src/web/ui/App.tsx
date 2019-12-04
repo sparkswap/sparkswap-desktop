@@ -14,7 +14,7 @@ import {
 } from './onboarding'
 import { openBeacon } from './beacon'
 import Balances from './Balances'
-import { showErrorToast, showLoadingToast } from './AppToaster'
+import { showErrorToast, showSupportToast, showLoadingToast, showSuccessToast } from './AppToaster'
 import * as lnd from '../domain/lnd'
 import register from '../domain/register'
 import { getStatus } from '../domain/server'
@@ -25,11 +25,13 @@ import { Button, IActionProps } from '@blueprintjs/core'
 
 interface OnboardingStep {
   stage: OnboardingStage,
-  depositUrl?: URL
+  depositUrl?: URL,
+  version?: number
 }
 
 interface AppState {
   onboardingStage: OnboardingStage,
+  onboardingVersion?: number,
   depositLoading: boolean,
   showSteps: boolean,
   depositUrl?: URL,
@@ -62,28 +64,42 @@ class App extends React.Component<{}, AppState> {
         return { stage: OnboardingStage.NONE }
       }
 
-      const { reviewStatus } = await getStatus()
+      const { reviewStatus, version } = await getStatus()
 
       switch (reviewStatus) {
         case ReviewStatus.UNCREATED:
         case ReviewStatus.CREATED:
         case ReviewStatus.INCOMPLETE:
-          return { stage: OnboardingStage.REGISTER }
+          return {
+            stage: OnboardingStage.REGISTER,
+            version
+          }
         case ReviewStatus.PENDING:
+          if (version && version > 0) {
+            showSuccessToast('Your application is pending review', {
+              text: 'Get an update',
+              onClick: openBeacon
+            })
+            return { stage: OnboardingStage.NONE }
+          }
+          // for version 0 users (legacy KYC) we go to deposit even if application is pending
+          return {
+            stage: OnboardingStage.DEPOSIT,
+            depositUrl: await startDeposit(),
+            version
+          }
         case ReviewStatus.APPROVED:
           return {
             stage: OnboardingStage.DEPOSIT,
-            depositUrl: await startDeposit()
+            depositUrl: await startDeposit(),
+            version
           }
         default:
           throw new Error(`Invalid review status: ${reviewStatus}`)
       }
     } catch (e) {
       logger.error(`Error getting onboarding stage: ${e}`)
-      showErrorToast('Error during identity verification', {
-        text: 'Contact support',
-        onClick: openBeacon
-      })
+      showSupportToast('Error during identity verification')
       return { stage: OnboardingStage.NONE }
     }
   }
@@ -97,19 +113,18 @@ class App extends React.Component<{}, AppState> {
       await register()
     } catch (e) {
       logger.error(`Error registering: ${e}`)
-      showErrorToast('Error during initial registration', {
-        text: 'Contact support',
-        onClick: openBeacon
-      })
+      showSupportToast('Error during initial registration')
     }
 
     const {
       stage,
-      depositUrl
+      depositUrl,
+      version
     } = await this.getOnboardingStep()
 
     this.setState({
       onboardingStage: stage,
+      onboardingVersion: version,
       depositUrl,
       depositLoading: false,
       showSteps: false
@@ -122,7 +137,8 @@ class App extends React.Component<{}, AppState> {
     try {
       const {
         stage,
-        depositUrl
+        depositUrl,
+        version
       } = await this.getOnboardingStep()
 
       if (stage === OnboardingStage.REGISTER) {
@@ -136,6 +152,7 @@ class App extends React.Component<{}, AppState> {
 
       this.setState({
         onboardingStage: stage,
+        onboardingVersion: version,
         depositUrl,
         showSteps: true
       })
@@ -173,6 +190,7 @@ class App extends React.Component<{}, AppState> {
   render (): ReactNode {
     const {
       onboardingStage,
+      onboardingVersion,
       depositLoading,
       depositUrl,
       showSteps
@@ -192,6 +210,7 @@ class App extends React.Component<{}, AppState> {
           onClose={this.handleClose}
           onProceed={this.handleDeposit}
           isOpen={onboardingStage === OnboardingStage.REGISTER}
+          onboardingVersion={onboardingVersion}
         />
         <DepositDialog
           depositUrl={depositUrl || ''}

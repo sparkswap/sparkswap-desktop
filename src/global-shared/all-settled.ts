@@ -36,7 +36,7 @@ async function reflect (promise: Promise<unknown>): Promise<PromiseResult> {
   }
 }
 
-export default async function allSettled (promises: Promise<unknown>[]): Promise<PromiseResult[]> {
+export default async function allSettled (promises: Array<Promise<unknown>>): Promise<PromiseResult[]> {
   const results = await Promise.all(promises.map(reflect))
   return results
 }

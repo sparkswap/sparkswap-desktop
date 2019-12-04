@@ -1,0 +1,20 @@
+.birthdate-form {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.birthdate-form .bp3-form-group {
+  margin-bottom: 0;
+}
+
+.birthdate-form .birthdate-month,
+.birthdate-form .birthdate-day,
+.birthdate-form .birthdate-year {
+  display: inline-block;
+}
+
+.birthdate-form .birthdate-month,
+.birthdate-form .birthdate-day {
+  margin-right: 10px;
+}

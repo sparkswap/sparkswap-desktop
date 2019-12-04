@@ -9,7 +9,7 @@ export const EVENTS = Object.freeze({
 
 export const updater = new EventEmitter()
 
-async function subscribeToDownloadEvents (): Promise<void> {
+function subscribeToDownloadEvents (): void {
   ipcRenderer.on(EVENTS.DOWNLOAD_STARTED, () => updater.emit(EVENTS.DOWNLOAD_STARTED))
   ipcRenderer.on(EVENTS.DOWNLOAD_RESTART, () => updater.emit(EVENTS.DOWNLOAD_RESTART))
   ipcRenderer.on(EVENTS.DOWNLOAD_PROGRESS, (_, ...args) => {

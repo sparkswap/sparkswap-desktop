@@ -17,3 +17,11 @@ export enum Statuses {
   // Custom type for UI
   NO_CONFIG = 'NO_CONFIG'
 }
+
+export enum TransactionTypes {
+  CHANNEL_OPEN = 'CHANNEL_OPEN',
+  CHANNEL_CLOSE = 'CHANNEL_CLOSE',
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAW = 'WITHDRAW',
+  UNKNOWN = 'UNKNOWN'
+}

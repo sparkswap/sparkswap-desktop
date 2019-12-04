@@ -6,7 +6,7 @@ import {
   MarketDataResponse,
   StatusResponse,
   QuoteResponse,
-  LocationWhitelistResponse,
+  JurisdictionWhitelistResponse,
   KYCUploadRequest,
   KYCUploadResponse,
   VerifyPhoneResponse
@@ -44,6 +44,14 @@ export async function submitPhoneVerificationCode (data: object): Promise<Verify
   return res as unknown as VerifyPhoneResponse
 }
 
+export async function startBerbix (): Promise<void> {
+  await serverRequest(API_ENDPOINTS.START_BERBIX, {})
+}
+
+export async function finishBerbix (): Promise<void> {
+  await serverRequest(API_ENDPOINTS.FINISH_BERBIX)
+}
+
 export async function getQuote (data: object): Promise<QuoteResponse> {
   const res = await serverRequest(API_ENDPOINTS.QUOTE, data)
 
@@ -77,7 +85,7 @@ export async function getQuote (data: object): Promise<QuoteResponse> {
   }
 }
 
-export async function getApprovedLocations (): Promise<LocationWhitelistResponse> {
+export async function getApprovedJurisdictions (): Promise<JurisdictionWhitelistResponse> {
   const res = await serverRequest(API_ENDPOINTS.LOCATION_WHITELIST)
-  return res as unknown as LocationWhitelistResponse
+  return res as unknown as JurisdictionWhitelistResponse
 }

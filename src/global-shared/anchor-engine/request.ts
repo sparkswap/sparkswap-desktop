@@ -19,7 +19,7 @@ export interface RequestOptions {
   headers?: { [key: string]: string }
 }
 
-export default async function request (apiKey: string, path: string, data: object = {}, options: RequestOptions = {}): Promise<UnknownJSON> {
+export default function request (apiKey: string, path: string, data: object = {}, options: RequestOptions = {}): Promise<UnknownJSON> {
   const method = options.method || RequestMethods.GET
   const fetchOptions = options.fetchOptions || {}
   const requestHeaders = options.headers || {}

@@ -2,38 +2,38 @@ import React, { ReactNode } from 'react'
 import { Button, Classes, Dialog, FormGroup, InputGroup } from '@blueprintjs/core'
 import { ZAPIER_HOOK } from '../../../common/config'
 import { showErrorToast, showSuccessToast } from '../AppToaster'
-import { OTHER_REGION } from './regions'
+import { OTHER_JURISDICTION } from './jurisdictions'
 
 interface SubscribeFormState {
   email: string,
-  region: string
+  jurisdiction: string
 }
 
 interface SubscribeFormProps {
   onClose: Function,
   isOpen: boolean,
-  region: string
+  jurisdiction: string
 }
 
 export class SubscribeForm extends React.Component<SubscribeFormProps, SubscribeFormState> {
   constructor (props: SubscribeFormProps) {
     super(props)
-    const defaultRegion = props.region === OTHER_REGION ? '' : props.region
+    const defaultJurisdiction = props.jurisdiction === OTHER_JURISDICTION ? '' : props.jurisdiction
 
     this.state = {
       email: '',
-      region: defaultRegion
+      jurisdiction: defaultJurisdiction
     }
   }
 
-  get unapprovedLocationText (): ReactNode {
-    const { region } = this.props
-    const outsideUnitedStates = region === OTHER_REGION
+  get unapprovedJurisdictionText (): ReactNode {
+    const { jurisdiction } = this.props
+    const outsideUnitedStates = jurisdiction === OTHER_JURISDICTION
 
     const unapprovedState = (
       <React.Fragment>
-        <p>We do not currently support users in {region}.</p>
-        <p>Get notified when we expand to serve {region}.</p>
+        <p>We do not currently support users in {jurisdiction}.</p>
+        <p>Get notified when we expand to serve {jurisdiction}.</p>
       </React.Fragment>
     )
 
@@ -53,17 +53,18 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
     })
   }
 
-  handleRegionChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  handleJurisdictionChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({
-      region: e.target.value
+      jurisdiction: e.target.value
     })
   }
 
   handleSubmit = async (e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e.preventDefault()
-    const { email, region } = this.state
+    const { email, jurisdiction } = this.state
 
-    const data = { email, region }
+    // Zapier expects the property `region`
+    const data = { email, region: jurisdiction }
     const res = await fetch(ZAPIER_HOOK, {
       method: 'POST',
       body: JSON.stringify(data)
@@ -74,22 +75,22 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
       return
     }
 
-    showSuccessToast('Successfully signed up for updates to your region.')
+    showSuccessToast('Successfully signed up for updates to your jurisdiction.')
     this.props.onClose()
   }
 
   render (): ReactNode {
-    const { email, region } = this.state
-    const regionLabel = this.props.region === OTHER_REGION ? 'Country' : 'State'
+    const { email, jurisdiction } = this.state
+    const jurisdictionLabel = this.props.jurisdiction === OTHER_JURISDICTION ? 'Country' : 'State'
 
     return (
       <Dialog
-        title="Unapproved Location"
+        title="Unapproved Jurisdiction"
         isOpen={this.props.isOpen}
         onClose={() => this.props.onClose()}
       >
         <div className={Classes.DIALOG_BODY}>
-          {this.unapprovedLocationText}
+          {this.unapprovedJurisdictionText}
           <div className="SubscribeForm">
             <form>
               <FormGroup
@@ -105,15 +106,15 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
                 />
               </FormGroup>
               <FormGroup
-                labelFor="region"
-                label={regionLabel}
+                labelFor="jurisdiction"
+                label={jurisdictionLabel}
               >
                 <InputGroup
-                  name="Region"
-                  id="region"
-                  placeholder={`${regionLabel} of primary residence`}
-                  value={region}
-                  onChange={this.handleRegionChange}
+                  name="Jurisdiction"
+                  id="jurisdiction"
+                  placeholder={`${jurisdictionLabel} of primary residence`}
+                  value={jurisdiction}
+                  onChange={this.handleJurisdictionChange}
                 />
               </FormGroup>
             </form>

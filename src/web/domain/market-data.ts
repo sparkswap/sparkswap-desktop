@@ -93,7 +93,7 @@ export class MarketData extends EventEmitter {
           }
         }
 
-        ws.onerror = async (event: Event) => {
+        ws.onerror = (event: Event) => {
           ws.close()
           reject(new Error(event.toString()))
         }

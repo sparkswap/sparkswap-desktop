@@ -13,5 +13,7 @@ export const API_ENDPOINTS: { [key: string]: string } = {
   UPLOAD_KYC: '/upload-kyc',
   EMAIL: '/email',
   LOCATION_WHITELIST: '/location-whitelist',
-  VERIFY_PHONE: '/verify-phone'
+  VERIFY_PHONE: '/verify-phone',
+  START_BERBIX: '/start-berbix',
+  FINISH_BERBIX: '/finish-berbix'
 }

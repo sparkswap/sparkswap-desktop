@@ -1,0 +1,29 @@
+.address-birthdate-ssn-form .form-section {
+  margin-top: 20px;
+}
+
+.bp3-dialog .address-birthdate-ssn-form .form-section h5.bp3-heading {
+  margin-bottom: 5px;
+}
+
+.address-birthdate-ssn-form .state-postal-code {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.address-birthdate-ssn-form .state-postal-code .bp3-form-group {
+  margin-bottom: 0;
+}
+
+.address-birthdate-ssn-form .state {
+  margin-right: 20px;
+  flex: 1;
+}
+
+.address-birthdate-ssn-form .postal-code {
+  display: inline-block;
+}
+
+.address-birthdate-ssn-form .street2 {
+  margin-top: 5px;
+}

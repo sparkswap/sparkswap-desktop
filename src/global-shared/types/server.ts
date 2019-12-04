@@ -11,7 +11,8 @@ export interface ServerAddressResponse {
 }
 
 export interface StatusResponse {
-  reviewStatus: ReviewStatus
+  reviewStatus: ReviewStatus,
+  version?: number
 }
 
 export interface HistoricalDataResponse {
@@ -54,7 +55,8 @@ export interface KYCUploadRequest {
   phone?: string,
   address?: Address,
   birthdate?: string,
-  ssn?: string
+  ssn?: string,
+  agreedTerms?: boolean
 }
 
 export interface KYCUploadResponse {
@@ -65,6 +67,6 @@ export interface VerifyPhoneResponse {
   verified: boolean
 }
 
-export interface LocationWhitelistResponse {
+export interface JurisdictionWhitelistResponse {
   regions: string[]
 }

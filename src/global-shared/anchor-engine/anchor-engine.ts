@@ -176,11 +176,15 @@ export class AnchorEngine {
   }
 
   async getSettledSwapPreimage (hash: SwapHash): Promise<SwapPreimage> {
+    // satisfy eslint for an unimplemented method
+    await new Promise(resolve => resolve())
     this.logger.debug(`getSettledSwapPreimage ${hash}`)
     throw new Error(`UNIMPLEMENTED`)
   }
 
   async prepareSwap (hash: SwapHash, amount: string, expiration: Date, timelockDelta: number): Promise<void> {
+    // await to unify the interface with lnd-engine
+    await new Promise(resolve => resolve())
     const swap = this.incomingSwaps.get(hash)
     if (swap) {
       if (swap.amount !== parseFloat(amount) ||
@@ -241,12 +245,16 @@ export class AnchorEngine {
   }
 
   async initiateSwap (address: string, hash: SwapHash, amount: string, maxTimeLock: number, finalDelta: number): Promise<SwapPreimage> {
+    // satisfy eslint for an unimplemented method
+    await new Promise(resolve => resolve())
     const parameters = JSON.stringify({ address, hash, amount, maxTimeLock, finalDelta })
     this.logger.debug(`initiateSwap ${parameters}`)
     throw new Error('unimplemented')
   }
 
   async getUncommittedBalance (): Promise<string> {
+    // await to unify the interface with lnd-engine
+    await new Promise(resolve => resolve())
     return '0'
   }
 
@@ -268,10 +276,14 @@ export class AnchorEngine {
   }
 
   async getTotalPendingChannelBalance (): Promise<string> {
+    // await to unify the interface with lnd-engine
+    await new Promise(resolve => resolve())
     return '0'
   }
 
   async getUncommittedPendingBalance (): Promise<string> {
+    // await to unify the interface with lnd-engine
+    await new Promise(resolve => resolve())
     return '0'
   }
 

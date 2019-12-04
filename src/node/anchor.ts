@@ -7,7 +7,7 @@ import { AnchorEngine } from '../global-shared/anchor-engine'
 import { IS_PRODUCTION } from '../common/config'
 
 // Public API key for the platform
-const PLATFORM_API_KEY = IS_PRODUCTION ? 'pk_kAerU8q99D1W8GgHtPxHHc' : 'pk_bGuxdNPqqmYqt6xCDaWaAz'
+const PLATFORM_API_KEY = IS_PRODUCTION ? 'pk_kAerU8q99D1W8GgHtPxHHc' : 'pk_4N2MSP8iaJg4tmK4xWo3xS'
 
 export class AnchorClient {
   private _apiKey?: string

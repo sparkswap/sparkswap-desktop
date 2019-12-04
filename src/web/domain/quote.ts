@@ -30,7 +30,7 @@ const quoteFns = {
   [Asset.USDX]: getUsdxQuote
 }
 
-export async function getQuote (amount: Amount): Promise<QuoteResponse> {
+export function getQuote (amount: Amount): Promise<QuoteResponse> {
   if (!isValidAmount(amount)) {
     throw new Error(`Invalid quantity`)
   }

@@ -51,9 +51,10 @@ body.sparkswap {
 }
 
 .App .help-link {
-  margin-top: 10px;
-  margin-bottom: -10px;
-  float: right;
+  position: fixed;
+  bottom: 20px;
+  right: 30px;
+  z-index: 22;
 }
 
 .bp3-dark.sparkswap .error {

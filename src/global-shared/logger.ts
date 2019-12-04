@@ -21,7 +21,7 @@ function printLogLine (level: LogLevel, message: string): void {
   }
 }
 
-export async function openLogFile (filepath: string): Promise<void> {
+export function openLogFile (filepath: string): Promise<void> {
   // we import dynamically so that we can use this module in the browser
   return import('fs').then(imported => {
     fs = imported

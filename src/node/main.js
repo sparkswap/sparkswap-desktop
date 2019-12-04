@@ -12,7 +12,7 @@ const LOG_PATH = path.join(app.getPath('userData'), 'sparkswap.log')
 // The LOG_PATH is only guaranteed to be created once the `ready` event is called
 // for the application. We open the logfile on ready to prevent ENONT errors on
 // first run.
-app.on('ready', async () => openLogFile(LOG_PATH))
+app.on('ready', () => openLogFile(LOG_PATH))
 app.on('will-quit', closeLogFile)
 
 enableAutoUpdate(app)

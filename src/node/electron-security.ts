@@ -30,7 +30,7 @@ function secureApp (app: App): void {
       }
     })
     // disable new windows
-    contents.on('new-window', async (event, navigationUrl) => {
+    contents.on('new-window', (event, navigationUrl) => {
       logger.warn(`tried to create a new window: ${navigationUrl}`)
       event.preventDefault()
     })

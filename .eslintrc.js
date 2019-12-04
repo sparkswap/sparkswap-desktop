@@ -54,10 +54,11 @@ module.exports = {
       "allowExpressions": true
     }],
     "camelcase": "off",
-    "@typescript-eslint/camelcase": ["error", {
-      "ignoreDestructuring": true,
-      "properties": "never"
-    }],
-    "@typescript-eslint/ban-ts-ignore": "off"
+    "@typescript-eslint/ban-ts-ignore": "off",
+    "@typescript-eslint/camelcase": "off",
+    "require-await": "error",
+    "@typescript-eslint/array-type": ["error", {
+      "default": "array-simple"
+    }]
   }
 }

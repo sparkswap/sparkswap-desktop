@@ -2,7 +2,7 @@ import * as url from 'url'
 import * as path from 'path'
 import { autoUpdater, BrowserWindow, App, Event } from 'electron'
 import { autoUpdater as electronUpdater } from 'electron-updater'
-import { IS_MACOS } from './util'
+import { IS_MACOS, IS_LINUX } from './util'
 import { IS_DEVELOPMENT, IS_PRODUCTION, IS_TEST } from '../common/config'
 import { tradeUpdater } from './data'
 import { delay } from '../global-shared/util'
@@ -11,6 +11,7 @@ import logger from '../global-shared/logger'
 import { Nullable } from '../global-shared/types'
 
 const DOWNLOAD_RESTART_DELAY_MS = 5000
+const LN_URI_PREFIX = 'lightning:'
 
 function isWindowAvailable (window: BrowserWindow): boolean {
   return !window.isDestroyed() && !window.webContents.isDestroyed()
@@ -101,13 +102,15 @@ function manageWindows (app: App): void {
 
   // Handles URIs for https://github.com/lightningnetwork/lightning-rfc/blob/master/11-payment-encoding.md#encoding-overview
   function handleLightningLink (input: string): void {
-    // remove `lightning:` from the string
-    const paymentRequest = input.split(':')[1]
-    // show our main window, which should be the first
-    // in the Set
-    const mainWindow = windows.values().next().value
-    mainWindow.webContents.send('lightningPaymentUri', { paymentRequest })
-    mainWindow.show()
+    // only handle lightning strings
+    if (input.slice(0, LN_URI_PREFIX.length) === LN_URI_PREFIX) {
+      const paymentRequest = input.slice(LN_URI_PREFIX.length)
+      // show our main window, which should be the first
+      // in the Set
+      const mainWindow = windows.values().next().value
+      mainWindow.webContents.send('lightningPaymentUri', { paymentRequest })
+      mainWindow.show()
+    }
   }
 
   function addWindow (): void {
@@ -178,6 +181,12 @@ function manageWindows (app: App): void {
   })
 
   app.setAsDefaultProtocolClient('lightning')
+
+  // Hardware acceleration on electron dev makes linux machines run incredibly
+  // slow so we disable it only for development.
+  if (IS_LINUX && IS_DEVELOPMENT) {
+    app.disableHardwareAcceleration()
+  }
 }
 
 export default manageWindows

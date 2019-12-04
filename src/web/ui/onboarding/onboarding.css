@@ -51,11 +51,11 @@
   margin-left: -50px;
 }
 
-.select-region {
+.select-jurisdiction {
   margin-top: 20px;
 }
 
-.select-region span.state-label {
+.select-jurisdiction span.state-label {
   display: inline-block;
   margin-bottom: 5px;
 }

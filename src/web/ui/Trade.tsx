@@ -7,7 +7,7 @@ import {
   Classes,
   Switch
 } from '@blueprintjs/core'
-import { toaster, showSuccessToast, showErrorToast } from './AppToaster'
+import { toaster, showSuccessToast, showErrorToast, showSupportToast } from './AppToaster'
 import { getQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
 import {
@@ -154,7 +154,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
       try {
         await executeTrade(quote)
       } catch (e) {
-        showErrorToast('Failed to execute trade: ' + e.message)
+        showSupportToast('Failed to execute trade: ' + e.message)
         return
       }
 
@@ -308,9 +308,9 @@ class Trade extends React.Component<TradeProps, TradeState> {
       this.countdown()
     } catch (e) {
       if (e.statusCode === 403) {
-        showErrorToast('Your account must be approved prior to trading')
+        showSupportToast('Your account must be approved prior to trading')
       } else {
-        showErrorToast('Failed to get price: ' + e.message)
+        showSupportToast('Failed to get price: ' + e.message)
       }
     }
   }

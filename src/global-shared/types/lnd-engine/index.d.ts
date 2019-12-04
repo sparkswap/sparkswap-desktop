@@ -36,8 +36,16 @@ declare module 'lnd-engine' {
     remoteBalance: string
   }
 
+  enum TransactionTypes {
+    CHANNEL_OPEN = 'CHANNEL_OPEN',
+    CHANNEL_CLOSE = 'CHANNEL_CLOSE',
+    DEPOSIT = 'DEPOSIT',
+    WITHDRAW = 'WITHDRAW',
+    UNKNOWN = 'UNKNOWN'
+  }
+
   interface Transaction {
-    type: string,
+    type: TransactionTypes,
     amount: string,
     transactionHash: string,
     blockHeight: number,
@@ -89,13 +97,14 @@ declare module 'lnd-engine' {
     tlsCertPath: string
     macaroonPath: string
     status: Statuses
-    maxChannelBalance: number
-    readonly validated: boolean
     logger: LoggerInterface
+    readonly maxChannelBalance: number
+    readonly validated: boolean
     readonly finalHopTimeLock: number
     readonly retrieveWindowDuration: number
     readonly claimWindowDuration: number
     readonly blockBuffer: number
+    readonly quantumsPerCommon: number
 
     waitForSwapCommitment (hash: SwapHash): Promise<Date>
     getSettledSwapPreimage (hash: SwapHash): Promise<SwapPreimage>
@@ -113,9 +122,12 @@ declare module 'lnd-engine' {
     getUncommittedPendingBalance (): Promise<string>
     getStatus (): Promise<Statuses>
     getChannelsForRemoteAddress (address: string): Promise<Channel[]>
+    getTotalBalanceForAddress (address: string): Promise<string>
     getChainTransactions (): Promise<Transaction[]>
     payInvoice (paymentRequest: string): Promise<PaymentPreimage>
     getInvoice (paymentRequest: string): Promise<Invoice>
+    getConfirmedBalance (): Promise<string>
+    getUnconfirmedBalance (): Promise<string>
   }
 
   export default LndEngine

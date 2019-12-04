@@ -6,7 +6,7 @@ import { IS_PRODUCTION } from '../common/config'
 const SCRIPT_SRC_EXT = IS_PRODUCTION
   ? 'https://stack.sparkswap.com wss://stack.sparkswap.com'
   : `'sha256-4qHwYstA/HMoqYktYjfAnyNPmBqLeAqunX99JaEvimc='`
-const IMG_SRC_EXT = IS_PRODUCTION ? '' : `localhost:*`
+const IMG_SRC_EXT = IS_PRODUCTION ? 'data:' : `localhost:* data:`
 const CONNECT_SRC_EXT = IS_PRODUCTION ? '' : `localhost:* ws://localhost:*`
 
 // all of these policy rules are for Help Scout Beacon except Zapier, ipapi, and
@@ -14,7 +14,7 @@ const CONNECT_SRC_EXT = IS_PRODUCTION ? '' : `localhost:* ws://localhost:*`
 // https://docs.helpscout.com/article/815-csp-settings-for-beacon
 // Beacon removed rules (these aren't necessary for the contact form):
 // connect-src: wss://*.pusher.com *.sumologic.com sentry.io
-const APP_CONTENT_SECURITY_POLICY = `connect-src https://ipapi.co https://hooks.zapier.com https://beaconapi.helpscout.net https://chatapi.helpscout.net https://d3hb14vkzrxvla.cloudfront.net ${CONNECT_SRC_EXT}; style-src 'unsafe-inline' https://fonts.googleapis.com https://beacon-v2.helpscout.net https://djtflbt20bdde.cloudfront.net; font-src https://fonts.gstatic.com; base-uri https://docs.helpscout.com; frame-src https://beacon-v2.helpscout.net; object-src https://beacon-v2.helpscout.net; img-src https://d33v4339jhl8k0.cloudfront.net ${IMG_SRC_EXT}; media-src https://beacon-v2.helpscout.net; script-src 'self' https://beacon-v2.helpscout.net https://d12wqas9hcki3z.cloudfront.net https://d33v4339jhl8k0.cloudfront.net ${SCRIPT_SRC_EXT}`
+const APP_CONTENT_SECURITY_POLICY = `connect-src https://ipapi.co https://hooks.zapier.com https://beaconapi.helpscout.net https://chatapi.helpscout.net https://d3hb14vkzrxvla.cloudfront.net ${CONNECT_SRC_EXT}; style-src 'unsafe-inline' https://fonts.googleapis.com https://beacon-v2.helpscout.net https://djtflbt20bdde.cloudfront.net; font-src https://fonts.gstatic.com; base-uri https://docs.helpscout.com; frame-src https://beacon-v2.helpscout.net https://verify.berbix.com; object-src https://beacon-v2.helpscout.net; img-src https://d33v4339jhl8k0.cloudfront.net ${IMG_SRC_EXT}; media-src https://beacon-v2.helpscout.net; script-src 'self' https://beacon-v2.helpscout.net https://d12wqas9hcki3z.cloudfront.net https://d33v4339jhl8k0.cloudfront.net ${SCRIPT_SRC_EXT}`
 
 const ANCHOR_PROD_WHITELIST = 'production.plaid.com:*'
 const ANCHOR_DEV_WHITELIST = 'sandbox.plaid.com:* development.plaid.com:*'
