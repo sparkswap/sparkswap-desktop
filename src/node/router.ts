@@ -17,6 +17,7 @@ import { getAuth } from './auth'
 import { openLink } from './util'
 import { delay } from '../global-shared/util'
 import { getNetworkTime } from './data/ntp'
+import { payInvoice } from '../global-shared/lnd-engine'
 
 const RETRY_TRADE_DELAY = 10000
 
@@ -126,7 +127,7 @@ export class Router {
     listen('lnd:getStatus', () => this.lndClient.getStatus())
     listenSync('lnd:getConnectionConfig', () => this.lndClient.getConnectionConfig())
     listen('lnd:getPaymentChannelNetworkAddress', () => this.lndClient.engine.getPaymentChannelNetworkAddress())
-    listen('lnd:payInvoice', (request: string) => this.lndClient.engine.payInvoice(request))
+    listen('lnd:payInvoice', (paymentRequest: string) => payInvoice(paymentRequest, { client: this.lndClient.engine.client, logger }))
     listen('lnd:getInvoice', (request: string) => this.lndClient.engine.getInvoice(request))
     listen('getBalance', (asset: string) => this.getBalance(valueToAsset(asset)))
     listen('openLink', ({ link }: { link: string}) => openLink(link))

@@ -1,3 +1,4 @@
+declare type Client = import('./client').Client
 
 declare module 'lnd-engine' {
   type SwapHash = string
@@ -66,6 +67,8 @@ declare module 'lnd-engine' {
     destination: string
   }
 
+  export type LndEngineClient = Client
+
   class LndEngine {
     static readonly STATUSES: {
       UNKNOWN: Statuses,
@@ -105,6 +108,7 @@ declare module 'lnd-engine' {
     readonly claimWindowDuration: number
     readonly blockBuffer: number
     readonly quantumsPerCommon: number
+    readonly client: Client
 
     waitForSwapCommitment (hash: SwapHash): Promise<Date>
     getSettledSwapPreimage (hash: SwapHash): Promise<SwapPreimage>

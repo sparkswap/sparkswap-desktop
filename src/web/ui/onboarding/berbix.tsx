@@ -1,13 +1,13 @@
 import React, { ReactNode } from 'react'
 import { Dialog, Classes, Spinner, Button } from '@blueprintjs/core'
-import { startBerbix } from '../../domain/server'
-import { showSupportToast, showSuccessToast } from '../AppToaster'
+import { startBerbix, finishBerbix } from '../../domain/server'
+import { showSupportToast, showSuccessToast, showErrorToast } from '../AppToaster'
 import './berbix.css'
 
 interface BerbixProps {
   isOpen: boolean,
   onClose: Function,
-  onGoBack: Function,
+  onGoBack?: Function,
   onComplete: Function
 }
 
@@ -44,8 +44,14 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
 
   handleComplete = async (): Promise<void> => {
     this.setState({ completeLoading: true })
-    await this.props.onComplete()
-    this.setState({ completeLoading: false })
+    try {
+      await finishBerbix()
+      this.setState({ completeLoading: false })
+      this.props.onComplete()
+    } catch (e) {
+      showErrorToast(`Error during identity verification: ${e.message}`)
+      this.setState({ completeLoading: false })
+    }
   }
 
   componentDidMount (): void {
@@ -72,7 +78,10 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
   render (): ReactNode {
     const isOpen = this.props.isOpen
     const onClose = (): void => this.props.onClose()
-    const onGoBack = (): void => this.props.onClose()
+    const { onGoBack } = this.props
+    const onGoBackButton = onGoBack
+      ? <Button minimal={true} text="Go back" onClick={(): void => onGoBack()} />
+      : null
 
     return (
       <Dialog title="Upload Photo ID" isOpen={isOpen} onClose={onClose}>
@@ -80,7 +89,7 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
           {this.renderDialogBody()}
         </div>
         <div className={Classes.DIALOG_FOOTER}>
-          <Button minimal={true} text="Go back" onClick={onGoBack} />
+          {onGoBackButton}
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
               text="Continue"

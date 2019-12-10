@@ -5,6 +5,8 @@ import WebviewCSSPath from './deposit-dialog-webview.css.txt'
 import { SpinnerMessage, SpinnerSuccess } from '../components'
 import logger from '../../../global-shared/logger'
 import { getWebviewPreloadPath } from '../../domain/main-request'
+import { submitPhotoId } from '../../domain/server'
+import { showSuccessToast } from '../AppToaster'
 import { balances, getBalanceState, BalanceState } from '../../domain/balance'
 import { isPlaidMessage, PlaidMessage, PlaidEvent } from '../../domain/plaid'
 import { ANCHOR_PARTITION, centsPerUSD } from '../../../common/constants'
@@ -20,6 +22,7 @@ import {
 import { formatDollarValue } from '.././formatters'
 import { Asset } from '../../../global-shared/types'
 import { openBeacon } from '../beacon'
+import { Berbix } from './berbix'
 
 const WEBVIEW_PRELOAD_PATH = getWebviewPreloadPath()
 
@@ -54,7 +57,8 @@ interface DepositDialogState {
   isDone: boolean,
   amountDeposited?: number,
   instant?: boolean,
-  previousBalance?: BalanceState
+  previousBalance?: BalanceState,
+  isBerbixOpen: boolean
 }
 
 function sendToWebview (webview: WebviewTag, channel: string): Promise<unknown> {
@@ -117,7 +121,8 @@ const DepositDialogInitialState: DepositDialogState = {
   isDone: false,
   amountDeposited: undefined,
   instant: undefined,
-  previousBalance: undefined
+  previousBalance: undefined,
+  isBerbixOpen: false
 }
 
 export class DepositDialog extends React.Component<DepositDialogProps, DepositDialogState> {
@@ -286,16 +291,36 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     }
   }
 
+  handleAnchorPhotoId = async (): Promise<void> => {
+    try {
+      await submitPhotoId()
+      showSuccessToast('Your application is pending review', {
+        text: 'Get an update',
+        onClick: openBeacon
+      })
+      this.setState({ isBerbixOpen: false })
+      return this.props.onClose()
+    } catch (e) {
+      // server responds with 404 if no photo ID was found for user
+      if (e.statusCode === 404) {
+        this.setState({ isBerbixOpen: true })
+        return
+      }
+      this.setState({ isBerbixOpen: false })
+      return this.depositError(DEPOSIT_ERROR_MESSAGE.ERROR, {
+        text: 'Contact support',
+        onClick: openBeacon
+      })
+    }
+  }
+
   handleWebviewReady = async (): Promise<void> => {
     const webviewNode = this.webviewRef.current
     if (!webviewNode) return
 
     const webviewUrl = new URL(webviewNode.getURL())
     if (webviewUrl.pathname === ANCHOR_PHOTO_ID_PATH) {
-      return this.depositError(DEPOSIT_ERROR_MESSAGE.ADDITIONAL_INFO_NEEDED, {
-        text: 'Contact support',
-        onClick: openBeacon
-      })
+      await this.handleAnchorPhotoId()
     }
 
     if (webviewUrl.pathname === ANCHOR_DASHBOARD_PATH) {
@@ -437,7 +462,18 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     }
   }
 
-  render (): ReactNode {
+  renderBerbix (): ReactNode {
+    const onClose = (): void => this.props.onClose()
+    const onComplete = (): Promise<void> => this.handleAnchorPhotoId()
+
+    return <Berbix
+      isOpen={this.props.isOpen}
+      onClose={onClose}
+      onComplete={onComplete}
+    />
+  }
+
+  renderDeposit (): ReactNode {
     const urlWithPostMessage = `${this.props.depositUrl}&callback=postMessage`
 
     return (
@@ -479,5 +515,13 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
 
       </Dialog>
     )
+  }
+
+  render (): ReactNode {
+    if (this.state.isBerbixOpen) {
+      return this.renderBerbix()
+    }
+
+    return this.renderDeposit()
   }
 }

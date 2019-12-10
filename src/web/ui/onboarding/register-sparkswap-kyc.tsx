@@ -1,8 +1,8 @@
 import React, { CSSProperties, ReactNode } from 'react'
-import { ControlGroup, InputGroup, Button, Classes, Dialog, FormGroup, H5 } from '@blueprintjs/core'
+import { ControlGroup, InputGroup, Button, Classes, Dialog, FormGroup, H5, Spinner } from '@blueprintjs/core'
 import { FormField } from './form-field'
 import { BirthdateForm } from './BirthdateForm'
-import { uploadKYC, submitPhoneVerificationCode, finishBerbix } from '../../domain/server'
+import { uploadKYC, submitPhoneVerificationCode } from '../../domain/server'
 import { showSuccessToast, showErrorToast } from '../AppToaster'
 import { Nullable, ReviewStatus } from '../../../global-shared/types'
 import { openBeacon } from '../beacon'
@@ -13,6 +13,7 @@ import {
   isValidAddress,
   isValidName
 } from '../../../global-shared/validation'
+import { SpinnerSuccess } from '../components'
 import { Berbix } from './berbix'
 import './register-sparkswap-kyc.css'
 
@@ -51,7 +52,8 @@ interface RegisterDialogState {
   isSendingVerificationCode: boolean,
   isVerificationCodeSent: boolean,
   isVerifyingCode: boolean,
-  isLoading: boolean
+  isLoading: boolean,
+  isKycDone: boolean
 }
 
 const initialState = {
@@ -70,7 +72,8 @@ const initialState = {
   isSendingVerificationCode: false,
   isVerificationCodeSent: false,
   isVerifyingCode: false,
-  isLoading: false
+  isLoading: false,
+  isKycDone: false
 }
 
 export function parsePhoneNumber (phone: string): string {
@@ -131,11 +134,8 @@ export class RegisterSparkswapKYC
     (event: React.ChangeEvent<HTMLInputElement>): void =>
       this.setState({ ...this.state, [name]: event.target.value })
 
-  onCompleteBerbix = async (): Promise<void> => {
+  onCompletePhotoId = (): void => {
     try {
-      // TODO: add response type on server to make sure we were able to
-      //  fetch the user's data from Berbix
-      await finishBerbix()
       showSuccessToast('Your application is pending review', {
         text: 'Get an update',
         onClick: openBeacon
@@ -166,8 +166,7 @@ export class RegisterSparkswapKYC
       this.setState({ isLoading: false })
 
       if (status === ReviewStatus.APPROVED) {
-        this.props.onProceed()
-        showSuccessToast(`Identity verified`)
+        this.setState({ isKycDone: true })
       } else if (status === ReviewStatus.INCOMPLETE) {
         this.setState({ kycStage: KycStage.ADDRESS_DOB_AND_SSN })
       } else {
@@ -255,7 +254,7 @@ export class RegisterSparkswapKYC
       this.setState({ isLoading: false })
 
       if (status === ReviewStatus.APPROVED) {
-        this.props.onProceed()
+        this.setState({ isKycDone: true })
       } else if (status === ReviewStatus.INCOMPLETE) {
         this.setState({ kycStage: KycStage.BERBIX })
       } else if (status === ReviewStatus.PENDING) {
@@ -442,11 +441,51 @@ export class RegisterSparkswapKYC
     )
   }
 
+  renderKycSuccess (): ReactNode {
+    const onClose = (): void => {
+      this.setState({ isKycDone: false })
+      this.props.onClose()
+    }
+    const onClick = (): void => {
+      this.setState({ isKycDone: false })
+      this.props.onProceed()
+    }
+
+    return (
+      <Dialog title="Identity Verified" isOpen={this.props.isOpen} onClose={onClose}>
+        <div className={Classes.DIALOG_BODY}>
+          <SpinnerSuccess
+            size={Spinner.SIZE_LARGE}
+            className='AnchorSpinner'
+          />
+          <p>You have successfully verified your identity. Click continue to link your bank account and start buying BTC.</p>
+        </div>
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <Button
+              type="submit"
+              text="Continue"
+              rightIcon='double-chevron-right'
+              className="RegisterButton"
+              fill={true}
+              loading={this.state.isLoading}
+              onClick={onClick}
+            />
+          </div>
+        </div>
+      </Dialog>
+    )
+  }
+
   render (): ReactNode {
     const isOpen = this.props.isOpen
     const onClose = (): void => this.props.onClose()
     const onGoBack = (): void => this.onGoBack()
-    const onComplete = (): Promise<void> => this.onCompleteBerbix()
+    const onComplete = (): void => this.onCompletePhotoId()
+
+    if (this.state.isKycDone) {
+      return this.renderKycSuccess()
+    }
 
     switch (this.state.kycStage) {
       case KycStage.JURISDICTION:

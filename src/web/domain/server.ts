@@ -52,6 +52,10 @@ export async function finishBerbix (): Promise<void> {
   await serverRequest(API_ENDPOINTS.FINISH_BERBIX)
 }
 
+export async function submitPhotoId (): Promise<void> {
+  await serverRequest(API_ENDPOINTS.SUBMIT_PHOTO_ID)
+}
+
 export async function getQuote (data: object): Promise<QuoteResponse> {
   const res = await serverRequest(API_ENDPOINTS.QUOTE, data)
 

@@ -15,5 +15,6 @@ export const API_ENDPOINTS: { [key: string]: string } = {
   LOCATION_WHITELIST: '/location-whitelist',
   VERIFY_PHONE: '/verify-phone',
   START_BERBIX: '/start-berbix',
-  FINISH_BERBIX: '/finish-berbix'
+  FINISH_BERBIX: '/finish-berbix',
+  SUBMIT_PHOTO_ID: '/submit-photo-id'
 }

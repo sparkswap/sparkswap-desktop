@@ -71,7 +71,7 @@ export default async function fetchJSON (url: string, httpOptions: RequestInit, 
 
   if (!ok && !(options.ignoreCodes && options.ignoreCodes.includes(status))) {
     const message = isUnknownJSON(json) ? getErrorMessage(json) : ''
-    throw new Error(`Error while requesting "${httpOptions.method} ${url}": ${message}`)
+    throw new FetchJsonError(`Error while requesting "${httpOptions.method} ${url}": ${message}`, status)
   }
 
   if (isUnknownJSON(json)) {
