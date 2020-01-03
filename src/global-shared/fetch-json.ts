@@ -1,12 +1,27 @@
 import fetch, { Headers, RequestInit } from 'node-fetch'
 import logger from './logger'
 
-class FetchJsonError extends Error {
-  statusCode?: number
+interface FetchJsonErrorOpts {
+  status?: number,
+  code?: string,
+  error?: string,
+  reason?: string
+}
 
-  constructor (message?: string, statusCode?: number) {
+class FetchJsonError extends Error {
+  status?: number
+  code?: string
+  error?: string
+  reason?: string
+
+  constructor (message?: string, opts?: FetchJsonErrorOpts) {
     super(message)
-    this.statusCode = statusCode
+    if (opts) {
+      this.status = opts.status
+      this.code = opts.code
+      this.error = opts.error
+      this.reason = opts.reason
+    }
   }
 }
 
@@ -46,7 +61,7 @@ Promise<{ ok: boolean, status: number, json: unknown }> {
     return { ok: res.ok, status: res.status, json }
   } catch (e) {
     const message = `Error while requesting "${httpOptions.method} ${url}": ${res.status} ${res.statusText}`
-    throw new FetchJsonError(message, res.status)
+    throw new FetchJsonError(message, { status: res.status })
   }
 }
 
@@ -71,7 +86,15 @@ export default async function fetchJSON (url: string, httpOptions: RequestInit, 
 
   if (!ok && !(options.ignoreCodes && options.ignoreCodes.includes(status))) {
     const message = isUnknownJSON(json) ? getErrorMessage(json) : ''
-    throw new FetchJsonError(`Error while requesting "${httpOptions.method} ${url}": ${message}`, status)
+    const opts = { status }
+    if (isUnknownJSON(json)) {
+      Object.assign(opts, {
+        code: json.code,
+        error: json.error,
+        reason: json.reason
+      })
+    }
+    throw new FetchJsonError(`Error while requesting "${httpOptions.method} ${url}": ${message}`, opts)
   }
 
   if (isUnknownJSON(json)) {

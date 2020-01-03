@@ -302,7 +302,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       return this.props.onClose()
     } catch (e) {
       // server responds with 404 if no photo ID was found for user
-      if (e.statusCode === 404) {
+      if (e.status === 404) {
         this.setState({ isBerbixOpen: true })
         return
       }

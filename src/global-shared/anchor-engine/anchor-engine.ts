@@ -135,9 +135,16 @@ export class AnchorEngine {
         `timeFromNow: ${timeFromNow}, finalDelta: ${finalDelta}`)
     }
 
-    const newEscrow = await api.createEscrow(this.apiKey, hash, recipientId, amount, expiration)
-    this.logger.debug(`Escrow for swap (${hash}) created`)
-    return newEscrow
+    try {
+      const newEscrow = await api.createEscrow(this.apiKey, hash, recipientId, amount, expiration)
+      this.logger.debug(`Escrow for swap (${hash}) created`)
+      return newEscrow
+    } catch (e) {
+      if (e.code && Object.values(api.CreateEscrowErrorCodes).includes(e.code)) {
+        throw new PermanentSwapError(`Error while creating escrow: ${e.reason}`)
+      }
+      throw e
+    }
   }
 
   private async waitForEscrowEnd (startedEscrow: api.Escrow): Promise<api.Escrow> {

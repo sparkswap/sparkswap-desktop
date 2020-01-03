@@ -4,6 +4,7 @@ export const IS_TEST = process.env.REACT_APP_ENV === 'test'
 
 export const API_URL = IS_PRODUCTION ? 'https://stack.sparkswap.com' : 'http://localhost:3000'
 export const WEBSOCKETS_URL = IS_PRODUCTION ? 'wss://stack.sparkswap.com' : 'ws://localhost:3000'
+export const PROOF_HOST = IS_PRODUCTION ? 'https://sparkswap.com' : 'http://localhost:3001'
 
 export const ZAPIER_HOOK = 'https://hooks.zapier.com/hooks/catch/5808043/o2fl9bt/'
 export const IP_API_URL = 'https://ipapi.co/json'

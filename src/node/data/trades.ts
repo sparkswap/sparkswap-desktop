@@ -155,7 +155,7 @@ WHERE id = @id
   updater.emit('update', id)
 }
 
-export function getTrades (db: Database, since = new Date(0), limit = 100): Trade[] {
+export function getTrades (db: Database, olderThanTradeId = Number.MAX_SAFE_INTEGER, limit = 100): Trade[] {
   const statement = db.prepare(`
 SELECT
   id,
@@ -171,14 +171,12 @@ SELECT
   preimage,
   failureCode
 FROM trades
-WHERE startTime >= datetime(@sinceTimestamp, 'unixepoch', 'localtime')
-ORDER BY datetime(startTime) DESC
+WHERE id < @olderThanTradeId
+ORDER BY id DESC
 LIMIT @limit
   `)
 
-  const sinceTimestamp = Math.round(since.getTime() / 1000)
-
-  const dbTrades = statement.all({ sinceTimestamp, limit })
+  const dbTrades = statement.all({ olderThanTradeId, limit })
   return dbTrades.map(deserializeTrade)
 }
 

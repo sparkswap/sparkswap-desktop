@@ -4,13 +4,19 @@ import { getAuth } from './auth'
 import { serverRequest as baseRequest } from '../common/utils'
 import { UnknownJSON } from '../global-shared/fetch-json'
 import { shell } from 'electron'
-import { IS_TEST } from '../common/config'
+import { IS_TEST, IS_PRODUCTION } from '../common/config'
 
 export function serverRequest (path: string, data: object = {}): Promise<UnknownJSON> {
   return baseRequest(path, data, getAuth)
 }
 
 // TODO: make a whitelist of links and use that instead of just enforcing https/mailto
+const PROTOCOL_WHITELIST = ['https:', 'mailto:']
+
+if (!IS_PRODUCTION) {
+  PROTOCOL_WHITELIST.push('http:')
+}
+
 export function openLink (link: string): void {
   const url = new URL(link)
 
@@ -19,7 +25,7 @@ export function openLink (link: string): void {
     return
   }
 
-  if (url.protocol === 'https:' || url.protocol === 'mailto:') {
+  if (PROTOCOL_WHITELIST.includes(url.protocol)) {
     shell.openExternal(link)
   } else {
     logger.warn(`tried to open insecure link: ${link}`)

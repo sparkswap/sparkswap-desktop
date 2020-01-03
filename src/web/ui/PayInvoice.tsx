@@ -10,7 +10,12 @@ import logger from '../../global-shared/logger'
 import { Asset, Unit, Amount, Nullable } from '../../global-shared/types'
 import { SpinnerSuccess } from './components'
 import { formatAmount, formatAsset } from './formatters'
+import { isUSDXSufficient } from '../domain/balance'
 import './PayInvoice.css'
+
+interface PayInvoiceProps {
+  onDeposit: Function
+}
 
 interface PayInvoiceState {
   isDialogOpen: boolean,
@@ -36,8 +41,8 @@ const initialState: PayInvoiceState = {
   secondsRemaining: 0
 }
 
-class PayInvoice extends React.Component<{}, PayInvoiceState> {
-  constructor (props: {}) {
+class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
+  constructor (props: PayInvoiceProps) {
     super(props)
 
     this.state = initialState
@@ -172,6 +177,21 @@ class PayInvoice extends React.Component<{}, PayInvoiceState> {
         if (this.state.quote === null) {
           throw new Error(`Quote not loaded`)
         }
+        const usdxAmount = this.state.quote.sourceAmount.asset === Asset.USDX
+          ? this.state.quote.sourceAmount
+          : this.state.quote.destinationAmount
+
+        if (!isUSDXSufficient(usdxAmount.value)) {
+          showErrorToast('Insufficient USD', {
+            onClick: () => this.props.onDeposit(),
+            text: 'Deposit'
+          })
+          this.setState({
+            isPaying: false
+          })
+          return
+        }
+
         await executeTrade(this.state.quote)
       }
 

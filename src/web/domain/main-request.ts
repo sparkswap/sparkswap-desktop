@@ -61,8 +61,12 @@ function deserializeTrade (wireTrade: UnknownObject): Trade {
   }
 }
 
-export async function getTrades (): Promise<Trade[]> {
-  return (await mainRequest('trade:getTrades') as UnknownObject[]).map(deserializeTrade)
+export async function getTrades (limit: number, olderThanTradeId?: number): Promise<Trade[]> {
+  return (await mainRequest('trade:getTrades', { limit, olderThanTradeId }) as UnknownObject[]).map(deserializeTrade)
+}
+
+export async function getTrade (id: number): Promise<Trade> {
+  return deserializeTrade(await mainRequest('trade:getTrade', { id }) as UnknownObject)
 }
 
 export async function startDeposit (): Promise<URL> {
@@ -87,6 +91,14 @@ export function handleLightningPaymentUri (fn: paymentUriHandler): void {
   ipcRenderer.on('lightningPaymentUri', (_event, message): void => {
     fn(message)
   })
+}
+
+export async function hasShownProofOfKeys (): Promise<boolean> {
+  return await mainRequest('pok:hasShown') as boolean
+}
+
+export async function markProofOfKeysShown (): Promise<void> {
+  await mainRequest('pok:markShown')
 }
 
 export default mainRequest

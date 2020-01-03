@@ -1,9 +1,15 @@
 import React, { ReactNode } from 'react'
 import './History.css'
-import { HTMLTable, H4, Spinner } from '@blueprintjs/core'
+import { HTMLTable, H4, Spinner, Button } from '@blueprintjs/core'
 import { Trade, TradeStatus } from '../../common/types'
 import { formatDate, formatAmount } from './formatters'
-import { trades, updater as tradeUpdater } from '../domain/history'
+import { showErrorToast } from './AppToaster'
+import {
+  trades,
+  updater as tradeUpdater,
+  loadTrades,
+  canLoadMore as canLoadMoreTrades
+} from '../domain/history'
 
 interface HistoryRowProps {
   trade: Trade
@@ -58,19 +64,66 @@ class HistoryRow extends React.PureComponent<HistoryRowProps> {
 }
 
 interface HistoryState {
-  trades: Trade[]
+  trades: Trade[],
+  loading: boolean,
+  canLoadMore: boolean
+}
+
+function mapToArr (tradesMap: Map<number, Trade>): Trade[] {
+  return Array.from(tradesMap.values()).sort((a, b) => {
+    return b.id - a.id
+  })
 }
 
 class History extends React.PureComponent<{}, HistoryState> {
   constructor (props: object) {
     super(props)
+
     this.state = {
-      trades
+      trades: mapToArr(trades),
+      loading: false,
+      canLoadMore: canLoadMoreTrades
     }
   }
 
   componentDidMount (): void {
-    tradeUpdater.on('update', trades => this.setState({ trades }))
+    tradeUpdater.on('update', trades => {
+      this.setState({
+        trades: mapToArr(trades),
+        canLoadMore: canLoadMoreTrades
+      })
+    })
+  }
+
+  handleLoadMore = async (): Promise<void> => {
+    this.setState({ loading: true })
+    const { trades } = this.state
+    try {
+      const lastTradeId = trades.length ? trades[trades.length - 1].id : undefined
+      const canLoadMore = await loadTrades(lastTradeId)
+      this.setState({ canLoadMore })
+    } catch (e) {
+      showErrorToast(`Error while loading additional trades: ${e.message}`)
+    } finally {
+      this.setState({ loading: false })
+    }
+  }
+
+  renderLoadMore (): React.ReactNode {
+    if (!this.state.canLoadMore) {
+      return
+    }
+
+    return (
+      <Button
+        fill={true}
+        minimal={true}
+        loading={this.state.loading}
+        onClick={this.handleLoadMore}
+      >
+        Load more...
+      </Button>
+    )
   }
 
   render (): React.ReactNode {
@@ -93,6 +146,7 @@ class History extends React.PureComponent<{}, HistoryState> {
                 {trades.map((trade) => <HistoryRow trade={trade} key={trade.id} />)}
               </tbody>
             </HTMLTable>
+            {this.renderLoadMore()}
           </div>
         </div>
       </div>

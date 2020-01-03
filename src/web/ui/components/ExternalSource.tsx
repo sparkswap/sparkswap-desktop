@@ -17,6 +17,7 @@ export class ExternalButton extends React.Component<ExternalButtonProps> {
     return (
       <Button
         text={this.props.text}
+        icon={this.props.icon}
         rightIcon={this.props.rightIcon}
         onClick={this.handleClick}
         className={this.props.className}

@@ -9,7 +9,8 @@ import {
   JurisdictionWhitelistResponse,
   KYCUploadRequest,
   KYCUploadResponse,
-  VerifyPhoneResponse
+  VerifyPhoneResponse,
+  ProofOfKeysResponse
 } from '../../global-shared/types/server'
 import { UnknownJSON, isUnknownJSON } from '../../global-shared/fetch-json'
 
@@ -92,4 +93,10 @@ export async function getQuote (data: object): Promise<QuoteResponse> {
 export async function getApprovedJurisdictions (): Promise<JurisdictionWhitelistResponse> {
   const res = await serverRequest(API_ENDPOINTS.LOCATION_WHITELIST)
   return res as unknown as JurisdictionWhitelistResponse
+}
+
+export async function getProofOfKeys (): Promise<ProofOfKeysResponse> {
+  const res = await serverRequest(API_ENDPOINTS.GET_PROOF)
+
+  return res as unknown as ProofOfKeysResponse
 }

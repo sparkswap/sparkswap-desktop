@@ -5,6 +5,7 @@ import { ExternalButton, ExternalLink } from './ExternalSource'
 import StatusBadge from './StatusBadge'
 import SpinnerMessage from './SpinnerMessage'
 import SpinnerSuccess from './SpinnerSuccess'
+import ValidatedInput from './ValidatedInput'
 
 export {
   FilePathInput,
@@ -14,5 +15,6 @@ export {
   ExternalLink,
   StatusBadge,
   SpinnerMessage,
-  SpinnerSuccess
+  SpinnerSuccess,
+  ValidatedInput
 }

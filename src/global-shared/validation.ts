@@ -25,6 +25,12 @@ export function isValidSSN (ssn: string): boolean {
   if (area.length !== 3 || group.length !== 2 || serial.length !== 4) {
     return false
   }
+  if (area === '000' || group === '00' || serial === '0000') {
+    return false
+  }
+  if (area === '666' || area[0] === '9') {
+    return false
+  }
   return true
 }
 
@@ -38,7 +44,7 @@ export function isValidBirthdate (birthdate: string): boolean {
   if (!isDigits(year) || !isDigits(month) || !isDigits(day)) {
     return false
   }
-  const oldestYear = 1850 // oldest birth year that Cognito allows
+  const oldestYear = 1850
   const currentYear = (new Date()).getFullYear()
   if (parseInt(year, 10) < oldestYear || parseInt(year, 10) > currentYear) {
     return false
@@ -52,12 +58,16 @@ export function isValidBirthdate (birthdate: string): boolean {
   return true
 }
 
+export function isValidPostalCode (postalCode: string): boolean {
+  return isDigits(postalCode) && postalCode.length === 5
+}
+
 export function isValidAddress (address: Address): boolean {
   if (address.street.length === 0 || address.city.length === 0 ||
     address.state.length === 0 || address.country.length === 0) {
     return false
   }
-  if (!isDigits(address.postalCode) || address.postalCode.length !== 5) {
+  if (!isValidPostalCode(address.postalCode)) {
     return false
   }
   return true

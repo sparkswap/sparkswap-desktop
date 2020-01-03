@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 import { SwapHash, SwapPreimage } from './types'
 
 export function fail (error: Error): void {
-  console.log(error)
+  console.error(error)
   process.exit(1)
 }
 

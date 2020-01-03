@@ -22,6 +22,23 @@ export enum EscrowStatus {
   complete = 'complete'
 }
 
+export class AnchorError extends Error {
+  param?: string
+  code?: string
+  error?: string
+  reason?: string
+}
+
+// see: https://www.anchorusd.com/9c0cba91e667a08e467f038b6e23e3c4/api/index.html#/?id=create-escrow
+export enum CreateEscrowErrorCodes {
+  insufficientFunds = 'insufficient_funds',
+  recipientNotFound = 'not_found',
+  positiveDurationRequired = 'positive_duration_required',
+  duplicateTimeout = 'duplicate_timeout_parameters',
+  invalidHashFormat = 'invalid_format',
+  futureTimeoutRequired = 'future_timestamp_required'
+}
+
 // see: https://www.anchorusd.com/9c0cba91e667a08e467f038b6e23e3c4/api/index.html#/?id=the-escrow-object
 // Note: Hashes and preimages are hex on Anchor, but we use base64. So there needs to be a conversion
 // prior to sending to the Anchor API or receiving from it.
@@ -173,7 +190,9 @@ export async function createEscrow (apiKey: string, hash: SwapHash, recipientId:
   amount: Amount, expiration: Date): Promise<Escrow> {
   const duration = Math.floor((expiration.getTime() - (new Date()).getTime()) / 1000)
   if (duration <= 0) {
-    throw new Error(`Escrow duration is too short (${duration}s)`)
+    const error = new AnchorError(`Escrow duration is too short (${duration}s)`)
+    error.code = CreateEscrowErrorCodes.positiveDurationRequired
+    throw error
   }
   const res = await request(
     apiKey,

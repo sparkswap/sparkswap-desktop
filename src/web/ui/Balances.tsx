@@ -141,7 +141,7 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
         <div className='balances-row'>
           <H5 className='single-balance'>
             {this.renderBalance(Asset.BTC)}
-            <PayInvoice />
+            <PayInvoice onDeposit={this.props.onDeposit} />
             {this.renderConverted(Asset.BTC)}
           </H5>
           <H5 className='single-balance'>

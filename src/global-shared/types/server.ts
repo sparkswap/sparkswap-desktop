@@ -70,3 +70,9 @@ export interface VerifyPhoneResponse {
 export interface JurisdictionWhitelistResponse {
   regions: string[]
 }
+
+export interface ProofOfKeysResponse {
+  publicId: string,
+  message: string,
+  signature: string
+}

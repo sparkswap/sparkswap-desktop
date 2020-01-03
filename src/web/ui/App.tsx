@@ -22,6 +22,7 @@ import { getAuth, openLinkInBrowser, startDeposit } from '../domain/main-request
 import { ReviewStatus, URL } from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
 import { Button, IActionProps } from '@blueprintjs/core'
+import { ProofOfKeysDialog } from './proof-of-keys-dialog'
 
 interface OnboardingStep {
   stage: OnboardingStage,
@@ -205,6 +206,7 @@ class App extends React.Component<{}, AppState> {
         </div>
         <DownloadProgress />
         <LNDConnect />
+        <ProofOfKeysDialog />
         <RegisterDialog
           uuid={this.state.uuid}
           onClose={this.handleClose}

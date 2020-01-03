@@ -1,0 +1,25 @@
+.ProofOfKeysDialog .proof-link {
+  text-align: center;
+  width: 275px;
+  display: block;
+  margin: auto;
+}
+
+.ProofOfKeysDialog .proof-badge {
+  background-color: white;
+  width: 275px;
+  height: 275px;
+  padding: 5px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+  display: block;
+  margin-bottom: 0.5em;
+}
+
+.tile-tooltip {
+  text-align: center;
+}
+
+.tile-tooltip img {
+  display: block;
+}

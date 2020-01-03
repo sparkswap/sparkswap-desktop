@@ -8,6 +8,10 @@ import {
   failTrade,
   updater as tradeUpdater
 } from './trades'
+import {
+  markProofOfKeysShown,
+  hasShownProofOfKeys
+} from './events'
 
 export {
   initialize,
@@ -18,5 +22,7 @@ export {
   getPendingTrades,
   completeTrade,
   failTrade,
-  tradeUpdater
+  tradeUpdater,
+  markProofOfKeysShown,
+  hasShownProofOfKeys
 }

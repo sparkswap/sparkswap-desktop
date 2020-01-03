@@ -307,7 +307,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
       })
       this.countdown()
     } catch (e) {
-      if (e.statusCode === 403) {
+      if (e.status === 403) {
         showSupportToast('Your account must be approved prior to trading')
       } else {
         showSupportToast('Failed to get price: ' + e.message)

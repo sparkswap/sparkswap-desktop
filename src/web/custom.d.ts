@@ -11,6 +11,11 @@ declare module '*.png' {
   export default pngSrc
 }
 
+declare module '*.jpg' {
+  const jpgSrc: string
+  export default jpgSrc
+}
+
 declare module '*.txt' {
   const contents: string
   export default contents

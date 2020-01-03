@@ -132,11 +132,14 @@ export class Router {
     listen('getBalance', (asset: string) => this.getBalance(valueToAsset(asset)))
     listen('openLink', ({ link }: { link: string}) => openLink(link))
     listen('trade:execute', (quote: Quote) => executeTrade(this.db, this.engines, quote))
-    listen('trade:getTrades', () => store.getTrades(this.db))
+    listen('trade:getTrades', ({ limit, olderThanTradeId }: { limit: number, olderThanTradeId?: number }) => store.getTrades(this.db, olderThanTradeId, limit))
+    listen('trade:getTrade', ({ id }: { id: number }) => store.getTrade(this.db, id))
     listen('auth:getAuth', () => getAuth())
     listen('anchor:startDeposit', () => this.anchorClient.startDeposit())
     listenSync('getWebviewPreloadPath', () => path.join(__dirname, 'webview-preload.js'))
     listen('ntp:getTime', () => getNetworkTime())
+    listen('pok:hasShown', () => store.hasShownProofOfKeys(this.db))
+    listen('pok:markShown', () => store.markProofOfKeysShown(this.db))
   }
 
   close (): void {

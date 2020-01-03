@@ -1,5 +1,14 @@
 import React, { CSSProperties, ReactNode } from 'react'
-import { ControlGroup, InputGroup, Button, Classes, Dialog, FormGroup, H5, Spinner } from '@blueprintjs/core'
+import {
+  ControlGroup,
+  InputGroup,
+  Button,
+  Classes,
+  Dialog,
+  FormGroup,
+  H5,
+  Spinner
+} from '@blueprintjs/core'
 import { FormField } from './form-field'
 import { BirthdateForm } from './BirthdateForm'
 import { uploadKYC, submitPhoneVerificationCode } from '../../domain/server'
@@ -11,11 +20,14 @@ import {
   isValidSSN,
   isValidBirthdate,
   isValidAddress,
-  isValidName
+  isValidName,
+  isValidPostalCode,
+  isValidEmail
 } from '../../../global-shared/validation'
-import { SpinnerSuccess } from '../components'
+import { SpinnerSuccess, ValidatedInput } from '../components'
 import { Berbix } from './berbix'
 import './register-sparkswap-kyc.css'
+import { parsePhoneNumber, parseSSN } from '../../../global-shared/parsers'
 
 enum KycStage {
   JURISDICTION,
@@ -42,6 +54,7 @@ interface RegisterDialogState {
   lastName: string,
   email: string,
   phone: string,
+  phoneError: boolean,
   street: string,
   street2: string,
   city: string,
@@ -63,6 +76,7 @@ const initialState = {
   lastName: '',
   email: '',
   phone: '',
+  phoneError: false,
   street: '',
   street2: '',
   city: '',
@@ -74,16 +88,6 @@ const initialState = {
   isVerifyingCode: false,
   isLoading: false,
   isKycDone: false
-}
-
-export function parsePhoneNumber (phone: string): string {
-  const digits = phone.split('-').join('').split(' ').join('')
-  return digits.startsWith('+') ? digits : '+1' + digits
-}
-
-export function parseSSN (ssn: string): string {
-  const digits = ssn.split('-').join('').split(' ').join('')
-  return [digits.slice(0, 3), digits.slice(3, 5), digits.slice(5, 9)].join('-')
 }
 
 function getPreviousStage (stage: KycStage): Nullable<KycStage> {
@@ -155,6 +159,10 @@ export class RegisterSparkswapKYC
       return
     }
 
+    if (!isValidEmail(email)) {
+      showErrorToast('A valid email address must be present')
+    }
+
     try {
       this.setState({ isLoading: true })
       const { status } = await uploadKYC({
@@ -184,7 +192,6 @@ export class RegisterSparkswapKYC
     try {
       this.setState({ isVerifyingCode: true })
       const { verified } = await submitPhoneVerificationCode({ phone, code })
-      this.setState({ isVerifyingCode: false })
       if (!verified) {
         throw new Error('Failed to verify phone')
       }
@@ -194,6 +201,8 @@ export class RegisterSparkswapKYC
       })
     } catch (e) {
       showErrorToast('Unable to verify phone')
+    } finally {
+      this.setState({ isVerifyingCode: false })
     }
   }
 
@@ -284,11 +293,28 @@ export class RegisterSparkswapKYC
         <form action="#" onSubmit={this.onClickContinueNameAndEmail}>
           <div className={Classes.DIALOG_BODY}>
             <p>The information below is required for us to verify your identity.</p>
-            <FormField autoFocus={true} formId="first-name" label="First Name" value={this.state.firstName}
-              onChange={this.onChange('firstName')} />
-            <FormField formId="last-name" label="Last Name" value={this.state.lastName}
-              onChange={this.onChange('lastName')} />
-            <FormField formId="email" label="Email Address" value={this.state.email} onChange={this.onChange('email')} />
+            <FormField
+              autoFocus={true}
+              formId="first-name"
+              label="First Name"
+              value={this.state.firstName}
+              onChange={this.onChange('firstName')}
+              validator={firstName => firstName.length > 0}
+            />
+            <FormField
+              formId="last-name"
+              label="Last Name"
+              value={this.state.lastName}
+              onChange={this.onChange('lastName')}
+              validator={lastName => lastName.length > 0}
+            />
+            <FormField
+              formId="email"
+              label="Email Address"
+              value={this.state.email}
+              onChange={this.onChange('email')}
+              validator={email => isValidEmail(email)}
+            />
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <Button minimal={true} text="Go back" onClick={this.onGoBack} />
@@ -320,11 +346,12 @@ export class RegisterSparkswapKYC
           <p>Phone Number</p>
           <form action="#" onSubmit={this.onClickSendCode}>
             <ControlGroup fill={true}>
-              <InputGroup
+              <ValidatedInput
                 autoFocus={true}
                 id="phone-number"
                 value={this.state.phone}
                 onChange={this.onChange('phone')}
+                validator={(phone) => isValidPhoneNumber(parsePhoneNumber(phone))}
               />
               <Button
                 type="submit"
@@ -336,8 +363,12 @@ export class RegisterSparkswapKYC
           <p style={supportTextStyle}><span style={{ color: 'green' }}>✓</span> Verification code sent</p>
           <br/>
           <form action="#" onSubmit={this.onClickPhoneVerification}>
-            <FormField formId="verification-code" label="Verification Code" value={this.state.phoneVerificationCode}
-              onChange={this.onChange('phoneVerificationCode')} />
+            <FormField
+              formId="verification-code"
+              label="Verification Code"
+              value={this.state.phoneVerificationCode}
+              onChange={this.onChange('phoneVerificationCode')}
+            />
           </form>
         </div>
         <div className={Classes.DIALOG_FOOTER}>
@@ -378,17 +409,19 @@ export class RegisterSparkswapKYC
                 label={<H5>Social Security Number</H5>}
                 value={this.state.ssn}
                 onChange={this.onChange('ssn')}
+                validator={ssn => isValidSSN(parseSSN(ssn))}
                 placeholder="123-45-6789"
                 size={12}
               />
             </div>
             <div className="form-section">
               <FormGroup labelFor="street" label={<H5>Home Address</H5>}>
-                <InputGroup
+                <ValidatedInput
                   id="street"
                   value={this.state.street}
                   onChange={this.onChange('street')}
                   placeholder="123 Main St"
+                  validator={street => street.length > 0}
                 />
                 <InputGroup
                   className="street2"
@@ -403,6 +436,7 @@ export class RegisterSparkswapKYC
                 value={this.state.city}
                 onChange={this.onChange('city')}
                 placeholder="San Francisco"
+                validator={city => city.length > 0}
               />
               <div className="state-postal-code">
                 <FormField
@@ -419,6 +453,7 @@ export class RegisterSparkswapKYC
                   size={12}
                   onChange={this.onChange('postalCode')}
                   placeholder="94111"
+                  validator={isValidPostalCode}
                 />
               </div>
             </div>
