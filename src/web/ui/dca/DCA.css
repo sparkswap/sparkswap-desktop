@@ -1,0 +1,158 @@
+.DCA .title-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.DCA .title-row .bp3-button {
+  padding-right: 0;
+}
+
+.bp3-dialog.dca-dialog .bp3-dialog-body {
+  padding-top: 5px;
+}
+
+.dca-dialog .amount-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bp3-dialog.dca-dialog .bp3-dialog-body .upcoming-buys .bp3-heading {
+  margin-top: 0.75em;
+  margin-bottom: 0.5em;
+}
+
+.dca-dialog .upcoming-buys table {
+  width: 100%;
+  margin-bottom: 4em;
+}
+
+.dca-dialog .upcoming-buys table th:first-child,
+.dca-dialog .upcoming-buys table td:first-child {
+  width: 38%;
+}
+
+.amount-row .select-asset {
+  margin-top: 7px;
+}
+
+.bp3-dialog .schedule-row {
+  display: flex;
+  align-items: center;
+}
+
+.schedule-row .select-time-unit {
+  margin-left: 30px;
+  margin-top: 7px;
+}
+
+.DCA .table-outer {
+  position: relative;
+  height: calc(100% - 30px);
+  padding-top: 30px;
+  width: 100%;
+}
+
+.DCA .table-outer .table-inner {
+  overflow-y: scroll;
+  height: 100%;
+  max-height: 45px;
+
+  /* Room for the scroll bar */
+  width: 105%;
+  padding-right: 5%;
+}
+
+.DCA .table-outer .table-inner table {
+  width: 100%;
+}
+
+.DCA .table-outer .table-inner table thead {
+  width: 100%;
+}
+
+.DCA .table-outer .table-inner table thead tr:only-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+
+  /* Room for the scroll bar */
+  width: 105%;
+  padding-right: 5%;
+}
+
+.DCA .table-outer .table-inner table thead tr th:first-child {
+  flex: 1;
+}
+
+/* Fixed width is required for the separate head/body scroll */
+
+.DCA table td,
+.DCA table th {
+  width: 30%;
+}
+
+.DCA table td:first-child,
+.DCA table th:first-child {
+  width: 40%;
+}
+
+.DCA table.bp3-html-table.bp3-html-table-condensed td:last-child {
+  padding-top: 0;
+}
+
+.DCA table td .bp3-button.remove-icon {
+  padding-right: 0;
+  padding-bottom: 2px;
+}
+
+/* Removes line between table header and body */
+.bp3-dark .DCA table.bp3-html-table tbody tr:first-child td {
+  box-shadow: none;
+}
+
+/* Tightens up spacing between rows */
+.DCA table.bp3-html-table.bp3-html-table-condensed td {
+  padding: 2px 11px 0 11px;
+}
+
+/* Aligns history table's left and right sides */
+.DCA table.bp3-html-table.bp3-html-table-condensed tr>td:first-child,
+.DCA table.bp3-html-table.bp3-html-table-condensed tr>th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.DCA table.bp3-html-table.bp3-html-table-condensed tr>td,
+.DCA table.bp3-html-table.bp3-html-table-condensed tr>th {
+  text-align: right;
+}
+
+.DCA table.bp3-html-table.bp3-html-table-condensed tr>td:last-child,
+.DCA table.bp3-html-table.bp3-html-table-condensed tr>th:last-child {
+  padding-right: 0;
+}
+
+/* Reduces weight of column headers */
+.DCA table.bp3-html-table th {
+  font-weight: 100;
+}
+
+/* TODO: make global color palette and remove custom color */
+.bp3-dark.sparkswap .DCA .text-muted,
+.bp3-dark.sparkswap .DCA .text-muted td {
+  color: #828f99;
+}
+
+.bp3-dark.sparkswap .DCA .error.text-muted,
+.bp3-dark.sparkswap .DCA .error.text-muted td,
+.bp3-dark.sparkswap .DCA .error.text-muted td .text-muted {
+  color: rgba(255, 115, 115, 0.5)
+}
+
+.DCA tbody tr td {
+  line-height: 16px;
+}

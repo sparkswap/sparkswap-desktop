@@ -5,16 +5,16 @@ import { listen, listenSync, close as closeListeners } from './main-listener'
 import LndClient from './lnd'
 import LndEngine from 'lnd-engine'
 import { AnchorEngine } from '../global-shared/anchor-engine'
-import { Amount, Asset, Unit, valueToAsset, assetToUnit, Engine }
-  from '../global-shared/types'
+import { Amount, Asset, Unit, valueToAsset, assetToUnit, Engine } from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
-import { Quote } from '../common/types'
+import { Quote, AlertEvent, WireUnsavedRecurringBuy } from '../common/types'
+import { deserializeUnsavedRecurringBuyFromWire, serializeRecurringBuyToWire } from '../common/serializers'
 import * as store from './data'
 import { Database } from 'better-sqlite3'
 import { AnchorClient } from './anchor'
 import { executeTrade, retryPendingTrades } from './trade'
 import { getAuth } from './auth'
-import { openLink } from './util'
+import { openLink, showNotification } from './util'
 import { delay } from '../global-shared/util'
 import { getNetworkTime } from './data/ntp'
 import { payInvoice } from '../global-shared/lnd-engine'
@@ -140,6 +140,11 @@ export class Router {
     listen('ntp:getTime', () => getNetworkTime())
     listen('pok:hasShown', () => store.hasShownProofOfKeys(this.db))
     listen('pok:markShown', () => store.markProofOfKeysShown(this.db))
+    listen('dca:addRecurringBuy', (recurringBuy: WireUnsavedRecurringBuy) =>
+      store.addRecurringBuy(this.db, deserializeUnsavedRecurringBuyFromWire(recurringBuy)))
+    listen('dca:removeRecurringBuy', (id: number) => store.removeRecurringBuy(this.db, id))
+    listen('dca:getRecurringBuys', () => store.getRecurringBuys(this.db).map(serializeRecurringBuyToWire))
+    listenSync('app:notification', (event: AlertEvent) => showNotification(event))
   }
 
   close (): void {

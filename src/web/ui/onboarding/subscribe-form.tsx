@@ -3,6 +3,8 @@ import { Button, Classes, Dialog, FormGroup, InputGroup } from '@blueprintjs/cor
 import { ZAPIER_HOOK } from '../../../common/config'
 import { showErrorToast, showSuccessToast } from '../AppToaster'
 import { OTHER_JURISDICTION } from './jurisdictions'
+import { isValidEmail } from '../../../global-shared/validation'
+import { FormField } from './form-field'
 
 interface SubscribeFormState {
   email: string,
@@ -63,6 +65,11 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
     e.preventDefault()
     const { email, jurisdiction } = this.state
 
+    if (!isValidEmail(email)) {
+      showErrorToast('Invalid email address')
+      return
+    }
+
     // Zapier expects the property `region`
     const data = { email, region: jurisdiction }
     const res = await fetch(ZAPIER_HOOK, {
@@ -93,18 +100,14 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
           {this.unapprovedJurisdictionText}
           <div className="SubscribeForm">
             <form>
-              <FormGroup
-                labelFor="email"
+              <FormField
+                formId="email"
                 label="Email"
-              >
-                <InputGroup
-                  name="Email"
-                  id="email"
-                  placeholder="satoshi@anonymousspeech.com"
-                  value={email}
-                  onChange={this.handleEmailChange}
-                />
-              </FormGroup>
+                placeholder="satoshi@anonymousspeech.com"
+                value={email}
+                onChange={this.handleEmailChange}
+                validator={email => isValidEmail(email)}
+              />
               <FormGroup
                 labelFor="jurisdiction"
                 label={jurisdictionLabel}

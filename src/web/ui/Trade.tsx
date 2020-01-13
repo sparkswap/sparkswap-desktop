@@ -8,36 +8,25 @@ import {
   Switch
 } from '@blueprintjs/core'
 import { toaster, showSuccessToast, showErrorToast, showSupportToast } from './AppToaster'
-import { getQuote, getQuoteUserDuration } from '../domain/quote'
+import { requestQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
 import {
-  isValidQuantity,
-  isValidAmount,
-  toQuantum,
   toCommon,
-  MIN_AMOUNT,
-  MAX_AMOUNT,
-  MIN_QUANTITY,
-  MAX_QUANTITY
+  validateQuantity
 } from '../domain/quantity'
-import { isUSDXSufficient, getBalanceState, balances } from '../domain/balance'
-import { altAmount, altAsset, altValue } from '../domain/convert-amount'
-import { formatAmount, formatAsset } from './formatters'
+import { altAmount } from '../domain/convert-amount'
+import { formatAmount, formatAsset, getAltAmount } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
 import { QuoteResponse } from '../../global-shared/types/server'
-import { Amount, Asset, assetToUnit } from '../../global-shared/types'
+import { Amount, Asset } from '../../global-shared/types'
 import './Trade.css'
-import logger from '../../global-shared/logger'
-import { delay } from '../../global-shared/util'
-import { getNetworkTime } from '../domain/main-request'
-import { BLOCK_BUFFER } from '../../global-shared/anchor-engine/anchor-engine'
+import { BalanceError, QuantityError } from '../../common/errors'
 
 interface TradeProps {
   onDeposit: Function
 }
 
 interface TradeState {
-  isClockSynced: boolean,
   isPulsingQuantity: boolean,
   secondsRemaining: number,
   quantityStr: string,
@@ -48,7 +37,6 @@ interface TradeState {
 }
 
 const initialState: TradeState = {
-  isClockSynced: true,
   isPulsingQuantity: false,
   secondsRemaining: 0,
   quantityStr: '',
@@ -62,19 +50,6 @@ class Trade extends React.Component<TradeProps, TradeState> {
   constructor (props: TradeProps) {
     super(props)
     this.state = initialState
-    this.checkClockSynced()
-    setInterval(() => this.checkClockSynced(), 60 * 60 * 1000)
-  }
-
-  async checkClockSynced (): Promise<void> {
-    try {
-      const date = await getNetworkTime()
-      const delta = ((new Date()).getTime() - date.getTime()) / 1000
-      logger.debug(`NTP clock delta ${delta}s`)
-      this.setState({ isClockSynced: Math.abs(delta) <= BLOCK_BUFFER })
-    } catch (e) {
-      logger.warn(`Unable to retrieve NTP time`)
-    }
   }
 
   get altAmount (): Amount {
@@ -85,27 +60,11 @@ class Trade extends React.Component<TradeProps, TradeState> {
       currentPrice
     } = this.state
 
-    if (currentPrice === null) {
-      return {
-        asset: altAsset(asset),
-        unit: assetToUnit(altAsset(asset)),
-        value: 0
-      }
-    }
-
-    if (this.isQuoteValid && quantity) {
+    if (this.isQuoteValid && quantity && currentPrice) {
       return altAmount(quantity, currentPrice)
     }
 
-    const currentAmount = {
-      asset,
-      unit: assetToUnit(asset),
-      value: parseFloat(quantityStr) > 0
-        ? toQuantum(asset, parseFloat(quantityStr))
-        : 0
-    }
-
-    return altAmount(currentAmount, currentPrice)
+    return getAltAmount(asset, quantityStr, currentPrice)
   }
 
   get isQuoteValid (): boolean {
@@ -119,6 +78,11 @@ class Trade extends React.Component<TradeProps, TradeState> {
 
   componentWillUnmount (): void {
     marketDataSubscriber.removeListener('update', this.onData)
+  }
+
+  pulseQuantity (): void {
+    this.setState({ isPulsingQuantity: true })
+    setTimeout(() => this.setState({ isPulsingQuantity: false }), 1000)
   }
 
   focus (): void {
@@ -158,11 +122,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
         return
       }
 
-      // This delay is necessary since LND doesn't update balance immediately after executeTrade
-      await delay(200)
       showSuccessToast('Trade completed')
-      getBalanceState(Asset.USDX)
-      getBalanceState(Asset.BTC)
     }
   }
 
@@ -222,83 +182,22 @@ class Trade extends React.Component<TradeProps, TradeState> {
     })
   }
 
-  validateQuantity (): number | null {
-    const { asset, quantityStr } = this.state
-    const quantity = parseFloat(quantityStr)
-
-    if (isValidQuantity(asset, quantity) && isValidAmount(this.altAmount)) {
-      return quantity
-    }
-
-    this.setState({ isPulsingQuantity: true })
-    setTimeout(() => this.setState({ isPulsingQuantity: false }), 1000)
-
-    if (quantity < MIN_QUANTITY[asset] || quantityStr === '') {
-      showErrorToast(`Minimum quantity is ${formatAmount(MIN_AMOUNT[asset])} ${formatAsset(asset)}`)
-    } else if (quantity > MAX_QUANTITY[asset]) {
-      showErrorToast(`Maximum quantity is ${formatAmount(MAX_AMOUNT[asset])} ${formatAsset(asset)}`)
-    } else if (this.altAmount.value < MIN_AMOUNT[this.altAmount.asset].value) {
-      showErrorToast(`Minimum quantity is ${formatAmount(MIN_AMOUNT[this.altAmount.asset])} ${formatAsset(this.altAmount.asset)}`)
-    } else if (this.altAmount.value > MAX_AMOUNT[this.altAmount.asset].value) {
-      showErrorToast(`Maximum quantity is ${formatAmount(MAX_AMOUNT[this.altAmount.asset])} ${formatAsset(this.altAmount.asset)}`)
-    } else {
-      showErrorToast(`Invalid ${formatAsset(asset)} quantity`)
-    }
-
-    return null
-  }
-
   startBuy = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
-    if (!this.state.isClockSynced) {
-      await this.checkClockSynced()
-      if (!this.state.isClockSynced) {
-        showErrorToast('The system clock is inaccurate, ' +
-          'please update the time and try again')
-        return
-      }
-    }
-
     const {
-      currentPrice,
-      asset
+      asset,
+      quantityStr,
+      currentPrice
     } = this.state
 
-    if (currentPrice === null) {
-      showErrorToast(`Wait for prices to load before buying BTC`)
-      return
-    }
-
-    const usdBalance = balances[Asset.USDX]
-
-    if (usdBalance instanceof Error) {
-      showErrorToast(`Wait for USD balance to load before buying BTC`)
-      return
-    } else if (usdBalance.value === 0) {
-      this.showDepositError(`Deposit USD before buying BTC`)
-      return
-    }
-
-    const value = this.validateQuantity()
-    if (value == null) return
-
-    const quantity = {
-      asset,
-      unit: assetToUnit(asset),
-      value: toQuantum(asset, value)
-    }
-
-    const usdxQuantity = asset === Asset.USDX
-      ? quantity.value
-      : altValue(asset, quantity.value, currentPrice)
-
-    if (!isUSDXSufficient(usdxQuantity)) {
-      this.showDepositError(`Insufficient USD`)
-      return
-    }
-
     try {
-      const quote = await getQuote(quantity)
+      if (currentPrice == null) {
+        throw new Error('Unable to execute trade before prices load')
+      }
+
+      const quantity = validateQuantity(asset, parseFloat(quantityStr), currentPrice)
+
+      const quote = await requestQuote(quantity)
       const secondsRemaining = getQuoteUserDuration(quote)
       this.setState({
         quantity,
@@ -307,10 +206,13 @@ class Trade extends React.Component<TradeProps, TradeState> {
       })
       this.countdown()
     } catch (e) {
-      if (e.status === 403) {
-        showSupportToast('Your account must be approved prior to trading')
+      if (e instanceof BalanceError) {
+        this.showDepositError(e.message)
+      } else if (e instanceof QuantityError) {
+        showErrorToast(e.message)
+        this.pulseQuantity()
       } else {
-        showSupportToast('Failed to get price: ' + e.message)
+        showSupportToast(e.message)
       }
     }
   }

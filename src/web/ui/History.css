@@ -111,27 +111,3 @@
 .History tbody tr td {
   line-height: 16px;
 }
-
-/* monospace amounts to make things line up */
-.History tbody .trade-amount {
-  font-family: 'B612 Mono', monospace;
-  font-size: 0.95em;
-  text-align: right;
-}
-
-.History tbody .trade-amount:first-child {
-  text-align: left;
-}
-
-.trade-amount.usd {
-  position: relative;
-}
-
-.History tbody .trade-amount.usd::before {
-  display: inline;
-  content: '$';
-  color: #828f99;
-  text-align: left;
-  position: absolute;
-  left: 20px;
-}

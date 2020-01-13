@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react'
-import { Alignment, Button, Classes, Dialog, MenuItem, Checkbox } from '@blueprintjs/core'
+import { Alignment, Button, Classes, Dialog, MenuItem, Checkbox, PopoverPosition } from '@blueprintjs/core'
 import { Select, ItemRenderer, ItemPredicate } from '@blueprintjs/select'
 import { getJurisdiction, isApprovedJurisdiction } from '../../domain/jurisdiction'
 import { SubscribeForm } from './subscribe-form'
@@ -138,6 +138,10 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
                 filterable={false}
                 onItemSelect={this.handleJurisdictionSelection}
                 activeItem={this.state.jurisdiction || null}
+                popoverProps={{
+                  position: PopoverPosition.TOP,
+                  minimal: true
+                }}
               >
                 <span className="state-label">State</span>
                 <Button

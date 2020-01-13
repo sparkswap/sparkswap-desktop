@@ -17,5 +17,6 @@ export const API_ENDPOINTS: { [key: string]: string } = {
   START_BERBIX: '/start-berbix',
   FINISH_BERBIX: '/finish-berbix',
   SUBMIT_PHOTO_ID: '/submit-photo-id',
-  GET_PROOF: '/proof-of-keys'
+  GET_PROOF: '/proof-of-keys',
+  HEALTHCHECK: '/healthcheck'
 }

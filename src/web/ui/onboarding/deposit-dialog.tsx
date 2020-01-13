@@ -19,7 +19,7 @@ import {
   ANCHOR_DASHBOARD_PATH,
   ANCHOR_PHOTO_ID_PATH
 } from '../../../global-shared/anchor-engine/api'
-import { formatDollarValue } from '.././formatters'
+import { formatDollarValue } from '../formatters'
 import { Asset } from '../../../global-shared/types'
 import { openBeacon } from '../beacon'
 import { Berbix } from './berbix'

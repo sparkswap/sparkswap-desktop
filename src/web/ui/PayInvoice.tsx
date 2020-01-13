@@ -1,6 +1,6 @@
 import React, { ReactNode, ChangeEvent } from 'react'
 import { payInvoice, getInvoice } from '../domain/lnd'
-import { getQuote, getQuoteUserDuration } from '../domain/quote'
+import { requestQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
 import { handleLightningPaymentUri } from '../domain/main-request'
 import { Button, Dialog, Classes, Label, TextArea, Switch, Spinner } from '@blueprintjs/core'
@@ -97,7 +97,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
   }
 
   async loadQuote (paymentRequest: string, btcAmount: Amount): Promise<void> {
-    const quote = await getQuote(btcAmount)
+    const quote = await requestQuote(btcAmount)
 
     // check that the user hasn't changed the payment request while we were
     // retrieving the quote so we associate the correct quote with the payment request.

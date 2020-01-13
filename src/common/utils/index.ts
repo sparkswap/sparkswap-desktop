@@ -1,5 +1,9 @@
 import serverRequest from './server-request'
+import { getNextTimeoutDuration, isStartOfInterval, getCronDate } from './time'
 
 export {
-  serverRequest
+  serverRequest,
+  getNextTimeoutDuration,
+  isStartOfInterval,
+  getCronDate
 }

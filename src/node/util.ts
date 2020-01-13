@@ -3,8 +3,9 @@ import logger from '../global-shared/logger'
 import { getAuth } from './auth'
 import { serverRequest as baseRequest } from '../common/utils'
 import { UnknownJSON } from '../global-shared/fetch-json'
-import { shell } from 'electron'
+import { Notification, shell } from 'electron'
 import { IS_TEST, IS_PRODUCTION } from '../common/config'
+import { AlertEvent } from '../common/types'
 
 export function serverRequest (path: string, data: object = {}): Promise<UnknownJSON> {
   return baseRequest(path, data, getAuth)
@@ -35,3 +36,11 @@ export function openLink (link: string): void {
 export const IS_MACOS = process.platform === 'darwin'
 export const IS_WINDOWS = process.platform === 'win32'
 export const IS_LINUX = process.platform === 'linux'
+
+export function showNotification (event: AlertEvent): void {
+  const notification = new Notification({
+    title: event.title,
+    body: event.message
+  })
+  notification.show()
+}

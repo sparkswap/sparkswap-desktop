@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react'
 import './History.css'
 import { HTMLTable, H4, Spinner, Button } from '@blueprintjs/core'
 import { Trade, TradeStatus } from '../../common/types'
-import { formatDate, formatAmount } from './formatters'
+import { formatDate, formatAmount, addMutedSpan } from './formatters'
 import { showErrorToast } from './AppToaster'
 import {
   trades,
@@ -21,23 +21,6 @@ const STATUS_CLASS_NAMES = Object.freeze({
   [TradeStatus.COMPLETE]: '',
   [TradeStatus.FAILED]: 'error text-muted'
 })
-
-function addMutedSpan (text: string): ReactNode {
-  const reversed = text.split('').reverse().join('')
-  let reverseIndex = 0
-
-  while (reversed[reverseIndex] === '0' || reversed[reverseIndex] === '.') {
-    reverseIndex++
-  }
-
-  const index = text.length - reverseIndex
-
-  return (
-    <React.Fragment>
-      {text.slice(0, index)}<span className='text-muted'>{text.slice(index)}</span>
-    </React.Fragment>
-  )
-}
 
 class HistoryRow extends React.PureComponent<HistoryRowProps> {
   render (): ReactNode {
@@ -134,7 +117,7 @@ class History extends React.PureComponent<{}, HistoryState> {
         <H4 className='HistoryTitle'>History</H4>
         <div className="table-outer">
           <div className="table-inner">
-            <HTMLTable condensed={true}>
+            <HTMLTable className='trade-table' condensed={true}>
               <thead>
                 <tr>
                   <th className='text-muted'>Size (BTC)</th>

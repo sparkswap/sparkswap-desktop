@@ -164,7 +164,7 @@ class PriceChart extends React.Component<{}, PriceChartState> {
     return (
       <H3 className='price-change' style={{ color: delta >= 0 ? Colors.GREEN4 : Colors.RED4 }}>
         <span className={this.getClassName()}>
-          {prefix} {formatDollarValue(delta)} ({formatPercent(percentGrowth)})
+          {prefix} {formatDollarValue(Math.abs(delta))} ({formatPercent(percentGrowth)})
         </span>
       </H3>
     )

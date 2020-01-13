@@ -4,7 +4,7 @@ import { autoUpdater, BrowserWindow, App, Event } from 'electron'
 import { autoUpdater as electronUpdater } from 'electron-updater'
 import { IS_MACOS, IS_LINUX } from './util'
 import { IS_DEVELOPMENT, IS_PRODUCTION, IS_TEST } from '../common/config'
-import { tradeUpdater } from './data'
+import { tradeUpdater, recurringBuyUpdater } from './data'
 import { delay } from '../global-shared/util'
 import { ProgressInfo } from 'app-builder-lib'
 import logger from '../global-shared/logger'
@@ -57,6 +57,12 @@ function createMainWindow (): BrowserWindow {
   tradeUpdater.on('change', (id: number) => {
     if (isWindowAvailable(window)) {
       window.webContents.send('tradeUpdate', id)
+    }
+  })
+
+  recurringBuyUpdater.on('change', (id: number) => {
+    if (isWindowAvailable(window)) {
+      window.webContents.send('recurringBuyUpdate', id)
     }
   })
 

@@ -87,7 +87,13 @@ export class MarketData extends EventEmitter {
             const rawCurrentPrice = Number(event.data)
             this.currentPrice = isValidPrice(rawCurrentPrice) ? rawCurrentPrice : null
 
-            this.emit('update', { currentPrice: this.currentPrice })
+            if (this.currentPrice) {
+              this.historicalData.push({ date: new Date(), price: this.currentPrice })
+            }
+            this.emit('update', {
+              currentPrice: this.currentPrice,
+              historicalData: this.historicalData
+            })
           } catch (e) {
             logger.debug(`Failed to update price, faulty data: ${event.data}`)
           }

@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events'
 import React, { ReactNode } from 'react'
 import logger from '../../global-shared/logger'
 import './App.css'
@@ -6,6 +7,8 @@ import PriceChart from './Prices'
 import TradeHistory from './History'
 import DownloadProgress from './DownloadProgress'
 import Trade from './Trade'
+import DCA, { getSuccessMessage } from './dca/DCA'
+import { subscribeRecurringBuys } from '../domain/dca'
 import {
   getRegistrationURL,
   RegisterDialog,
@@ -14,15 +17,21 @@ import {
 } from './onboarding'
 import { openBeacon } from './beacon'
 import Balances from './Balances'
-import { showErrorToast, showSupportToast, showLoadingToast, showSuccessToast } from './AppToaster'
+import { showErrorToast, showSupportToast, showLoadingToast, showSuccessToast, toaster } from './AppToaster'
 import * as lnd from '../domain/lnd'
 import register from '../domain/register'
 import { getStatus } from '../domain/server'
-import { getAuth, openLinkInBrowser, startDeposit } from '../domain/main-request'
+import { getAuth, openLinkInBrowser, startDeposit, sendAppNotification } from '../domain/main-request'
 import { ReviewStatus, URL } from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
-import { Button, IActionProps } from '@blueprintjs/core'
+import { Button, IActionProps, Intent } from '@blueprintjs/core'
 import { ProofOfKeysDialog } from './proof-of-keys-dialog'
+import { BalanceError } from '../../common/errors'
+import { delay } from '../../global-shared/util'
+
+// Delay so that our notification appears instead of Zap's
+// which is less informative
+const OS_NTFN_DELAY = 500
 
 interface OnboardingStep {
   stage: OnboardingStage,
@@ -40,6 +49,8 @@ interface AppState {
 }
 
 class App extends React.Component<{}, AppState> {
+  recurringBuySubscriber: EventEmitter
+
   constructor (props: {}) {
     super(props)
     this.state = {
@@ -48,6 +59,38 @@ class App extends React.Component<{}, AppState> {
       showSteps: true
     }
     this.updateUUID()
+    this.recurringBuySubscriber = subscribeRecurringBuys()
+  }
+
+  componentDidMount (): void {
+    this.recurringBuySubscriber.on('success', async (message: string): Promise<void> => {
+      showSuccessToast(message)
+      await delay(OS_NTFN_DELAY)
+      sendAppNotification({
+        title: message,
+        message: getSuccessMessage()
+      })
+    })
+    this.recurringBuySubscriber.on('error', async (error: Error): Promise<void> => {
+      if (error instanceof BalanceError) {
+        toaster.show({
+          intent: Intent.DANGER,
+          message: error.message,
+          action: {
+            onClick: () => this.handleDeposit(),
+            text: 'Deposit'
+          }
+        })
+      } else {
+        showErrorToast(error.message)
+      }
+
+      await delay(OS_NTFN_DELAY)
+      sendAppNotification({
+        title: 'Failed to execute recurring buy',
+        message: error.message
+      })
+    })
   }
 
   async updateUUID (): Promise<void> {
@@ -230,6 +273,7 @@ class App extends React.Component<{}, AppState> {
           <div className="vertical-line" />
           <div className="TradeAndHistory">
             <Trade onDeposit={this.handleDeposit} />
+            <DCA recurringBuySubscriber={this.recurringBuySubscriber} />
             <TradeHistory />
           </div>
         </div>

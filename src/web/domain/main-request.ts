@@ -1,5 +1,13 @@
 import { Auth, Amount, Asset, URL, UnknownObject } from '../../global-shared/types'
-import { Quote, Trade, TradeStatus } from '../../common/types'
+import {
+  Quote,
+  Trade,
+  RecurringBuy,
+  AlertEvent,
+  UnsavedRecurringBuy,
+  WireRecurringBuy
+} from '../../common/types'
+import { serializeUnsavedRecurringBuyToWire, deserializeRecurringBuyFromWire, deserializeTradeFromWire } from '../../common/serializers'
 import { ipcRenderer } from '../electron'
 
 let counter = 1
@@ -49,24 +57,12 @@ export async function sendExecuteTrade (quote: Quote): Promise<void> {
   await mainRequest('trade:execute', quote)
 }
 
-function deserializeTrade (wireTrade: UnknownObject): Trade {
-  return {
-    id: wireTrade.id as number,
-    status: wireTrade.status as TradeStatus,
-    hash: wireTrade.hash as string,
-    destinationAmount: wireTrade.destinationAmount as Amount,
-    sourceAmount: wireTrade.sourceAmount as Amount,
-    startTime: new Date(wireTrade.startTime as string),
-    endTime: wireTrade.endTime ? new Date(wireTrade.endTime as string) : undefined
-  }
-}
-
 export async function getTrades (limit: number, olderThanTradeId?: number): Promise<Trade[]> {
-  return (await mainRequest('trade:getTrades', { limit, olderThanTradeId }) as UnknownObject[]).map(deserializeTrade)
+  return (await mainRequest('trade:getTrades', { limit, olderThanTradeId }) as UnknownObject[]).map(deserializeTradeFromWire)
 }
 
 export async function getTrade (id: number): Promise<Trade> {
-  return deserializeTrade(await mainRequest('trade:getTrade', { id }) as UnknownObject)
+  return deserializeTradeFromWire(await mainRequest('trade:getTrade', { id }) as UnknownObject)
 }
 
 export async function startDeposit (): Promise<URL> {
@@ -99,6 +95,22 @@ export async function hasShownProofOfKeys (): Promise<boolean> {
 
 export async function markProofOfKeysShown (): Promise<void> {
   await mainRequest('pok:markShown')
+}
+
+export async function getRecurringBuys (): Promise<RecurringBuy[]> {
+  return (await mainRequest('dca:getRecurringBuys') as WireRecurringBuy[]).map(deserializeRecurringBuyFromWire)
+}
+
+export async function addRecurringBuy (recurringBuy: UnsavedRecurringBuy): Promise<void> {
+  await mainRequest('dca:addRecurringBuy', serializeUnsavedRecurringBuyToWire(recurringBuy))
+}
+
+export async function removeRecurringBuy (id: number): Promise<void> {
+  await mainRequest('dca:removeRecurringBuy', id)
+}
+
+export function sendAppNotification (event: AlertEvent): void {
+  mainRequestSync('app:notification', event)
 }
 
 export default mainRequest

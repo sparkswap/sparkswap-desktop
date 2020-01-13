@@ -1,5 +1,8 @@
 import { satoshisPerBTC, centsPerUSD } from '../../common/constants'
-import { Amount, Asset, Unit } from '../../global-shared/types'
+import { Amount, Asset, assetToUnit, Unit } from '../../global-shared/types'
+import { QuantityError } from '../../common/errors'
+import { formatAmount, formatAsset } from '../ui/formatters'
+import { altAmount } from './convert-amount'
 
 export function toSatoshis (btcQuantity: number): number {
   return Math.round(btcQuantity * satoshisPerBTC)
@@ -117,4 +120,32 @@ export const MAX_QUANTITY = {
 export const MAX_AMOUNT = {
   [Asset.BTC]: MAX_AMOUNT_BTC,
   [Asset.USDX]: MAX_AMOUNT_USDX
+}
+
+export function toAmount (asset: Asset, quantity: number): Amount {
+  return {
+    asset,
+    unit: assetToUnit(asset),
+    value: toQuantum(asset, quantity)
+  }
+}
+
+export function validateQuantity (asset: Asset, quantity: number, currentPrice: number): Amount {
+  const alternateAmount = altAmount(toAmount(asset, quantity), currentPrice)
+
+  if (quantity < MIN_QUANTITY[asset]) {
+    throw new QuantityError(`Minimum quantity is ${formatAmount(MIN_AMOUNT[asset])} ${formatAsset(asset)}`, asset)
+  } else if (quantity > MAX_QUANTITY[asset]) {
+    throw new QuantityError(`Maximum quantity is ${formatAmount(MAX_AMOUNT[asset])} ${formatAsset(asset)}`, asset)
+  } else if (alternateAmount.value < MIN_AMOUNT[alternateAmount.asset].value) {
+    throw new QuantityError(`Minimum quantity is ${formatAmount(MIN_AMOUNT[alternateAmount.asset])} ${formatAsset(alternateAmount.asset)}`, asset)
+  } else if (alternateAmount.value > MAX_AMOUNT[alternateAmount.asset].value) {
+    throw new QuantityError(`Maximum quantity is ${formatAmount(MAX_AMOUNT[alternateAmount.asset])} ${formatAsset(alternateAmount.asset)}`, asset)
+  }
+
+  if (isValidQuantity(asset, quantity) && isValidAmount(alternateAmount)) {
+    return toAmount(asset, quantity)
+  }
+
+  throw new QuantityError(`Invalid ${formatAsset(asset)} quantity`, asset)
 }

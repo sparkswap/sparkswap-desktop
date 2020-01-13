@@ -59,6 +59,7 @@ body.sparkswap {
   bottom: 20px;
   right: 30px;
   z-index: 22;
+  padding-right: 0;
 }
 
 .bp3-dark.sparkswap .error {
@@ -110,6 +111,11 @@ body.sparkswap {
 .sparkswap h5.bp3-heading .subtitle {
   font-size: 0.95em;
   font-weight: 400;
+}
+
+.sparkswap .placeholder,
+.sparkswap table.bp3-html-table .placeholder td {
+  color: rgba(191,204,214,.5);
 }
 
 /* Inputs */
@@ -195,6 +201,10 @@ body.sparkswap {
   margin-bottom: 20px;
 }
 
+.sparkswap .bp3-dialog .bp3-dialog-body .bp3-callout .bp3-heading {
+  margin-bottom: 5px;
+}
+
 .sparkswap .bp3-dialog .bp3-dialog-body p {
   margin-top: 10px;
 }
@@ -243,4 +253,26 @@ body.sparkswap {
     border-color: rgba(206, 217, 224, 0.2);
     background: rgba(206, 217, 224, 0.2);
   }
+}
+
+/* Shared table */
+
+/* monospace amounts to make things line up */
+.trade-table tbody .trade-amount {
+  font-family: 'B612 Mono', monospace;
+  font-size: 0.95em;
+  text-align: right;
+}
+
+.trade-table tbody .trade-amount.usd {
+  position: relative;
+}
+
+.trade-table tbody .trade-amount.usd::before {
+  display: inline;
+  content: '$';
+  color: #828f99;
+  text-align: left;
+  position: absolute;
+  left: 20px;
 }

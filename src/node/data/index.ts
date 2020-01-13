@@ -12,6 +12,12 @@ import {
   markProofOfKeysShown,
   hasShownProofOfKeys
 } from './events'
+import {
+  addRecurringBuy,
+  getRecurringBuys,
+  removeRecurringBuy,
+  updater as recurringBuyUpdater
+} from './recurringBuys'
 
 export {
   initialize,
@@ -24,5 +30,9 @@ export {
   failTrade,
   tradeUpdater,
   markProofOfKeysShown,
-  hasShownProofOfKeys
+  hasShownProofOfKeys,
+  addRecurringBuy,
+  getRecurringBuys,
+  removeRecurringBuy,
+  recurringBuyUpdater
 }

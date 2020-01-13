@@ -33,3 +33,50 @@ export interface Trade extends Quote {
   failureCode?: TradeFailureReason,
   status: TradeStatus
 }
+
+export enum TimeUnit {
+  MINUTES = 'MINUTES',
+  HOURS = 'HOURS',
+  DAYS = 'DAYS',
+  WEEKS = 'WEEKS',
+  MONTHS = 'MONTHS'
+}
+
+const timeUnitEntries = Object.entries(TimeUnit)
+
+export function valueToTimeUnit (str: string): TimeUnit {
+  for (let i = 0; i < timeUnitEntries.length; i++) {
+    if (timeUnitEntries[i][1] === str) {
+      return TimeUnit[timeUnitEntries[i][0] as keyof typeof TimeUnit]
+    }
+  }
+  throw new Error(`${str} is not a valid value for TimeUnit`)
+}
+
+export interface Frequency {
+  interval: number,
+  unit: TimeUnit
+}
+
+export interface RecurringBuy {
+  id: number,
+  amount: Amount,
+  frequency: Frequency,
+  referenceTime: Date
+}
+
+export interface WireRecurringBuy {
+  id: number,
+  amount: Amount,
+  frequency: Frequency,
+  referenceTime: string
+}
+
+export type UnsavedRecurringBuy = Omit<RecurringBuy, 'id'>
+
+export type WireUnsavedRecurringBuy = Omit<WireRecurringBuy, 'id'>
+
+export interface AlertEvent {
+  title: string,
+  message: string
+}
