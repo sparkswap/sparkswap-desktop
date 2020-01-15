@@ -494,7 +494,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
             ref={this.webviewRef}
             partition={ANCHOR_PARTITION}
             src={urlWithPostMessage}
-            preload={`file://${WEBVIEW_PRELOAD_PATH}`}
+            preload={WEBVIEW_PRELOAD_PATH}
           />
         </div>
         {this.state.isDone

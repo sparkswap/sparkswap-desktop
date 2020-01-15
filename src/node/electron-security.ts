@@ -5,7 +5,7 @@ import { App } from 'electron'
 import { injectContentSecurityPolicies } from './content-security-policies'
 import { IS_PRODUCTION } from '../common/config'
 
-const WEBVIEW_PRELOAD = `file://${path.join(__dirname, 'webview-preload.js')}`
+export const WEBVIEW_PRELOAD_PATH = url.pathToFileURL(path.join(__dirname, 'webview-preload.js')).toString()
 
 const WEBVIEW_URL_WHITELIST = IS_PRODUCTION
   ? ['https://portal.anchorusd.com']
@@ -45,10 +45,12 @@ function secureApp (app: App): void {
       // Best practices for webviews (see: https://electronjs.org/docs/tutorial/security#11-verify-webview-options-before-creation)
 
       // Strip away preload scripts if not our explicit preload script
-      if (webPreferences.preload !== WEBVIEW_PRELOAD) {
+      if (webPreferences.preload !== WEBVIEW_PRELOAD_PATH) {
+        logger.warn(`Removing unauthorized webview preload: ${webPreferences.preload}`)
         delete webPreferences.preload
       }
-      if (webPreferences.preloadURL !== WEBVIEW_PRELOAD) {
+      if (webPreferences.preloadURL !== WEBVIEW_PRELOAD_PATH) {
+        logger.warn(`Removing unauthorized webview preload: ${webPreferences.preloadURL}`)
         delete webPreferences.preloadURL
       }
 

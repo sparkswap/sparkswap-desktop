@@ -12,7 +12,8 @@ const tryConnection = () => client.connect({port: ELECTRON_DEV_PORT}, () => {
 
     if(!electron) {
       console.info('Starting electron...')
-      electron = spawn('npm', ['run', 'electron'])
+      const cmd = /^win/.test(process.platform) ? 'npm.cmd' : 'npm'
+      electron = spawn(cmd, ['run', 'electron'])
       electron.stdout.on('data', data => console.log(data.toString()))
       electron.stderr.on('data', data => console.error(data.toString()))
       electron.on('close', code => console.info(`electron exited with code ${code}`))

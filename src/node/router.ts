@@ -1,4 +1,3 @@
-import * as path from 'path'
 import { App } from 'electron'
 import logger from '../global-shared/logger'
 import { listen, listenSync, close as closeListeners } from './main-listener'
@@ -18,6 +17,7 @@ import { openLink, showNotification } from './util'
 import { delay } from '../global-shared/util'
 import { getNetworkTime } from './data/ntp'
 import { payInvoice } from '../global-shared/lnd-engine'
+import { WEBVIEW_PRELOAD_PATH } from './electron-security'
 
 const RETRY_TRADE_DELAY = 10000
 
@@ -136,7 +136,7 @@ export class Router {
     listen('trade:getTrade', ({ id }: { id: number }) => store.getTrade(this.db, id))
     listen('auth:getAuth', () => getAuth())
     listen('anchor:startDeposit', () => this.anchorClient.startDeposit())
-    listenSync('getWebviewPreloadPath', () => path.join(__dirname, 'webview-preload.js'))
+    listenSync('getWebviewPreloadPath', () => WEBVIEW_PRELOAD_PATH)
     listen('ntp:getTime', () => getNetworkTime())
     listen('pok:hasShown', () => store.hasShownProofOfKeys(this.db))
     listen('pok:markShown', () => store.markProofOfKeysShown(this.db))
