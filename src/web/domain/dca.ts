@@ -38,13 +38,17 @@ function shouldExecuteRecurringBuy (recurringBuy: RecurringBuy): boolean {
 }
 
 async function executeScheduledBuys (subscriber: EventEmitter): Promise<void> {
+  const MAX_EXECUTE_ATTEMPTS = 3
   for (const buy of recurringBuys.values()) {
     if (shouldExecuteRecurringBuy(buy)) {
-      try {
-        await tryBuy(buy)
-        subscriber.emit('success', 'Recurring buy completed')
-      } catch (e) {
-        subscriber.emit('error', e)
+      for (let i = 0; i < MAX_EXECUTE_ATTEMPTS; i++) {
+        try {
+          await tryBuy(buy)
+          subscriber.emit('success', 'Recurring buy completed')
+          break
+        } catch (e) {
+          subscriber.emit('error', e)
+        }
       }
     }
   }
