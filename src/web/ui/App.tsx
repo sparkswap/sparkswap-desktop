@@ -14,7 +14,7 @@ import {
   RegisterDialog,
   DepositDialog,
   OnboardingStage
-} from './onboarding'
+} from './Onboarding'
 import { openBeacon } from './beacon'
 import Balances from './Balances'
 import { showErrorToast, showSupportToast, showLoadingToast, showSuccessToast, toaster } from './AppToaster'

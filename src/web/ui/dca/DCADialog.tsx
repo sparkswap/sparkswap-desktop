@@ -8,7 +8,7 @@ import { getCronDate, getNextTimeoutDuration } from '../../../common/utils'
 import { addRecurringBuy } from '../../domain/main-request'
 import { formatAmount, formatAsset, getAltAmount } from '../formatters'
 import { Button, ButtonGroup, Callout, Classes, Dialog, H5, HTMLTable, Icon } from '@blueprintjs/core'
-import { FormField } from '../onboarding/form-field'
+import { FormField } from '../Onboarding/form-field'
 
 const PLACEHOLDER_INTERVAL = 1
 const NUM_IMPLIED_BUYS = 3
