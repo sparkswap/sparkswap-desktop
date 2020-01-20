@@ -51,6 +51,7 @@ interface RegisterDialogProps {
   onProceed: Function,
   isOpen: boolean,
   onClose: Function,
+  onboardingVersion?: number,
   uuid?: string
 }
 
