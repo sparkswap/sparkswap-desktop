@@ -2,6 +2,8 @@ import { getTrades, getTrade } from './main-request'
 import { Trade, TradeStatus } from '../../common/types'
 import { EventEmitter } from 'events'
 import { ipcRenderer } from '../electron'
+import { formatDate, formatAmount } from '../ui/formatters'
+import mainRequest from './main-request'
 
 export const trades: Map<number, Trade> = new Map()
 
@@ -22,6 +24,33 @@ export async function loadTrades (olderThanTradeId?: number): Promise<boolean> {
   // can get the updated state when the updated trades go out
   updater.emit('update', trades)
   return canLoadMore
+}
+
+export async function exportTrades (exportLimit: number, historyExportPath: string): Promise<void> {
+  const tradesArr = await getTrades(exportLimit, undefined)
+  var content = ''
+  tradesArr.forEach(trade => 
+    {
+      if (trade.status === TradeStatus.COMPLETE) {
+        content = content 
+        + trade.id + ','
+        + formatDate(trade.endTime || trade.startTime) + ','
+        + formatAmount(trade.sourceAmount) + ','
+        + formatAmount(trade.destinationAmount) + ''
+        +'\n'
+      }
+    }
+  )
+  
+  try {
+    await mainRequest('file:writeFileSync', {
+      filePath: historyExportPath,
+      content: content
+    })
+  }
+  catch(e) {
+     alert(e);
+  }
 }
 
 async function subscribeTrades (): Promise<void> {

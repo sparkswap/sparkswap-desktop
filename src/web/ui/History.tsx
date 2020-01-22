@@ -4,6 +4,7 @@ import { HTMLTable, H4, Spinner, Button } from '@blueprintjs/core'
 import { Trade, TradeStatus } from '../../common/types'
 import { formatDate, formatAmount, addMutedSpan } from './formatters'
 import { showErrorToast } from './AppToaster'
+import { HistoryExportDialog } from './HistoryExportDialog'
 import {
   trades,
   updater as tradeUpdater,
@@ -49,7 +50,8 @@ class HistoryRow extends React.PureComponent<HistoryRowProps> {
 interface HistoryState {
   trades: Trade[],
   loading: boolean,
-  canLoadMore: boolean
+  canLoadMore: boolean,
+  isDialogOpen: boolean
 }
 
 function mapToArr (tradesMap: Map<number, Trade>): Trade[] {
@@ -65,7 +67,8 @@ class History extends React.PureComponent<{}, HistoryState> {
     this.state = {
       trades: mapToArr(trades),
       loading: false,
-      canLoadMore: canLoadMoreTrades
+      canLoadMore: canLoadMoreTrades,
+      isDialogOpen: false
     }
   }
 
@@ -92,6 +95,8 @@ class History extends React.PureComponent<{}, HistoryState> {
     }
   }
 
+  toggleDialog = (): void => this.setState({ isDialogOpen: !this.state.isDialogOpen })
+
   renderLoadMore (): React.ReactNode {
     if (!this.state.canLoadMore) {
       return
@@ -114,7 +119,14 @@ class History extends React.PureComponent<{}, HistoryState> {
 
     return (
       <div className="History">
-        <H4 className='HistoryTitle'>History</H4>
+        <div className="title-row">
+          <H4 className='HistoryTitle'>History</H4>
+          <Button
+            icon='export'
+            onClick={this.toggleDialog}
+            minimal
+          />
+        </div>
         <div className="table-outer">
           <div className="table-inner">
             <HTMLTable className='trade-table' condensed={true}>
@@ -132,6 +144,7 @@ class History extends React.PureComponent<{}, HistoryState> {
             {this.renderLoadMore()}
           </div>
         </div>
+        <HistoryExportDialog isOpen={this.state.isDialogOpen} onClose={this.toggleDialog} />
       </div>
     )
   }

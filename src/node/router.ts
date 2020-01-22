@@ -18,6 +18,7 @@ import { delay } from '../global-shared/util'
 import { getNetworkTime } from './data/ntp'
 import { payInvoice } from '../global-shared/lnd-engine'
 import { WEBVIEW_PRELOAD_PATH } from './electron-security'
+import { writeFileSync } from 'fs'
 
 const RETRY_TRADE_DELAY = 10000
 
@@ -25,6 +26,11 @@ interface Engines {
   BTC: LndEngine,
   USDX: AnchorEngine,
   [symbol: string]: Engine
+}
+
+export interface WriteFileParams {
+  filePath: string,
+  content: string
 }
 
 export class Router {
@@ -121,6 +127,15 @@ export class Router {
     }
   }
 
+  private async writeFileSync (filePath: string, content: string): Promise<void> {
+    try {
+      writeFileSync(filePath, content);
+    }
+    catch(e) {
+       alert(e);
+    }
+  }
+
   listen (): void {
     listen('lnd:connect', (config: ConnectionConfig) => this.lndClient.manualConnect(config))
     listen('lnd:scan', () => this.lndClient.scan())
@@ -140,6 +155,8 @@ export class Router {
     listen('ntp:getTime', () => getNetworkTime())
     listen('pok:hasShown', () => store.hasShownProofOfKeys(this.db))
     listen('pok:markShown', () => store.markProofOfKeysShown(this.db))
+    listen('file:writeFileSync', (params: WriteFileParams) =>
+      this.writeFileSync(params.filePath, params.content))
     listen('dca:addRecurringBuy', (recurringBuy: WireUnsavedRecurringBuy) =>
       store.addRecurringBuy(this.db, deserializeUnsavedRecurringBuyFromWire(recurringBuy)))
     listen('dca:removeRecurringBuy', (id: number) => store.removeRecurringBuy(this.db, id))
