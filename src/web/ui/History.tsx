@@ -114,7 +114,14 @@ class History extends React.PureComponent<{}, HistoryState> {
 
     return (
       <div className="History">
-        <H4 className='HistoryTitle'>History</H4>
+        <div className="title-row">
+          <H4 className='HistoryTitle'>History</H4>
+          <Button
+            icon='export'
+            // onClick={this.toggleDialog}
+            minimal
+          />
+        </div>
         <div className="table-outer">
           <div className="table-inner">
             <HTMLTable className='trade-table' condensed={true}>

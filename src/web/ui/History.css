@@ -7,6 +7,13 @@
   width: 100%;
 }
 
+.History .title-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .History .table-outer {
   position: relative;
   height: calc(100% - 30px);
