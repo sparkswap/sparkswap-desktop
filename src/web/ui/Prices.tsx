@@ -1,8 +1,10 @@
 import React, { ReactNode } from 'react'
-import { Classes, Colors, H1, H3 } from '@blueprintjs/core'
+import { Classes, Colors, H3 } from '@blueprintjs/core'
 import { Line } from 'react-chartjs-2'
+import CurrentPrice from './CurrentPrice'
 import { marketDataSubscriber, PricePoint } from '../domain/market-data'
-import { formatPercent, formatDollarValue } from './formatters'
+import { formatPercent } from './formatters'
+import { formatDollarValue } from '../../common/formatters'
 import './Prices.css'
 
 const CURRENCY_NAME = 'Bitcoin'
@@ -18,7 +20,8 @@ const CHART_OPTIONS = {
       time: { unit: 'month' },
       ticks: {
         autoSkip: true,
-        maxTicksLimit: 12
+        maxTicksLimit: 12,
+        fontColor: '#77838C'
       },
       gridLines: {
         display: false,
@@ -29,7 +32,8 @@ const CHART_OPTIONS = {
     yAxes: [{
       ticks: {
         beginAtZero: true,
-        callback: (value: number) => formatDollarValue(value)
+        callback: (value: number) => formatDollarValue(value),
+        fontColor: '#77838C'
       },
       gridLines: {
         display: false,
@@ -170,14 +174,6 @@ class PriceChart extends React.Component<{}, PriceChartState> {
     )
   }
 
-  renderPrice (): ReactNode {
-    // Used for sizing the skeleton outline while price is loading
-    const PLACEHOLDER_PRICE = 10000
-
-    const renderedPrice = this.state.currentPrice !== null ? this.state.currentPrice : PLACEHOLDER_PRICE
-    return <span className={this.getClassName()}>{formatDollarValue(renderedPrice)}</span>
-  }
-
   render (): ReactNode {
     const {
       currentPrice,
@@ -187,10 +183,7 @@ class PriceChart extends React.Component<{}, PriceChartState> {
 
     return (
       <div className='PriceChart'>
-        <H1 className='current-price'>
-          {this.renderPrice()}
-          <span className='subtitle'>{CURRENCY_NAME} Price</span>
-        </H1>
+        <CurrentPrice />
         {this.renderDelta(currentPrice, oldestClose)}
         {this.renderChart(historicalData)}
       </div>

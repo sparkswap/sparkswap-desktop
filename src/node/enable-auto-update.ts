@@ -21,16 +21,16 @@ autoUpdater.autoDownload = false
 // have consistent functionality when installing/auto-updating
 autoUpdater.autoInstallOnAppQuit = false
 
-function createNotificationForPlatform (autoUpdater: AppUpdater): Notification {
+function createNotificationForPlatform (autoUpdater: AppUpdater, version: string): Notification {
   const notification = new Notification({
     title: 'Update available for Sparkswap Desktop',
-    body: 'Click to install the latest version of Sparkswap Desktop.'
+    body: `Click to install the version ${version} of Sparkswap Desktop.`
   })
 
   notification.on('click', async () => {
     const answer: unknown = await dialog.showMessageBox({
       title: 'Update available for Sparkswap Desktop',
-      message: 'Do you want to download and install the latest version of Sparkswap Desktop?',
+      message: `Do you want to download and install version ${version} of Sparkswap Desktop?`,
       type: 'question',
       defaultId: 0,
       cancelId: 1,
@@ -72,8 +72,6 @@ function enableAutoUpdate (app: App): void {
     app.setAppUserModelId('com.sparkswap.Sparkswap')
   }
 
-  let updateNotification: Notification
-
   // TODO make this configurable through settings
   let shouldCheckForUpdates = true
 
@@ -82,7 +80,10 @@ function enableAutoUpdate (app: App): void {
     shouldCheckForUpdates = true
   })
 
-  autoUpdater.on('update-available', () => {
+  autoUpdater.on('update-available', ({ version }: UpdateInfo) => {
+    if (!app.isReady()) return
+    const updateNotification = createNotificationForPlatform(autoUpdater, version)
+    updateNotification.on('click', () => { shouldCheckForUpdates = false })
     updateNotification.show()
   })
 
@@ -98,13 +99,6 @@ function enableAutoUpdate (app: App): void {
       logger.debug('Skipping autoUpdater in development')
       return
     }
-
-    // We setup the Notification here because we cannot create a notification
-    // before the app is ready AND we only want to have one instance of a notification
-    // so that multiple notifications will be handled w/ the same element instead
-    // of creating a ton of individual notifications for the same thing.
-    updateNotification = createNotificationForPlatform(autoUpdater)
-    updateNotification.on('click', () => { shouldCheckForUpdates = false })
 
     // Disabled eslint because we modify this variable outside of the scope of this
     // app handler

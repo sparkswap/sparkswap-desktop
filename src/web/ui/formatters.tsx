@@ -1,32 +1,23 @@
 import React, { ReactNode } from 'react'
 import { Amount, Asset, assetToUnit, Nullable } from '../../global-shared/types'
-import { centsPerUSD, satoshisPerBTC } from '../../common/constants'
 import { altAmount, altAsset } from '../domain/convert-amount'
-import { toAmount } from '../domain/quantity'
+import { toAmount } from '../../common/currency-conversions'
 import { Frequency } from '../../common/types'
 
 const DATE_FORMAT_OPTIONS = {
-  year: '2-digit',
-  month: 'numeric',
+  year: 'numeric',
+  month: 'short',
   day: 'numeric'
 }
 
-const BTC_FORMAT_OPTIONS = {
-  minimumFractionDigits: 8,
-  maximumFractionDigits: 8
+const TIME_FORMAT_OPTIONS = {
+  hour: 'numeric',
+  minute: 'numeric'
 }
 
 const ASSET_DISPLAY_SYMBOL = {
   [Asset.BTC]: 'BTC',
   [Asset.USDX]: 'USD'
-}
-
-export function formatDollarValue (value: number): string {
-  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-}
-
-export function formatBtcValue (value: number): string {
-  return (value).toLocaleString('en-US', BTC_FORMAT_OPTIONS)
 }
 
 export function formatPercent (value: number): string {
@@ -35,17 +26,6 @@ export function formatPercent (value: number): string {
 
 export function formatDate (date: Date): string {
   return date.toLocaleDateString('default', DATE_FORMAT_OPTIONS)
-}
-
-export function formatAmount (amount: Amount): string {
-  switch (amount.asset) {
-    case Asset.BTC:
-      return formatBtcValue(amount.value / satoshisPerBTC)
-    case Asset.USDX:
-      return formatDollarValue(amount.value / centsPerUSD)
-    default:
-      throw new Error(`Unknown asset type. Cannot format asset ${amount.asset}`)
-  }
 }
 
 export function formatAsset (asset: Asset): string {
@@ -82,7 +62,16 @@ export function getAltAmount (asset: Asset, quantityStr: string, currentPrice: N
   return altAmount(toAmount(asset, value), currentPrice)
 }
 
-export function formatTimeUnit (frequency: Frequency): string {
+export function formatTime (date: Date): string {
+  return date.toLocaleTimeString([], TIME_FORMAT_OPTIONS)
+}
+
+export function formatFrequency (frequency: Frequency): string {
+  const unit = formatTimeUnit(frequency)
+  return frequency.interval === 1 ? `${unit}` : `${frequency.interval} ${unit}`
+}
+
+function formatTimeUnit (frequency: Frequency): string {
   return frequency.interval === 1
     ? frequency.unit.toLowerCase().slice(0, -1)
     : frequency.unit.toLowerCase()

@@ -4,7 +4,8 @@ import { readdirSync } from 'fs'
 const migrationFilePaths = [
   pathJoin(__dirname, '0001-create-trades-table.sql'),
   pathJoin(__dirname, '0002-create-events-table.sql'),
-  pathJoin(__dirname, '0003-create-recurring-buys-table.sql')
+  pathJoin(__dirname, '0003-create-recurring-buys-table.sql'),
+  pathJoin(__dirname, '0004-add-quote-expiration.sql')
 ]
 
 const version = migrationFilePaths.length

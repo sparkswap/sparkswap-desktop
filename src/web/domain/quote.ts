@@ -1,15 +1,41 @@
 import { Amount, Asset } from '../../global-shared/types'
-import { QuoteResponse } from '../../global-shared/types/server'
 import { isValidAmount } from './quantity'
 import * as server from './server'
 import { marketDataSubscriber } from './market-data'
-import { isClockSynced, checkClockSynced } from './system-clock'
 import { BalanceError } from '../../common/errors'
+import { Quote } from '../../common/types'
+import { quoteSetupSec } from '../../common/constants'
 import { balances, isUSDXSufficient } from './balance'
 import { altValue } from './convert-amount'
 
-async function getBtcQuote (btcAmount: Amount): Promise<QuoteResponse> {
-  const quote = await server.getQuote({ destinationAmount: btcAmount })
+interface BtcQuoteParams {
+  destinationAmount: Amount
+}
+
+interface UsdxQuoteParams {
+  sourceAmount: Amount
+}
+
+type QuoteParams = BtcQuoteParams | UsdxQuoteParams
+
+async function getQuote (params: QuoteParams): Promise<Quote> {
+  const startQuoteTime = Date.now()
+
+  const quoteRes = await server.getQuote(params)
+
+  return {
+    hash: quoteRes.hash,
+    destinationAmount: quoteRes.destinationAmount,
+    sourceAmount: quoteRes.sourceAmount,
+    // since `startQuoteTime` is before the server executes, this is
+    // a conservative estimate (i.e. it is probably a few hundred milliseconds
+    // earlier than the actual expiration on the server)
+    expiration: new Date(startQuoteTime + quoteRes.duration * 1000)
+  }
+}
+
+async function getBtcQuote (btcAmount: Amount): Promise<Quote> {
+  const quote = await getQuote({ destinationAmount: btcAmount })
 
   // sanity check the server's quote
   if (quote.destinationAmount.value !== btcAmount.value) {
@@ -19,8 +45,8 @@ async function getBtcQuote (btcAmount: Amount): Promise<QuoteResponse> {
   return quote
 }
 
-async function getUsdxQuote (usdxAmount: Amount): Promise<QuoteResponse> {
-  const quote = await server.getQuote({ sourceAmount: usdxAmount })
+async function getUsdxQuote (usdxAmount: Amount): Promise<Quote> {
+  const quote = await getQuote({ sourceAmount: usdxAmount })
 
   // sanity check the server's quote
   if (quote.sourceAmount.value !== usdxAmount.value) {
@@ -35,26 +61,9 @@ const quoteFns = {
   [Asset.USDX]: getUsdxQuote
 }
 
-// Calculates the amount of time remaining for a human to act
-// on a quote
-export function getQuoteUserDuration (quote: QuoteResponse): number {
-  // subtract 5 seconds from the quote duration because if the user clicks
-  // the confirm button right before the countdown hits zero, we still have
-  // to make a network round trip before the client's invoice gets an HTLC,
-  // and this invoice's expiration is set based on the quote duration.
-  return Math.max(quote.duration - 5, 0)
-}
-
-async function validateAmount (amount: Amount): Promise<Amount> {
+function validateAmount (amount: Amount): Amount {
   if (!isValidAmount(amount)) {
     throw new Error(`Invalid quantity`)
-  }
-
-  if (!isClockSynced) {
-    await checkClockSynced()
-    if (!isClockSynced) {
-      throw new Error('The system clock is inaccurate, please update the time')
-    }
   }
 
   if (marketDataSubscriber.currentPrice == null) {
@@ -80,8 +89,8 @@ async function validateAmount (amount: Amount): Promise<Amount> {
   return amount
 }
 
-export async function requestQuote (amount: Amount): Promise<QuoteResponse> {
-  const validatedAmount = await validateAmount(amount)
+export function requestQuote (amount: Amount): Promise<Quote> {
+  const validatedAmount = validateAmount(amount)
 
   try {
     return quoteFns[amount.asset](validatedAmount)
@@ -92,4 +101,10 @@ export async function requestQuote (amount: Amount): Promise<QuoteResponse> {
       throw new Error(`Failed to get quote: ${e.message}`)
     }
   }
+}
+
+// Get an approximate number of seconds until the user can no longer
+// accept a quote, accounting for the amount of time it will take us to setup.
+export function getQuoteUserDuration (quote: Quote): number {
+  return Math.round((quote.expiration.getTime() - Date.now()) / 1000) - quoteSetupSec
 }

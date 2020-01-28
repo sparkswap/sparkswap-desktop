@@ -1,50 +1,42 @@
-.Balances {
-  margin-bottom: 20px;
-}
-
-.Balances .balances-row {
-  display: flex;
-  min-height: 3.5em;
-}
-
 .Balances .single-balance {
   font-weight: 500;
-  margin-right: 2em;
-  height: 25px;
+  height: 70px;
   vertical-align: middle;
+  border-bottom: 1px solid rgba(90, 103, 112, 0.50);
+  margin-bottom: 0;
+  padding: 1em 0;
+  display: flex;
 }
 
 .Balances .single-balance:last-child {
-  margin-right: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+  height: calc(70px - 1em);
 }
 
-.Balances .single-balance>span {
-  line-height: 25px;
-  display: inline-block;
-  text-align: right;
-  min-width: 125px;
+.Balances .single-balance .asset {
+  width: 50px;
 }
 
-.Balances .single-balance .balance-amount {
-  margin-right: 0.25em;
-  display: inline-block;
-  min-width: 95px;
+.Balances .single-balance .actions {
+  width: 100px;
 }
 
-.Balances .single-balance:first-child>span {
-  text-align: left;
+.Balances .single-balance .info {
+  flex: 1;
 }
 
 .Balances .single-balance .subtitle {
   margin-left: 0;
   display: block;
+  height: 1.65em;
 }
 
-.Balances .single-balance>.bp3-button {
+.Balances .single-balance .actions .bp3-button {
   line-height: 25px;
-  margin-left: 2em;
-  /* couldn't fine any other way to get this to line up */
-  margin-top: -3px;
+  margin-left: 1em;
+  width: 75px;
+  float: right;
 }
 
 @keyframes color-change {

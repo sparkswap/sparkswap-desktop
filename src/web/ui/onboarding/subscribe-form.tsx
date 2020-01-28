@@ -92,29 +92,29 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
 
     return (
       <Dialog
-        title="Unapproved Jurisdiction"
+        title='Unapproved Jurisdiction'
         isOpen={this.props.isOpen}
         onClose={() => this.props.onClose()}
       >
         <div className={Classes.DIALOG_BODY}>
           {this.unapprovedJurisdictionText}
-          <div className="SubscribeForm">
+          <div className='SubscribeForm'>
             <form>
               <FormField
-                formId="email"
-                label="Email"
-                placeholder="satoshi@anonymousspeech.com"
+                formId='email'
+                label='Email'
+                placeholder='satoshi@anonymousspeech.com'
                 value={email}
                 onChange={this.handleEmailChange}
                 validator={email => isValidEmail(email)}
               />
               <FormGroup
-                labelFor="jurisdiction"
+                labelFor='jurisdiction'
                 label={jurisdictionLabel}
               >
                 <InputGroup
-                  name="Jurisdiction"
-                  id="jurisdiction"
+                  name='Jurisdiction'
+                  id='jurisdiction'
                   placeholder={`${jurisdictionLabel} of primary residence`}
                   value={jurisdiction}
                   onChange={this.handleJurisdictionChange}
@@ -126,12 +126,12 @@ export class SubscribeForm extends React.Component<SubscribeFormProps, Subscribe
         <div className={Classes.DIALOG_FOOTER}>
           <Button
             minimal={true}
-            text="Return to app"
+            text='Return to app'
             onClick={() => this.props.onClose()}
           />
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
-              text="Subscribe to Updates"
+              text='Subscribe to Updates'
               onClick={this.handleSubmit}
               className='RegisterButton'
               fill={true}

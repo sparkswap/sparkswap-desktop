@@ -1,4 +1,5 @@
-import { LndActionOptions, GrpcError } from '../types/lnd-engine/client'
+import { LndActionOptions } from '../types/lnd-engine/client'
+import { GrpcError } from '../types/lnd-engine/client/grpc'
 import { deadline } from './deadline'
 import { promisify } from 'util'
 

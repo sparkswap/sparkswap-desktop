@@ -45,7 +45,7 @@ declare module 'lnd-engine' {
     UNKNOWN = 'UNKNOWN'
   }
 
-  interface Transaction {
+  export interface Transaction {
     type: TransactionTypes,
     amount: string,
     transactionHash: string,

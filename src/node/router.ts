@@ -2,24 +2,35 @@ import { App } from 'electron'
 import logger from '../global-shared/logger'
 import { listen, listenSync, close as closeListeners } from './main-listener'
 import LndClient from './lnd'
-import LndEngine from 'lnd-engine'
+import LndEngine from '../global-shared/lnd-engine'
 import { AnchorEngine } from '../global-shared/anchor-engine'
-import { Amount, Asset, Unit, valueToAsset, assetToUnit, Engine } from '../global-shared/types'
+import {
+  Amount,
+  Asset,
+  Unit,
+  valueToAsset,
+  assetToUnit,
+  Engine
+} from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
-import { Quote, AlertEvent, WireUnsavedRecurringBuy } from '../common/types'
-import { deserializeUnsavedRecurringBuyFromWire, serializeRecurringBuyToWire } from '../common/serializers'
+import {
+  AlertEvent,
+  WireUnsavedRecurringBuy,
+  WireQuote
+} from '../common/types'
+import {
+  deserializeQuoteFromWire,
+  deserializeUnsavedRecurringBuyFromWire,
+  serializeRecurringBuyToWire
+} from '../common/serializers'
 import * as store from './data'
 import { Database } from 'better-sqlite3'
 import { AnchorClient } from './anchor'
 import { executeTrade, retryPendingTrades } from './trade'
 import { getAuth } from './auth'
 import { openLink, showNotification } from './util'
-import { delay } from '../global-shared/util'
-import { getNetworkTime } from './data/ntp'
-import { payInvoice } from '../global-shared/lnd-engine'
 import { WEBVIEW_PRELOAD_PATH } from './electron-security'
-
-const RETRY_TRADE_DELAY = 10000
+import { createTransactionReport } from './create-transaction-report'
 
 interface Engines {
   BTC: LndEngine,
@@ -29,10 +40,9 @@ interface Engines {
 
 export class Router {
   private db: Database;
-
   private lndClient: LndClient;
-
   private anchorClient: AnchorClient;
+  private shouldRetryPendingTrades = true;
 
   constructor () {
     this.db = store.initialize()
@@ -53,16 +63,14 @@ export class Router {
       return
     }
 
-    // We loop and continually retry pending trades because the engine can go
-    // to a NOT_SYNCED state after validation.
-    while (true) {
-      try {
-        await retryPendingTrades(this.db, this.engines)
-        return
-      } catch (e) {
-        logger.error(`Error while retrying pending trades: ${e}`)
-        await delay(RETRY_TRADE_DELAY)
-      }
+    // We ONLY retry pending trades on initialization of the application to prevent
+    // an edge case where trades will be in both failed/success states. This is due
+    // to block timing that causes the engine to go from a valid to an invalid (not synced)
+    // state. This callback would then be triggered and would successfully retry a trade
+    // after we've already marked it failed.
+    if (this.shouldRetryPendingTrades) {
+      this.shouldRetryPendingTrades = false
+      await retryPendingTrades(this.db, this.engines)
     }
   }
 
@@ -127,17 +135,16 @@ export class Router {
     listen('lnd:getStatus', () => this.lndClient.getStatus())
     listenSync('lnd:getConnectionConfig', () => this.lndClient.getConnectionConfig())
     listen('lnd:getPaymentChannelNetworkAddress', () => this.lndClient.engine.getPaymentChannelNetworkAddress())
-    listen('lnd:payInvoice', (paymentRequest: string) => payInvoice(paymentRequest, { client: this.lndClient.engine.client, logger }))
+    listen('lnd:payInvoice', (paymentRequest: string) => this.lndClient.engine.payInvoice(paymentRequest))
     listen('lnd:getInvoice', (request: string) => this.lndClient.engine.getInvoice(request))
     listen('getBalance', (asset: string) => this.getBalance(valueToAsset(asset)))
     listen('openLink', ({ link }: { link: string}) => openLink(link))
-    listen('trade:execute', (quote: Quote) => executeTrade(this.db, this.engines, quote))
+    listen('trade:execute', (quote: WireQuote) => executeTrade(this.db, this.engines, deserializeQuoteFromWire(quote)))
     listen('trade:getTrades', ({ limit, olderThanTradeId }: { limit: number, olderThanTradeId?: number }) => store.getTrades(this.db, olderThanTradeId, limit))
     listen('trade:getTrade', ({ id }: { id: number }) => store.getTrade(this.db, id))
     listen('auth:getAuth', () => getAuth())
     listen('anchor:startDeposit', () => this.anchorClient.startDeposit())
     listenSync('getWebviewPreloadPath', () => WEBVIEW_PRELOAD_PATH)
-    listen('ntp:getTime', () => getNetworkTime())
     listen('pok:hasShown', () => store.hasShownProofOfKeys(this.db))
     listen('pok:markShown', () => store.markProofOfKeysShown(this.db))
     listen('dca:addRecurringBuy', (recurringBuy: WireUnsavedRecurringBuy) =>
@@ -145,6 +152,7 @@ export class Router {
     listen('dca:removeRecurringBuy', (id: number) => store.removeRecurringBuy(this.db, id))
     listen('dca:getRecurringBuys', () => store.getRecurringBuys(this.db).map(serializeRecurringBuyToWire))
     listenSync('app:notification', (event: AlertEvent) => showNotification(event))
+    listen('report:transactions', () => createTransactionReport(this.db))
   }
 
   close (): void {

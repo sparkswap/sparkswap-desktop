@@ -1,15 +1,13 @@
 .PriceChart {
-  height: calc(100% - 110px);
-}
-
-.PriceChart .current-price {
-  margin-bottom: 0em;
+  height: 100%;
+  padding-top: 10px;
 }
 
 .PriceChart .price-change {
-  margin-bottom: 3em;
+  text-align: left;
+  margin-bottom: 1.5em;
 }
 
 .PriceChart .chart-wrapper {
-  height: calc(100% - 10em);
+  height: calc(100% - 8.5em);
 }

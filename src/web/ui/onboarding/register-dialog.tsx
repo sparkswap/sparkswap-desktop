@@ -4,7 +4,6 @@ import { Select, ItemRenderer, ItemPredicate } from '@blueprintjs/select'
 import { getJurisdiction, isApprovedJurisdiction } from '../../domain/jurisdiction'
 import { SubscribeForm } from './subscribe-form'
 import { JURISDICTIONS } from './jurisdictions'
-import { RegisterAbacus } from './register-abacus'
 import { RegisterSparkswapKYC } from './register-sparkswap-kyc'
 import { showErrorToast } from '../AppToaster'
 import { ExternalLink } from '../components/ExternalSource'
@@ -124,16 +123,16 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
   renderJurisdictionSelection (): ReactNode {
     return (
       <Dialog
-        title="Select Location"
+        title='Select Location'
         isOpen={this.props.isOpen}
         onClose={() => this.props.onClose()}
       >
-        <form action="#" onSubmit={this.handleJurisdictionSubmission}>
+        <form action='#' onSubmit={this.handleJurisdictionSubmission}>
           <div className={Classes.DIALOG_BODY}>
             <p>Sparkswap is currently only available in select locations. Choose your location of residence before proceeding to Deposit funds.</p>
             <div className='select-jurisdiction'>
               <JurisdictionSelect
-                className="select-jurisdiction"
+                className='select-jurisdiction'
                 {...jurisdictionSelectProps}
                 filterable={false}
                 onItemSelect={this.handleJurisdictionSelection}
@@ -143,12 +142,12 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
                   minimal: true
                 }}
               >
-                <span className="state-label">State</span>
+                <span className='state-label'>State</span>
                 <Button
-                  className="select-button"
+                  className='select-button'
                   text={this.state.jurisdiction || 'Select your location'}
                   alignText={Alignment.LEFT}
-                  rightIcon="caret-down"
+                  rightIcon='caret-down'
                 />
               </JurisdictionSelect>
             </div>
@@ -157,19 +156,19 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
               onChange={() => this.setState({ agreedTerms: !this.state.agreedTerms })}
             >
               I agree to Sparkswap&apos;s&nbsp;
-              <ExternalLink href="https://sparkswap.com/terms">Terms of Service</ExternalLink>
+              <ExternalLink href='https://sparkswap.com/terms'>Terms of Service</ExternalLink>
             </Checkbox>
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <Button
               minimal={true}
-              text="Return to app"
+              text='Return to app'
               onClick={() => this.props.onClose()}
             />
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
               <Button
                 autoFocus={true}
-                text="Continue"
+                text='Continue'
                 rightIcon='double-chevron-right'
                 onClick={this.handleJurisdictionSubmission}
                 disabled={!this.state.jurisdiction}
@@ -201,24 +200,14 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
   }
 
   renderRegistration (): ReactNode {
-    if (this.props.onboardingVersion && this.props.onboardingVersion > 0) {
-      return (
-        <RegisterSparkswapKYC
-          onProceed={this.props.onProceed}
-          jurisdiction={this.state.jurisdiction}
-          agreedTerms={this.state.agreedTerms}
-          isOpen={this.props.isOpen}
-          onClose={this.props.onClose}
-          reselectJurisdiction={this.reselectJurisdiction}
-        />
-      )
-    }
     return (
-      <RegisterAbacus
-        uuid={this.props.uuid}
+      <RegisterSparkswapKYC
         onProceed={this.props.onProceed}
-        onClose={this.props.onClose}
+        jurisdiction={this.state.jurisdiction}
+        agreedTerms={this.state.agreedTerms}
         isOpen={this.props.isOpen}
+        onClose={this.props.onClose}
+        reselectJurisdiction={this.reselectJurisdiction}
       />
     )
   }

@@ -1,0 +1,16 @@
+.sparkswap h1.current-price {
+  margin: 0 auto;
+  text-align: left;
+  margin-bottom: 0.2em;
+}
+
+.sparkswap h1.current-price .subtitle {
+  display: block;
+  margin-left: 0;
+  line-height: 12px;
+  margin-bottom: 0.5em;
+}
+
+.sparkswap h6.current-price .subtitle {
+  padding-right: 0.5em;
+}

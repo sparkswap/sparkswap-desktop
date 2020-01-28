@@ -14,7 +14,7 @@ import {
 // Default number of seconds before our first confirmation. (30 minutes)
 const DEFAULT_CONFIRMATION_DELAY = 1800
 
-interface CreateChannelOptions {
+export interface CreateChannelOptions {
   targetTime?: number,
   privateChan?: boolean
 }

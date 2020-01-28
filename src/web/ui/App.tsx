@@ -1,16 +1,16 @@
+import logger from '../../global-shared/logger'
+import rendererTransport from '../logger-electron-renderer'
 import { EventEmitter } from 'events'
 import React, { ReactNode } from 'react'
-import logger from '../../global-shared/logger'
 import './App.css'
 import LNDConnect from './LNDConnect'
-import PriceChart from './Prices'
-import TradeHistory from './History'
+import MainContent from './MainContent'
+import CurrentPrice, { Size as CurrentPriceSize } from './CurrentPrice'
 import DownloadProgress from './DownloadProgress'
 import Trade from './Trade'
 import DCA, { getSuccessMessage } from './dca/DCA'
 import { subscribeRecurringBuys } from '../domain/dca'
 import {
-  getRegistrationURL,
   RegisterDialog,
   DepositDialog,
   OnboardingStage
@@ -21,7 +21,7 @@ import { showErrorToast, showSupportToast, showLoadingToast, showSuccessToast, t
 import * as lnd from '../domain/lnd'
 import register from '../domain/register'
 import { getStatus } from '../domain/server'
-import { getAuth, openLinkInBrowser, startDeposit, sendAppNotification } from '../domain/main-request'
+import { getAuth, startDeposit, sendAppNotification } from '../domain/main-request'
 import { ReviewStatus, URL } from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
 import { Button, IActionProps, Intent } from '@blueprintjs/core'
@@ -29,19 +29,19 @@ import { ProofOfKeysDialog } from './proof-of-keys-dialog'
 import { BalanceError } from '../../common/errors'
 import { delay } from '../../global-shared/util'
 
+logger.addTransport(rendererTransport)
+
 // Delay so that our notification appears instead of Zap's
 // which is less informative
 const OS_NTFN_DELAY = 500
 
 interface OnboardingStep {
   stage: OnboardingStage,
-  depositUrl?: URL,
-  version?: number
+  depositUrl?: URL
 }
 
 interface AppState {
   onboardingStage: OnboardingStage,
-  onboardingVersion?: number,
   depositLoading: boolean,
   showSteps: boolean,
   depositUrl?: URL,
@@ -108,35 +108,25 @@ class App extends React.Component<{}, AppState> {
         return { stage: OnboardingStage.NONE }
       }
 
-      const { reviewStatus, version } = await getStatus()
+      const { reviewStatus } = await getStatus()
 
       switch (reviewStatus) {
         case ReviewStatus.UNCREATED:
         case ReviewStatus.CREATED:
         case ReviewStatus.INCOMPLETE:
           return {
-            stage: OnboardingStage.REGISTER,
-            version
+            stage: OnboardingStage.REGISTER
           }
         case ReviewStatus.PENDING:
-          if (version && version > 0) {
-            showSuccessToast('Your application is pending review', {
-              text: 'Get an update',
-              onClick: openBeacon
-            })
-            return { stage: OnboardingStage.NONE }
-          }
-          // for version 0 users (legacy KYC) we go to deposit even if application is pending
-          return {
-            stage: OnboardingStage.DEPOSIT,
-            depositUrl: await startDeposit(),
-            version
-          }
+          showSuccessToast('Your application is pending review', {
+            text: 'Get an update',
+            onClick: openBeacon
+          })
+          return { stage: OnboardingStage.NONE }
         case ReviewStatus.APPROVED:
           return {
             stage: OnboardingStage.DEPOSIT,
-            depositUrl: await startDeposit(),
-            version
+            depositUrl: await startDeposit()
           }
         default:
           throw new Error(`Invalid review status: ${reviewStatus}`)
@@ -158,17 +148,16 @@ class App extends React.Component<{}, AppState> {
     } catch (e) {
       logger.error(`Error registering: ${e}`)
       showSupportToast('Error during initial registration')
+      return
     }
 
     const {
       stage,
-      depositUrl,
-      version
+      depositUrl
     } = await this.getOnboardingStep()
 
     this.setState({
       onboardingStage: stage,
-      onboardingVersion: version,
       depositUrl,
       depositLoading: false,
       showSteps: false
@@ -181,22 +170,15 @@ class App extends React.Component<{}, AppState> {
     try {
       const {
         stage,
-        depositUrl,
-        version
+        depositUrl
       } = await this.getOnboardingStep()
 
       if (stage === OnboardingStage.REGISTER) {
-        const uuid = this.state.uuid
-        showErrorToast('Verify your identity before proceeding to Step 2.',
-          uuid ? {
-            text: 'Verify',
-            onClick: () => openLinkInBrowser(getRegistrationURL(uuid))
-          } : undefined)
+        showErrorToast('Verify your identity before proceeding to Step 2.')
       }
 
       this.setState({
         onboardingStage: stage,
-        onboardingVersion: version,
         depositUrl,
         showSteps: true
       })
@@ -234,20 +216,20 @@ class App extends React.Component<{}, AppState> {
   render (): ReactNode {
     const {
       onboardingStage,
-      onboardingVersion,
       depositLoading,
       depositUrl,
       showSteps
     } = this.state
 
     return (
-      <div className="App">
-        <div className="logo">
-          <Logo width="100%" height="100%" />
+      <div className='App'>
+        <div className='logo'>
+          <Logo width='100%' height='100%' />
         </div>
-        <div className="chrome-title">
+        <div className='chrome-title'>
         </div>
         <DownloadProgress />
+        <CurrentPrice size={CurrentPriceSize.Small} />
         <LNDConnect />
         <ProofOfKeysDialog />
         <RegisterDialog
@@ -255,7 +237,6 @@ class App extends React.Component<{}, AppState> {
           onClose={this.handleClose}
           onProceed={this.handleDeposit}
           isOpen={onboardingStage === OnboardingStage.REGISTER}
-          onboardingVersion={onboardingVersion}
         />
         <DepositDialog
           depositUrl={depositUrl || ''}
@@ -265,16 +246,15 @@ class App extends React.Component<{}, AppState> {
           onDepositError={this.handleDepositError}
           showSteps={showSteps}
         />
-        <div className="app-content">
-          <div className="BalancesAndPrice">
-            <Balances onDeposit={this.handleDeposit} depositLoading={depositLoading} />
-            <PriceChart />
-          </div>
-          <div className="vertical-line" />
-          <div className="TradeAndHistory">
+        <div className='app-content'>
+          <div className='tools-content'>
             <Trade onDeposit={this.handleDeposit} />
             <DCA recurringBuySubscriber={this.recurringBuySubscriber} />
-            <TradeHistory />
+            <Balances onDeposit={this.handleDeposit} depositLoading={depositLoading} />
+          </div>
+          <div className='vertical-line' />
+          <div className='main-content'>
+            <MainContent />
           </div>
         </div>
         <Button className='help-link' icon='help' minimal={true} onClick={openBeacon} />

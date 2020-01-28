@@ -32,18 +32,36 @@ git clone --single-branch git@github.com:sparkswap/sparkswap-desktop.git
 echo "Preparing satstacker to be copied to client"
 (
     cd satstacker
-    rm -f ../shared
-    mkdir -p ../shared
-    cp -r ./shared/. ../shared
+    # create a shared temp directory to copy files into so they wont get blown
+    # away by the filter below
+    mkdir -p ../shared-temp
+    cp -r ./shared/. ../shared-temp
     git filter-branch --tag-name-filter cat --subdirectory-filter client
     rm -rf ./.git
+    # We create a fake shared directory here so that we can remove the global-shared
+    # symlink correctly
+    mkdir -p ../shared
+    # Remove symlink, we'll replace this directory below
     rm ./src/global-shared
-    cp -r ../shared/. ./src/global-shared
+    rm -rf ../shared
+    mkdir -p ./src/global-shared
+    cp -r ../shared-temp/. ./src/global-shared
 )
+
+echo "Preparing sparkswap-desktop"
+(
+    rm -r ./sparkswap-desktop/*
+    cp -rf ./satstacker/. ./sparkswap-desktop
+)
+
+echo "Running tests"
+cd sparkswap-desktop
+npm install
+npm run ci-test
+cd ../
 
 echo "Pushing code changes to sparkswap-desktop"
 (
-    cp -rf ./satstacker/. ./sparkswap-desktop
     cd sparkswap-desktop
     git add .
     git commit -m "Publishing client to sparkswap-desktop: $TAG"

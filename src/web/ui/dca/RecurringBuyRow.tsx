@@ -3,13 +3,21 @@ import React, { ReactNode } from 'react'
 import { getNextTimeoutDuration } from '../../../common/utils'
 import { removeRecurringBuy } from '../../domain/main-request'
 import { showErrorToast, showSuccessToast } from '../AppToaster'
-import { Button, PopoverInteractionKind, Tooltip } from '@blueprintjs/core'
-import { addMutedSpan, formatAmount, formatTimeUnit } from '../formatters'
+import { Button, PopoverInteractionKind, Tooltip, Spinner } from '@blueprintjs/core'
+import {
+  addMutedSpan,
+  formatAsset,
+  formatFrequency,
+  formatDate,
+  formatTime
+} from '../formatters'
 import { Asset } from '../../../global-shared/types'
 import { getCheckBuysTimeoutDuration } from '../../domain/dca'
+import { formatAmount } from '../../../common/formatters'
 
 interface RecurringBuyRowProps {
-  recurringBuy: RecurringBuy
+  recurringBuy: RecurringBuy,
+  isExecuting: boolean
 }
 
 interface RecurringBuyRowState {
@@ -66,22 +74,28 @@ export class RecurringBuyRow extends React.Component<RecurringBuyRowProps, Recur
     />
   }
 
+  renderRemoveOrSpinner (id: number): ReactNode {
+    if (this.props.isExecuting) {
+      return <Spinner size={12} />
+    }
+
+    return this.renderRemoveButton(id)
+  }
+
   render (): ReactNode {
     const { recurringBuy } = this.props
+    const { asset } = recurringBuy.amount
     const { timeoutDuration } = this.state
 
-    const displayTimeUnit = formatTimeUnit(recurringBuy.frequency)
-    const displayTime = `${recurringBuy.frequency.interval} ${displayTimeUnit}`
+    const displayTime = `every ${formatFrequency(recurringBuy.frequency)}`
 
-    const { asset } = recurringBuy.amount
-    const amountBtc = asset === Asset.BTC ? addMutedSpan(formatAmount(recurringBuy.amount)) : 'Market'
-    const amountUsd = asset === Asset.USDX ? addMutedSpan(formatAmount(recurringBuy.amount).slice(1)) : 'Market'
-
-    const btcClassName = asset === Asset.BTC ? 'trade-amount btc' : ''
-    const usdClassName = asset === Asset.USDX ? 'trade-amount usd' : ''
+    const className = asset === Asset.BTC ? 'trade-amount btc' : 'trade-amount usd'
+    // slice off the dollar symbol since we do that in css
+    const formattedAmount = formatAmount(recurringBuy.amount).slice(asset === Asset.USDX ? 1 : 0)
+    const formattedAsset = asset === Asset.BTC ? formatAsset(asset) : ''
 
     const nextBuyDate = new Date(Date.now() + timeoutDuration)
-    const nextBuyText = <span>Next buy: {nextBuyDate.toLocaleDateString()} at {nextBuyDate.toLocaleTimeString()}</span>
+    const nextBuyText = <span>Next buy: {formatDate(nextBuyDate)} at {formatTime(nextBuyDate)}</span>
 
     const nextBuyTooltip = (
       <Tooltip content={nextBuyText} interactionKind={PopoverInteractionKind.HOVER} boundary='window'>
@@ -91,9 +105,9 @@ export class RecurringBuyRow extends React.Component<RecurringBuyRowProps, Recur
 
     return (
       <tr key={recurringBuy.id}>
-        <td className={btcClassName}>{amountBtc}</td>
-        <td className={usdClassName}>{amountUsd}</td>
-        <td>{nextBuyTooltip}{this.renderRemoveButton(recurringBuy.id)}</td>
+        <td className='dca-type'>Buy</td>
+        <td className={className}>{addMutedSpan(formattedAmount)} {formattedAsset}</td>
+        <td className='dca-schedule'>{nextBuyTooltip}{this.renderRemoveOrSpinner(recurringBuy.id)}</td>
       </tr>
     )
   }

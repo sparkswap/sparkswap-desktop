@@ -29,14 +29,14 @@ class FilePathInput extends React.Component<FilePathInputProps> {
     return (
       <InputGroup
         id={id}
-        className="FilePathInput"
+        className='FilePathInput'
         placeholder={placeholder}
         value={value}
         onChange={this.handlePathChange}
         rightElement={
           <FileInput
             fill={false}
-            text=""
+            text=''
             onInputChange={this.handleFileChange}
           />
         }

@@ -1,4 +1,4 @@
-import LndEngine from 'lnd-engine'
+import LndEngine from '../lnd-engine'
 import { AnchorEngine } from '../anchor-engine'
 
 export type Nullable<T> = null | T

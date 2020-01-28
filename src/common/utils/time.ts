@@ -71,6 +71,11 @@ export function getCronDate (date: Date): Date {
 export function isStartOfInterval ({ unit, interval }: Frequency, since = EPOCH_DATE): boolean {
   const now = getCronDate(new Date())
 
+  // If a recurring buy is added, we need to make sure that it's not executed on the first cron
+  if (now.getTime() === since.getTime()) {
+    return false
+  }
+
   if (now.getUTCMinutes() !== since.getUTCMinutes()) {
     return false
   }

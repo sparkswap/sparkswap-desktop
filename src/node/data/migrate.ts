@@ -33,7 +33,12 @@ function migrate (db: Database.Database, toVersion: number): void {
 
     const migration = readFileSync(migrationFilePath, 'utf8')
 
-    runMigration(migration, nextVersion)
+    try {
+      db.pragma('foreign_keys = OFF')
+      runMigration(migration, nextVersion)
+    } finally {
+      db.pragma('foreign_keys = ON')
+    }
   }
 
   logger.debug(`Database migration completed at version ${toVersion}`)

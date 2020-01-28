@@ -1,113 +1,66 @@
-/* Make the history entries scroll without the headers */
-
 .History {
-  margin: 20px 0;
-  position: relative;
-  height: calc(100% - 304px);
-  width: 100%;
-}
-
-.History .table-outer {
-  position: relative;
-  height: calc(100% - 30px);
-  padding-top: 30px;
-  width: 100%;
-}
-
-.History .table-outer .table-inner {
+  /** 36px is to account for the export-row **/
+  height: calc(100% - 36px);
   overflow-y: scroll;
+}
+
+.History .bp3-non-ideal-state {
   height: 100%;
-
-  /* Room for the scroll bar */
-  width: 105%;
-  padding-right: 5%;
 }
 
-.History .table-outer .table-inner table {
-  width: 100%;
-}
-
-.History .table-outer .table-inner table thead {
-  width: 100%;
-}
-
-.History .table-outer .table-inner table thead tr:only-child {
-  position: absolute;
-  top: 0;
-  left: 0;
+.History .bp3-card.transaction {
   display: flex;
-
-  /* Room for the scroll bar */
-  width: 105%;
-  padding-right: 5%;
+  padding: 15px 20px 15px 18px;
+  background-color: rgba(48, 64, 77, 0.4);
 }
 
-.History .table-outer .table-inner table thead tr th:first-child {
+.History .transaction:not(:first-child) {
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+}
+
+.History .transaction:not(:last-of-type) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.History .transaction>* {
   flex: 1;
 }
 
-/* Fixed width is required for the separate head/body scroll */
-
-.History table td,
-.History table th {
-  width: 30%;
+.History .transaction>.bp3-icon,
+.History .transaction>.bp3-spinner {
+  max-width: 18px;
+  margin-right: 12px;
 }
 
-.History table td:first-child,
-.History table th:first-child {
-  width: 40%;
+.History .transaction>.bp3-icon {
+  margin-top: 9px;
 }
 
-/* Removes line between table header and body */
-.bp3-dark .History table.bp3-html-table tbody tr:first-child td {
-  box-shadow: none;
+.History .transaction .bp3-heading {
+  /* align all elements of the card */
+  line-height: 18px;
+  margin-bottom: 0;
 }
 
-/* Tightens up spacing between rows */
-.History table.bp3-html-table.bp3-html-table-condensed td {
-  padding: 2px 11px;
+.History .transaction .bp3-heading .subtitle {
+  margin-left: 0;
 }
 
-/* Aligns history table's left and right sides */
-.History table.bp3-html-table.bp3-html-table-condensed tr>td:first-child,
-.History table.bp3-html-table.bp3-html-table-condensed tr>th:first-child {
-  padding-left: 0;
-  text-align: left;
+.History .transaction.trade .price .subtitle {
+  margin-right: 0.5em;
 }
 
-.History table.bp3-html-table.bp3-html-table-condensed tr>td,
-.History table.bp3-html-table.bp3-html-table-condensed tr>th {
+.History .transaction .amounts {
   text-align: right;
 }
 
-.History table.bp3-html-table.bp3-html-table-condensed tr>td:last-child,
-.History table.bp3-html-table.bp3-html-table-condensed tr>th:last-child {
-  padding-right: 0;
+.export-row {
+  width: 100%;
+  text-align: right;
 }
 
-/* Reduces weight of column headers */
-.History table.bp3-html-table th {
-  font-weight: 100;
-}
-
-/* TODO: make global color palette and remove custom color */
-.bp3-dark.sparkswap .History .text-muted,
-.bp3-dark.sparkswap .History .text-muted td {
-  color: #828f99;
-}
-
-.bp3-dark.sparkswap .History .error.text-muted,
-.bp3-dark.sparkswap .History .error.text-muted td,
-.bp3-dark.sparkswap .History .error.text-muted td .text-muted {
-  color: rgba(255, 115, 115, 0.5)
-}
-
-.History .trade-status-spinner {
-  justify-content: flex-end;
-  padding-top: .25em;
-  padding-right: .5em;
-}
-
-.History tbody tr td {
-  line-height: 16px;
+.export-row .export-button {
+  padding-bottom: 15px;
 }

@@ -59,6 +59,7 @@ module.exports = {
     "require-await": "error",
     "@typescript-eslint/array-type": ["error", {
       "default": "array-simple"
-    }]
+    }],
+    "jsx-quotes": ["error", "prefer-single"]
   }
 }

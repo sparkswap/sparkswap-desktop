@@ -1,42 +1,13 @@
-import { satoshisPerBTC, centsPerUSD } from '../../common/constants'
-import { Amount, Asset, assetToUnit, Unit } from '../../global-shared/types'
+import {
+  Amount,
+  Asset,
+  Unit
+} from '../../global-shared/types'
 import { QuantityError } from '../../common/errors'
-import { formatAmount, formatAsset } from '../ui/formatters'
+import { formatAsset } from '../ui/formatters'
+import { formatAmount } from '../../common/formatters'
 import { altAmount } from './convert-amount'
-
-export function toSatoshis (btcQuantity: number): number {
-  return Math.round(btcQuantity * satoshisPerBTC)
-}
-
-export function toCents (usdxQuantity: number): number {
-  return Math.round(usdxQuantity * centsPerUSD)
-}
-
-const toQuantumFns = {
-  [Asset.BTC]: toSatoshis,
-  [Asset.USDX]: toCents
-}
-
-export function toQuantum (asset: Asset, quantity: number): number {
-  return toQuantumFns[asset](quantity)
-}
-
-export function toBTC (satoshis: number): number {
-  return satoshis / satoshisPerBTC
-}
-
-export function toUSDX (cents: number): number {
-  return cents / centsPerUSD
-}
-
-const toCommonFns = {
-  [Asset.BTC]: toBTC,
-  [Asset.USDX]: toUSDX
-}
-
-export function toCommon (asset: Asset, quantums: number): number {
-  return toCommonFns[asset](quantums)
-}
+import { toSatoshis, toCents, toAmount } from '../../common/currency-conversions'
 
 export const MIN_QUANTITY_BTC = 0.00000001 // one satoshi
 export const MIN_QUANTITY_SAT = toSatoshis(MIN_QUANTITY_BTC)
@@ -120,14 +91,6 @@ export const MAX_QUANTITY = {
 export const MAX_AMOUNT = {
   [Asset.BTC]: MAX_AMOUNT_BTC,
   [Asset.USDX]: MAX_AMOUNT_USDX
-}
-
-export function toAmount (asset: Asset, quantity: number): Amount {
-  return {
-    asset,
-    unit: assetToUnit(asset),
-    value: toQuantum(asset, quantity)
-  }
 }
 
 export function validateQuantity (asset: Asset, quantity: number, currentPrice: number): Amount {

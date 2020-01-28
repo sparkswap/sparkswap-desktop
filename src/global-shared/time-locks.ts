@@ -6,15 +6,9 @@ import { Engine } from './types'
 // the payment may be rejected because time passes (or, in the case of Bitcoin, a block is mined)
 // between when the payment is initiated by the sender and when it is
 // evaluated by the recipient.
-export interface TimeLocks {
-  innerTimeLock: {
-    send: number,
-    receive: number
-  },
-  outerTimeLock: {
-    send: number,
-    receive: number
-  }
+export interface TimeLock {
+  send: number,
+  receive: number
 }
 
 // The outer engine is the engine involved in the initial HTLC/escrow, the one that kicks off the swap process.
@@ -22,28 +16,31 @@ export interface TimeLocks {
 // process that the preimage to the shared hash is revealed.
 // The swap transaction completes the same place it begins: at the outer engine with the settlement
 // of the initial HTLC/escrow.
-export function swapTimeLock (outerEngine: Engine, innerEngine: Engine): TimeLocks {
-  const innerTimeLockReceive = innerEngine.finalHopTimeLock
-  // add a buffer to ensure acceptance by the recipient
-  const innerTimeLockSend = innerTimeLockReceive + innerEngine.blockBuffer
 
+export function innerTimeLock (innerEngine: Engine): TimeLock {
+  const receive = innerEngine.finalHopTimeLock
+  // add a buffer to ensure acceptance by the recipient
+  const send = receive + innerEngine.blockBuffer
+
+  return {
+    send,
+    receive
+  }
+}
+
+export function outerTimeLock (innerEngine: Engine, outerEngine: Engine, swapDuration: number): TimeLock {
   // to enable a swap, the party translating from the origin chain to the destination chain
   // needs enough time to retrieve the preimage from the destination chain, and publish it
   // on the origin chain in the case of a contested close.
-  const interchainForwardDelta = innerEngine.retrieveWindowDuration + outerEngine.claimWindowDuration
+  const interchainForwardDelta = innerEngine.retrieveWindowDuration +
+    outerEngine.claimWindowDuration + swapDuration
 
-  const outerTimeLockReceive = innerTimeLockSend + interchainForwardDelta
+  const receive = innerTimeLock(innerEngine).send + interchainForwardDelta
   // add a buffer to ensure acceptance by the recipient
-  const outerTimeLockSend = outerTimeLockReceive + outerEngine.blockBuffer
+  const send = receive + outerEngine.blockBuffer
 
   return {
-    innerTimeLock: {
-      send: innerTimeLockSend,
-      receive: innerTimeLockReceive
-    },
-    outerTimeLock: {
-      send: outerTimeLockSend,
-      receive: outerTimeLockReceive
-    }
+    send,
+    receive
   }
 }

@@ -92,8 +92,8 @@ export class BirthdateForm extends React.Component<BirthdateFormProps, Birthdate
 
   render (): ReactNode {
     return (
-      <div className="birthdate-form">
-        <FormGroup labelFor="birthdate-month" label="Month" className="birthdate-month">
+      <div className='birthdate-form'>
+        <FormGroup labelFor='birthdate-month' label='Month' className='birthdate-month'>
           <NumericInput
             onValueChange={(_, stringVal: string) => {
               this.setState({
@@ -102,17 +102,17 @@ export class BirthdateForm extends React.Component<BirthdateFormProps, Birthdate
             }}
             value={this.state.month}
             intent={this.state.month === '' || validateMonth(this.state.month) ? Intent.NONE : Intent.DANGER}
-            buttonPosition="none"
+            buttonPosition='none'
             max={MAX_MONTH}
             min={MIN_MONTH}
             minorStepSize={null}
             majorStepSize={null}
             size={4}
-            placeholder="1"
+            placeholder='1'
             autoFocus={this.props.autoFocus}
           />
         </FormGroup>
-        <FormGroup labelFor="birthdate-day" label="Day" className="birthdate-day">
+        <FormGroup labelFor='birthdate-day' label='Day' className='birthdate-day'>
           <NumericInput
             onValueChange={(_, stringVal: string) => {
               this.setState({
@@ -121,16 +121,16 @@ export class BirthdateForm extends React.Component<BirthdateFormProps, Birthdate
             }}
             value={this.state.day}
             intent={this.state.day === '' || validateDay(this.state.day) ? Intent.NONE : Intent.DANGER}
-            buttonPosition="none"
+            buttonPosition='none'
             max={MAX_DAY}
             min={MIN_DAY}
             minorStepSize={null}
             majorStepSize={null}
             size={4}
-            placeholder="3"
+            placeholder='3'
           />
         </FormGroup>
-        <FormGroup labelFor="birthdate-year" label="Year" className="birthdate-year">
+        <FormGroup labelFor='birthdate-year' label='Year' className='birthdate-year'>
           <NumericInput
             onValueChange={(_, stringVal: string) => {
               this.setState({
@@ -139,13 +139,13 @@ export class BirthdateForm extends React.Component<BirthdateFormProps, Birthdate
             }}
             value={this.state.year}
             intent={this.state.year.length < 4 || validateYear(this.state.year) ? Intent.NONE : Intent.DANGER}
-            buttonPosition="none"
+            buttonPosition='none'
             max={MAX_YEAR}
             min={MIN_YEAR}
             minorStepSize={null}
             majorStepSize={10}
             size={8}
-            placeholder="2009"
+            placeholder='2009'
           />
         </FormGroup>
       </div>

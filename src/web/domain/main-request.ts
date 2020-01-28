@@ -1,7 +1,8 @@
-import { Auth, Amount, Asset, URL, UnknownObject } from '../../global-shared/types'
+import { Auth, Amount, Asset, URL } from '../../global-shared/types'
 import {
   Quote,
   Trade,
+  WireTrade,
   RecurringBuy,
   AlertEvent,
   UnsavedRecurringBuy,
@@ -58,11 +59,11 @@ export async function sendExecuteTrade (quote: Quote): Promise<void> {
 }
 
 export async function getTrades (limit: number, olderThanTradeId?: number): Promise<Trade[]> {
-  return (await mainRequest('trade:getTrades', { limit, olderThanTradeId }) as UnknownObject[]).map(deserializeTradeFromWire)
+  return (await mainRequest('trade:getTrades', { limit, olderThanTradeId }) as WireTrade[]).map(deserializeTradeFromWire)
 }
 
 export async function getTrade (id: number): Promise<Trade> {
-  return deserializeTradeFromWire(await mainRequest('trade:getTrade', { id }) as UnknownObject)
+  return deserializeTradeFromWire(await mainRequest('trade:getTrade', { id }) as WireTrade)
 }
 
 export async function startDeposit (): Promise<URL> {
@@ -75,10 +76,6 @@ export async function getBalance (asset: Asset): Promise<Amount> {
 
 export function getWebviewPreloadPath (): string {
   return mainRequestSync('getWebviewPreloadPath') as string
-}
-
-export async function getNetworkTime (): Promise<Date> {
-  return new Date(await mainRequest('ntp:getTime') as Date)
 }
 
 type paymentUriHandler = (message: { paymentRequest: string }) => void
@@ -111,6 +108,10 @@ export async function removeRecurringBuy (id: number): Promise<void> {
 
 export function sendAppNotification (event: AlertEvent): void {
   mainRequestSync('app:notification', event)
+}
+
+export async function exportTransactions (): Promise<boolean> {
+  return await mainRequest('report:transactions') as boolean
 }
 
 export default mainRequest

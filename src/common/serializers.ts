@@ -1,22 +1,31 @@
 import {
   RecurringBuy,
   WireRecurringBuy,
+  Quote,
+  WireQuote,
   Trade,
-  TradeStatus,
+  WireTrade,
   UnsavedRecurringBuy,
   WireUnsavedRecurringBuy
 } from './types'
-import { Amount, UnknownObject } from '../global-shared/types'
 
-export function deserializeTradeFromWire (wireTrade: UnknownObject): Trade {
+export function deserializeQuoteFromWire (wireQuote: WireQuote): Quote {
   return {
-    id: wireTrade.id as number,
-    status: wireTrade.status as TradeStatus,
-    hash: wireTrade.hash as string,
-    destinationAmount: wireTrade.destinationAmount as Amount,
-    sourceAmount: wireTrade.sourceAmount as Amount,
-    startTime: new Date(wireTrade.startTime as string),
-    endTime: wireTrade.endTime ? new Date(wireTrade.endTime as string) : undefined
+    hash: wireQuote.hash,
+    destinationAmount: wireQuote.destinationAmount,
+    sourceAmount: wireQuote.sourceAmount,
+    expiration: new Date(wireQuote.expiration)
+  }
+}
+
+export function deserializeTradeFromWire (wireTrade: WireTrade): Trade {
+  const partialTrade = deserializeQuoteFromWire(wireTrade)
+  return {
+    id: wireTrade.id,
+    status: wireTrade.status,
+    startTime: new Date(wireTrade.startTime),
+    endTime: wireTrade.endTime ? new Date(wireTrade.endTime) : undefined,
+    ...partialTrade
   }
 }
 

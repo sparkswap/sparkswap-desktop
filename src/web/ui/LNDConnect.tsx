@@ -307,7 +307,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
           <Divider />
           <Button large={true} className='scan-button' loading={scanning} onClick={this.handleScan}>Scan for LND</Button>
         </div>
-        <Button icon="cog" minimal={true} onClick={() => this.setState({ forceManualConfig: true })}>Configure manually</Button>
+        <Button icon='cog' minimal={true} onClick={() => this.setState({ forceManualConfig: true })}>Configure manually</Button>
       </React.Fragment>
     )
   }
@@ -315,8 +315,8 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
   renderAutoConfig (): ReactNode {
     return (
       <React.Fragment>
-        <div className="AutoConnect">
-          <img src={LNDGraphic} className="ConnectGraphic" alt="Sparkswap + LND" />
+        <div className='AutoConnect'>
+          <img src={LNDGraphic} className='ConnectGraphic' alt='Sparkswap + LND' />
           <p>To buy Bitcoin instantly over the Lightning Network, first establish a connection to your LND node.</p>
         </div>
         <div className={Classes.DIALOG_FOOTER}>
@@ -369,7 +369,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
       <React.Fragment>
         <div>
           <FormGroup
-            labelFor="lnd-hostname"
+            labelFor='lnd-hostname'
             label={
               <InlineTooltip
                 content='The locally available URL or domain name where LND can be reached'
@@ -379,14 +379,14 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
             }
           >
             <InputGroup
-              id="lnd-hostname"
-              placeholder="localhost"
+              id='lnd-hostname'
+              placeholder='localhost'
               value={hostName}
               onChange={this.handleHostNameChange}
             />
           </FormGroup>
           <FormGroup
-            labelFor="lnd-port"
+            labelFor='lnd-port'
             label={
               <InlineTooltip
                 content="The port on which LND's RPC is available"
@@ -396,15 +396,15 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
             }
           >
             <InputGroup
-              id="lnd-port"
-              placeholder="10009"
+              id='lnd-port'
+              placeholder='10009'
               value={port}
               onChange={this.handlePortChange}
             />
           </FormGroup>
 
           <FormGroup
-            labelFor="lnd-tls-cert-path"
+            labelFor='lnd-tls-cert-path'
             label={
               <InlineTooltip
                 content="The certificate for accessing LND's RPC. Typically located in LND's Home directory as 'tls.cert'"
@@ -414,15 +414,15 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
             }
           >
             <FilePathInput
-              id="lnd-tls-cert-path"
-              placeholder="/path/to/tls.cert"
+              id='lnd-tls-cert-path'
+              placeholder='/path/to/tls.cert'
               value={tlsCertPath}
               onChange={this.handleTlsCertPathChange}
             />
           </FormGroup>
 
           <FormGroup
-            labelFor="lnd-macaroon-path"
+            labelFor='lnd-macaroon-path'
             label={
               <InlineTooltip
                 content="The macaroon for accessing actions on LND's RPC. Typically located in LND's data directory as 'admin.macaroon'"
@@ -432,8 +432,8 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
             }
           >
             <FilePathInput
-              id="lnd-macaroon-path"
-              placeholder="/path/to/admin.macaroon"
+              id='lnd-macaroon-path'
+              placeholder='/path/to/admin.macaroon'
               value={macaroonPath}
               onChange={this.handleMacaroonPathChange}
             />
@@ -469,31 +469,31 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
     } = this.state
 
     return (
-      <div className="LNDConnect">
+      <div className='LNDConnect'>
         {this.maybeRenderStatus()}
-        <FullScreenOverlay isOpen={overlayIsOpen} onClose={this.handleOverlayClose} showHomeButton={configured} title="Connect to LND">
+        <FullScreenOverlay isOpen={overlayIsOpen} onClose={this.handleOverlayClose} showHomeButton={configured} title='Connect to LND'>
           {configured || forceManualConfig ? this.renderManualConfig() : this.renderAutoConfig()}
         </FullScreenOverlay>
         <Dialog
-          title="Download LND"
-          className="download-lnd"
+          title='Download LND'
+          className='download-lnd'
           isOpen={this.state.isDownloadDialogOpen}
           onClose={() => this.setState({ isDownloadDialogOpen: false })}
         >
           <div className={Classes.DIALOG_BODY}>
             <p>
               Don&apos;t have LND yet? Download one of the apps below to install a Lightning node on your machine:
-              <ul className="bp3-list-unstyled">
+              <ul className='bp3-list-unstyled'>
                 <li>
-                  <ExternalLink href="https://zap.jackmallers.com">
-                    <img src={ZapLogo} alt="Zap Desktop" />
+                  <ExternalLink href='https://zap.jackmallers.com'>
+                    <img src={ZapLogo} alt='Zap Desktop' />
                     Zap
                   </ExternalLink>
                 </li>
                 <li><Divider /></li>
                 <li>
-                  <ExternalLink href="https://github.com/lightning-power-users/node-launcher">
-                    <img src={LPULogo} alt="Node Launcher" />
+                  <ExternalLink href='https://github.com/lightning-power-users/node-launcher'>
+                    <img src={LPULogo} alt='Node Launcher' />
                     Node Launcher
                   </ExternalLink>
                 </li>

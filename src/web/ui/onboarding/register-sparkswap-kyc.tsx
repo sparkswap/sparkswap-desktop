@@ -289,41 +289,41 @@ export class RegisterSparkswapKYC
     const onClose = (): void => this.props.onClose()
 
     return (
-      <Dialog title="Verify Your Identity" isOpen={this.props.isOpen} onClose={onClose}>
-        <form action="#" onSubmit={this.onClickContinueNameAndEmail}>
+      <Dialog title='Verify Your Identity' isOpen={this.props.isOpen} onClose={onClose}>
+        <form action='#' onSubmit={this.onClickContinueNameAndEmail}>
           <div className={Classes.DIALOG_BODY}>
             <p>The information below is required for us to verify your identity.</p>
             <FormField
               autoFocus={true}
-              formId="first-name"
-              label="First Name"
+              formId='first-name'
+              label='First Name'
               value={this.state.firstName}
               onChange={this.onChange('firstName')}
               validator={firstName => firstName.length > 0}
             />
             <FormField
-              formId="last-name"
-              label="Last Name"
+              formId='last-name'
+              label='Last Name'
               value={this.state.lastName}
               onChange={this.onChange('lastName')}
               validator={lastName => lastName.length > 0}
             />
             <FormField
-              formId="email"
-              label="Email Address"
+              formId='email'
+              label='Email Address'
               value={this.state.email}
               onChange={this.onChange('email')}
               validator={email => isValidEmail(email)}
             />
           </div>
           <div className={Classes.DIALOG_FOOTER}>
-            <Button minimal={true} text="Go back" onClick={this.onGoBack} />
+            <Button minimal={true} text='Go back' onClick={this.onGoBack} />
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
               <Button
-                type="submit"
-                text="Continue"
+                type='submit'
+                text='Continue'
                 rightIcon='double-chevron-right'
-                className="RegisterButton"
+                className='RegisterButton'
                 fill={true}
                 loading={this.state.isLoading}
               />
@@ -340,42 +340,42 @@ export class RegisterSparkswapKYC
       this.state.isVerificationCodeSent ? undefined : { visibility: 'hidden' }
 
     return (
-      <Dialog title="Phone Verification" isOpen={this.props.isOpen} onClose={onClose}>
+      <Dialog title='Phone Verification' isOpen={this.props.isOpen} onClose={onClose}>
         <div className={Classes.DIALOG_BODY}>
           <p>Please enter your phone number. We will send a verification code (SMS rates apply).</p>
           <p>Phone Number</p>
-          <form action="#" onSubmit={this.onClickSendCode}>
+          <form action='#' onSubmit={this.onClickSendCode}>
             <ControlGroup fill={true}>
               <ValidatedInput
                 autoFocus={true}
-                id="phone-number"
+                id='phone-number'
                 value={this.state.phone}
                 onChange={this.onChange('phone')}
                 validator={(phone) => isValidPhoneNumber(parsePhoneNumber(phone))}
               />
               <Button
-                type="submit"
-                text="Send code"
+                type='submit'
+                text='Send code'
                 loading={this.state.isSendingVerificationCode}
               />
             </ControlGroup>
           </form>
           <p style={supportTextStyle}><span style={{ color: 'green' }}>✓</span> Verification code sent</p>
           <br/>
-          <form action="#" onSubmit={this.onClickPhoneVerification}>
+          <form action='#' onSubmit={this.onClickPhoneVerification}>
             <FormField
-              formId="verification-code"
-              label="Verification Code"
+              formId='verification-code'
+              label='Verification Code'
               value={this.state.phoneVerificationCode}
               onChange={this.onChange('phoneVerificationCode')}
             />
           </form>
         </div>
         <div className={Classes.DIALOG_FOOTER}>
-          <Button minimal={true} text="Go back" onClick={this.onGoBack} />
+          <Button minimal={true} text='Go back' onClick={this.onGoBack} />
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
-              text="Continue"
+              text='Continue'
               rightIcon='double-chevron-right'
               onClick={this.onClickPhoneVerification}
               className='RegisterButton'
@@ -392,10 +392,10 @@ export class RegisterSparkswapKYC
     const onClose = (): void => this.props.onClose()
 
     return (
-      <Dialog title="Additional Info Required" isOpen={this.props.isOpen} onClose={onClose}>
-        <form action="#" onSubmit={this.onClickContinueAddressBirthdateAndSsn} className="address-birthdate-ssn-form">
+      <Dialog title='Additional Info Required' isOpen={this.props.isOpen} onClose={onClose}>
+        <form action='#' onSubmit={this.onClickContinueAddressBirthdateAndSsn} className='address-birthdate-ssn-form'>
           <div className={Classes.DIALOG_BODY}>
-            <div className="form-section">
+            <div className='form-section'>
               <H5>Date of Birth</H5>
               <BirthdateForm
                 birthdate={this.state.birthdate}
@@ -403,69 +403,69 @@ export class RegisterSparkswapKYC
                 autoFocus={true}
               />
             </div>
-            <div className="form-section">
+            <div className='form-section'>
               <FormField
-                formId="ssn"
+                formId='ssn'
                 label={<H5>Social Security Number</H5>}
                 value={this.state.ssn}
                 onChange={this.onChange('ssn')}
                 validator={ssn => isValidSSN(parseSSN(ssn))}
-                placeholder="123-45-6789"
+                placeholder='123-45-6789'
                 size={12}
               />
             </div>
-            <div className="form-section">
-              <FormGroup labelFor="street" label={<H5>Home Address</H5>}>
+            <div className='form-section'>
+              <FormGroup labelFor='street' label={<H5>Home Address</H5>}>
                 <ValidatedInput
-                  id="street"
+                  id='street'
                   value={this.state.street}
                   onChange={this.onChange('street')}
-                  placeholder="123 Main St"
+                  placeholder='123 Main St'
                   validator={street => street.length > 0}
                 />
                 <InputGroup
-                  className="street2"
+                  className='street2'
                   value={this.state.street2}
                   onChange={this.onChange('street2')}
-                  placeholder="Apt 2F (Optional)"
+                  placeholder='Apt 2F (Optional)'
                 />
               </FormGroup>
               <FormField
-                formId="city"
-                label="City"
+                formId='city'
+                label='City'
                 value={this.state.city}
                 onChange={this.onChange('city')}
-                placeholder="San Francisco"
+                placeholder='San Francisco'
                 validator={city => city.length > 0}
               />
-              <div className="state-postal-code">
+              <div className='state-postal-code'>
                 <FormField
-                  formId="state"
-                  label="State"
+                  formId='state'
+                  label='State'
                   value={this.state.state}
                   disabled={true}
                 />
                 <FormField
-                  formId="postal-code"
-                  label="Postal
-                  Code"
+                  formId='postal-code'
+                  label='Postal
+                  Code'
                   value={this.state.postalCode}
                   size={12}
                   onChange={this.onChange('postalCode')}
-                  placeholder="94111"
+                  placeholder='94111'
                   validator={isValidPostalCode}
                 />
               </div>
             </div>
           </div>
           <div className={Classes.DIALOG_FOOTER}>
-            <Button minimal={true} text="Go back" onClick={this.onGoBack} />
+            <Button minimal={true} text='Go back' onClick={this.onGoBack} />
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
               <Button
-                type="submit"
-                text="Continue"
+                type='submit'
+                text='Continue'
                 rightIcon='double-chevron-right'
-                className="RegisterButton"
+                className='RegisterButton'
                 fill={true}
                 loading={this.state.isLoading}
               />
@@ -487,7 +487,7 @@ export class RegisterSparkswapKYC
     }
 
     return (
-      <Dialog title="Identity Verified" isOpen={this.props.isOpen} onClose={onClose}>
+      <Dialog title='Identity Verified' isOpen={this.props.isOpen} onClose={onClose}>
         <div className={Classes.DIALOG_BODY}>
           <SpinnerSuccess
             size={Spinner.SIZE_LARGE}
@@ -498,10 +498,10 @@ export class RegisterSparkswapKYC
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
-              type="submit"
-              text="Continue"
+              type='submit'
+              text='Continue'
               rightIcon='double-chevron-right'
-              className="RegisterButton"
+              className='RegisterButton'
               fill={true}
               loading={this.state.isLoading}
               onClick={onClick}

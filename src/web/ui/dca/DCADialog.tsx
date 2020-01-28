@@ -2,13 +2,15 @@ import { Asset, Nullable } from '../../../global-shared/types'
 import { Frequency, TimeUnit } from '../../../common/types'
 import { marketDataSubscriber } from '../../domain/market-data'
 import React, { ReactNode } from 'react'
-import { showErrorToast, showSuccessToast } from '../AppToaster'
-import { toAmount, toCommon, validateQuantity } from '../../domain/quantity'
+import { showErrorToast, showSuccessToast, showSupportToast } from '../AppToaster'
+import { validateQuantity } from '../../domain/quantity'
 import { getCronDate, getNextTimeoutDuration } from '../../../common/utils'
 import { addRecurringBuy } from '../../domain/main-request'
-import { formatAmount, formatAsset, getAltAmount } from '../formatters'
+import { formatAsset, getAltAmount, formatDate, formatTime } from '../formatters'
 import { Button, ButtonGroup, Callout, Classes, Dialog, H5, HTMLTable, Icon } from '@blueprintjs/core'
 import { FormField } from '../onboarding/form-field'
+import { toAmount, toCommon } from '../../../common/currency-conversions'
+import { formatAmount } from '../../../common/formatters'
 
 const PLACEHOLDER_INTERVAL = 1
 const NUM_IMPLIED_BUYS = 3
@@ -71,7 +73,7 @@ export class DCADialog extends React.Component<DCADialogProps, DCADialogState> {
     }
 
     if (currentPrice == null) {
-      showErrorToast('Unable to submit recurring buy before prices load')
+      showSupportToast('Unable to submit recurring buy before prices load')
       return
     }
 
@@ -91,7 +93,7 @@ export class DCADialog extends React.Component<DCADialogProps, DCADialogState> {
       showSuccessToast('Added recurring buy')
       this.props.onClose()
     } catch (e) {
-      showErrorToast(e.message)
+      showSupportToast(e.message)
     } finally {
       this.setState({ isLoading: false })
     }
@@ -147,8 +149,8 @@ export class DCADialog extends React.Component<DCADialogProps, DCADialogState> {
           </thead>
           <tbody className={this.state.intervalStr ? '' : 'placeholder'}>
             {nextBuyDates.map((nextBuyDate: Date, i: number) => {
-              const date = nextBuyDate.toLocaleDateString()
-              const time = nextBuyDate.toLocaleTimeString()
+              const date = formatDate(nextBuyDate)
+              const time = formatTime(nextBuyDate)
 
               return (
                 <tr key={i}>
@@ -195,7 +197,7 @@ export class DCADialog extends React.Component<DCADialogProps, DCADialogState> {
                 />
               </ButtonGroup>
             </div>
-            <div className="schedule-row">
+            <div className='schedule-row'>
               <FormField
                 formId='interval'
                 label='Every'

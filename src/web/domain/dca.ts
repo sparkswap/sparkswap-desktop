@@ -1,19 +1,30 @@
 import { EventEmitter } from 'events'
-import { Nullable } from '../../global-shared/types'
+import logger from '../../global-shared/logger'
 import {
   Frequency,
   RecurringBuy,
   TimeUnit
 } from '../../common/types'
-import { requestQuote } from './quote'
 import executeTrade from '../domain/trade'
 import { getRecurringBuys } from './main-request'
 import { ipcRenderer } from '../electron'
 import { getNextTimeoutDuration, isStartOfInterval } from '../../common/utils'
+import { requestQuote } from './quote'
+import { delay } from '../../global-shared/util'
+import { Nullable } from '../../global-shared/types'
 
-export const recurringBuys: Map<number, RecurringBuy> = new Map()
+let recurringBuysSubscriber: EventEmitter | undefined
 
-let checkBuysTimeoutId: Nullable<NodeJS.Timeout> = null
+let schedulerTimeout: NodeJS.Timeout | undefined
+
+// These are buys that are currently executing, so they should not be executed again or removed from the UI
+const executingBuys: Map<number, RecurringBuy> = new Map()
+
+// These are all recurring buys that will be executed in the future
+const scheduledBuys: Map<number, RecurringBuy> = new Map()
+
+// This is the superset of scheduled and executing buys for updating the UI
+export const recurringBuys = new Map([...scheduledBuys, ...executingBuys])
 
 const CHECK_BUYS_INTERVAL: Frequency = { interval: 1, unit: TimeUnit.MINUTES }
 
@@ -23,66 +34,108 @@ const CHECK_BUYS_INTERVAL: Frequency = { interval: 1, unit: TimeUnit.MINUTES }
 // 30 seconds past the each minute
 const CHECK_BUYS_OFFSET = 30 * 1000
 
+const EXECUTE_BUY_RETRY_ATTEMPTS = 3
+const EXECUTE_BUY_RETRY_DELAY_MS = 2000
+
 // gets the number of milliseconds to the next time we'll check for scheduled buys
 export function getCheckBuysTimeoutDuration (): number {
   return getNextTimeoutDuration(CHECK_BUYS_INTERVAL) + CHECK_BUYS_OFFSET
-}
-
-async function tryBuy (recurringBuy: RecurringBuy): Promise<void> {
-  const quote = await requestQuote(recurringBuy.amount)
-  await executeTrade(quote)
 }
 
 function shouldExecuteRecurringBuy (recurringBuy: RecurringBuy): boolean {
   return isStartOfInterval(recurringBuy.frequency, recurringBuy.referenceTime)
 }
 
-async function executeScheduledBuys (subscriber: EventEmitter): Promise<void> {
-  for (const buy of recurringBuys.values()) {
-    if (shouldExecuteRecurringBuy(buy)) {
-      try {
-        await tryBuy(buy)
-        subscriber.emit('success', 'Recurring buy completed')
-      } catch (e) {
-        subscriber.emit('error', e)
-      }
-    }
-  }
-
-  scheduleRecurringBuys(subscriber)
-}
-
-function stopRecurringBuys (): void {
-  if (checkBuysTimeoutId) clearTimeout(checkBuysTimeoutId)
-  checkBuysTimeoutId = null
-}
-
-async function loadRecurringBuys (): Promise<void> {
+function updateRecurringBuysMap (subscriber: EventEmitter): void {
   recurringBuys.clear()
-  const recurringBuysArr = await getRecurringBuys()
-  recurringBuysArr.forEach(recurringBuy => recurringBuys.set(recurringBuy.id, recurringBuy))
+  scheduledBuys.forEach(buy => recurringBuys.set(buy.id, buy))
+  executingBuys.forEach(buy => recurringBuys.set(buy.id, buy))
+
+  subscriber.emit('update', recurringBuys)
 }
 
-function scheduleRecurringBuys (subscriber: EventEmitter): void {
-  const timeoutDuration = getCheckBuysTimeoutDuration()
-  checkBuysTimeoutId = setTimeout(() => executeScheduledBuys(subscriber), timeoutDuration)
+export async function executeRecurringBuyWithRetries (buy: RecurringBuy): Promise<void> {
+  let retries = 0
+  let error: Nullable<Error> = null
+
+  do {
+    try {
+      await executeTrade(await requestQuote(buy.amount))
+      error = null
+    } catch (e) {
+      logger.debug(`Failed to execute recurring buy ${buy.id}. Retrying in ${EXECUTE_BUY_RETRY_DELAY_MS} ms`)
+      error = e
+    }
+  } while (error != null && retries++ < EXECUTE_BUY_RETRY_ATTEMPTS && await delay(EXECUTE_BUY_RETRY_DELAY_MS))
+
+  if (error) {
+    throw error
+  }
 }
 
-async function resetRecurringBuys (subscriber: EventEmitter): Promise<void> {
+async function executeScheduledBuys (subscriber: EventEmitter): Promise<void> {
+  const buysToExecute = Array.from(scheduledBuys.values()).filter(buy => shouldExecuteRecurringBuy(buy))
+
+  // We don't want to wait for each buy to complete, since the execution time may be long
+  await Promise.all(buysToExecute.map(async (buy) => {
+    if (executingBuys.has(buy.id)) {
+      logger.debug(`Recurring buy ${buy.id} is currently executing. Skipping additional buy.`)
+      return
+    }
+
+    try {
+      executingBuys.set(buy.id, buy)
+      subscriber.emit('executing:id', buy.id)
+      subscriber.emit('executing')
+      await executeRecurringBuyWithRetries(buy)
+      subscriber.emit('success', 'Recurring buy completed')
+      subscriber.emit('success:id', buy.id)
+    } catch (e) {
+      subscriber.emit('error', e)
+      subscriber.emit('error:id', buy.id, e)
+    } finally {
+      executingBuys.delete(buy.id)
+      updateRecurringBuysMap(subscriber)
+    }
+  }))
+}
+
+async function loadRecurringBuys (subscriber: EventEmitter): Promise<void> {
   try {
-    stopRecurringBuys()
-    await loadRecurringBuys()
-    subscriber.emit('update', recurringBuys)
-    scheduleRecurringBuys(subscriber)
+    const recurringBuysArr = await getRecurringBuys()
+
+    scheduledBuys.clear()
+    recurringBuysArr.forEach(buy => scheduledBuys.set(buy.id, buy))
+
+    updateRecurringBuysMap(subscriber)
   } catch (e) {
     subscriber.emit('error', e)
   }
 }
 
-export function subscribeRecurringBuys (): EventEmitter {
-  const subscriber = new EventEmitter()
-  resetRecurringBuys(subscriber)
-  ipcRenderer.on('recurringBuyUpdate', (_evt: Event): void => { resetRecurringBuys(subscriber) })
+function scheduleRecurringBuys (subscriber: EventEmitter): void {
+  if (schedulerTimeout) {
+    clearTimeout(schedulerTimeout)
+  }
 
-  return subscriber
+  schedulerTimeout = setTimeout(() => {
+    executeScheduledBuys(subscriber)
+    scheduleRecurringBuys(subscriber)
+  }, getCheckBuysTimeoutDuration())
+}
+
+export function subscribeRecurringBuys (): EventEmitter {
+  if (recurringBuysSubscriber) {
+    return recurringBuysSubscriber
+  }
+
+  const subscriber = new EventEmitter()
+
+  loadRecurringBuys(subscriber)
+  ipcRenderer.on('recurringBuyUpdate', (_evt: Event): void => { loadRecurringBuys(subscriber) })
+
+  scheduleRecurringBuys(subscriber)
+
+  recurringBuysSubscriber = subscriber
+  return recurringBuysSubscriber
 }

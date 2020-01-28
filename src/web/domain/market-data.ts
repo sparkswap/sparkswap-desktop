@@ -59,7 +59,7 @@ export class MarketData extends EventEmitter {
         })
         return
       } catch (e) {
-        logger.debug(`Error retrieving market data, retrying: ${e}`)
+        logger.debug(`Error retrieving market data, retrying: ${e.message}`)
         error = e
         await delay(REST_RETRY_DELAY)
       }
@@ -71,7 +71,7 @@ export class MarketData extends EventEmitter {
       try {
         await this.subscribeUpdates()
       } catch (e) {
-        logger.debug(`Error during websocket stream, restarting: ${e}`)
+        logger.debug(`Error during websocket stream, restarting: ${e.message}`)
         await delay(WS_RETRY_DELAY)
       }
     }

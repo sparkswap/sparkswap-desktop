@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import { SwapHash, SwapPreimage } from './types'
+import { Interface } from 'readline'
 
 export function requireEnv (name: string, defaultVal?: string): string | never {
   const value = process.env[name]
@@ -74,4 +75,12 @@ export function isEnumKey<T extends Record<string, unknown>> (obj: T,
   }
 
   return false
+}
+
+export function question (rl: Interface, question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, (answer: string) => {
+      resolve(answer)
+    })
+  })
 }

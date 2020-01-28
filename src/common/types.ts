@@ -8,7 +8,15 @@ export interface LndConfig extends ConnectionConfig {
 export interface Quote {
   hash: SwapHash,
   destinationAmount: Amount,
-  sourceAmount: Amount
+  sourceAmount: Amount,
+  expiration: Date
+}
+
+export interface WireQuote {
+  hash: string,
+  destinationAmount: Amount,
+  sourceAmount: Amount,
+  expiration: string
 }
 
 export enum TradeFailureReason {
@@ -32,6 +40,15 @@ export interface Trade extends Quote {
   preimage?: SwapPreimage,
   failureCode?: TradeFailureReason,
   status: TradeStatus
+}
+
+export interface WireTrade extends WireQuote {
+  id: number,
+  startTime: string,
+  endTime?: string,
+  preimage?: string,
+  failureCode?: number,
+  status: number
 }
 
 export enum TimeUnit {

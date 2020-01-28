@@ -1,6 +1,6 @@
 import { getServerAddress } from './server'
 import { Asset } from '../global-shared/types'
-import LndEngine, { Channel } from 'lnd-engine'
+import LndEngine, { Channel } from '../global-shared/lnd-engine'
 
 interface ChannelsState {
   maxRemotePendingOpenBalance: number,

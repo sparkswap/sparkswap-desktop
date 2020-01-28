@@ -1,5 +1,7 @@
 import { LndRouter } from './router'
+import { LndInvoices } from './invoices'
 import { LndEngineClient } from 'lnd-engine'
+import { GrpcCall, GrpcOptions, GrpcError } from './grpc'
 import { LoggerInterface } from '../../../logger'
 
 export interface UTXO {
@@ -49,10 +51,6 @@ interface EstimateFeeResposne {
   feerateSatPerByte: string
 }
 
-interface GrpcOptions {
-  deadline: number
-}
-
 export interface LndActionOptions {
   client: LndEngineClient,
   logger: LoggerInterface
@@ -65,11 +63,6 @@ interface LightningAddress {
 
 interface ConnectPeerRequest {
   addr: LightningAddress
-}
-
-export interface GrpcError extends Error {
-  code: number,
-  details?: string
 }
 
 interface OpenChannelRequest {
@@ -102,13 +95,6 @@ export interface ChannelOpenResponse {
 
 export type OpenChannelResponse = PendingUpdateResponse | ChannelOpenResponse
 
-interface OpenChannelResponseCall {
-  on(event: 'data', listener: (chunk: OpenChannelResponse) => void): this,
-  on(event: 'status', listener: (chunk: unknown) => void): this,
-  on(event: 'error', listener: (chunk: Error) => void): this,
-  end (): this
-}
-
 interface SignMessageRequest {
   msg: Buffer
 }
@@ -119,11 +105,12 @@ interface SignMessageResponse {
 
 export interface Client {
   router: LndRouter,
+  invoices: LndInvoices,
   listUnspent: (req: ListUnspentRequest, opts: GrpcOptions, cb: (err: GrpcError, res: ListUnspentResponse) => void) => void,
   sendMany: (req: SendManyRequest, opts: GrpcOptions, cb: (err: GrpcError, res: SendManyResponse) => void) => void,
   newAddress: (req: {}, opts: GrpcOptions, cb: (err: GrpcError, res: NewAddressResponse) => void) => void,
   estimateFee: (req: EstimateFeeRequest, opts: GrpcOptions, cb: (err: GrpcError, res: EstimateFeeResposne) => void) => void,
   connectPeer: (req: ConnectPeerRequest, opts: GrpcOptions, cb: (err: GrpcError, res: {}) => void) => void,
-  openChannel (req: OpenChannelRequest): OpenChannelResponseCall,
+  openChannel: (req: OpenChannelRequest) => GrpcCall<OpenChannelResponse>,
   signMessage: (req: SignMessageRequest, opts: GrpcOptions, cb: (err: GrpcError, res: SignMessageResponse) => void) => void
 }

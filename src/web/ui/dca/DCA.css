@@ -1,3 +1,7 @@
+.DCA {
+  min-height: 55px;
+}
+
 .DCA .title-row {
   width: 100%;
   display: flex;
@@ -50,19 +54,14 @@
 
 .DCA .table-outer {
   position: relative;
-  height: calc(100% - 30px);
-  padding-top: 30px;
   width: 100%;
+  height: calc(100% - 31px);
+  overflow-y: scroll;
 }
 
 .DCA .table-outer .table-inner {
   overflow-y: scroll;
-  height: 100%;
-  max-height: 45px;
-
-  /* Room for the scroll bar */
-  width: 105%;
-  padding-right: 5%;
+  width: 100%;
 }
 
 .DCA .table-outer .table-inner table {
@@ -78,10 +77,7 @@
   top: 0;
   left: 0;
   display: flex;
-
-  /* Room for the scroll bar */
-  width: 105%;
-  padding-right: 5%;
+  width: 100%;
 }
 
 .DCA .table-outer .table-inner table thead tr th:first-child {
@@ -90,22 +86,35 @@
 
 /* Fixed width is required for the separate head/body scroll */
 
-.DCA table td,
-.DCA table th {
-  width: 30%;
+.DCA table th,
+.DCA table td {
+  max-width: 45%;
+} 
+
+.DCA table th.dca-type,
+.DCA table td.dca-type {
+  width: 15%;
 }
 
-.DCA table td:first-child,
-.DCA table th:first-child {
-  width: 40%;
+.DCA table th.dca-schedule,
+.DCA table td.dca-schedule {
+  min-width: 40%;
 }
 
 .DCA table.bp3-html-table.bp3-html-table-condensed td:last-child {
   padding-top: 0;
 }
 
+.DCA table td .bp3-spinner {
+  display: inline-block;
+  margin-left: 10px;
+  margin-right: 2px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
 .DCA table td .bp3-button.remove-icon {
-  padding-right: 0;
+  padding-right: 0px;
   padding-bottom: 2px;
 }
 
@@ -133,7 +142,7 @@
 
 .DCA table.bp3-html-table.bp3-html-table-condensed tr>td:last-child,
 .DCA table.bp3-html-table.bp3-html-table-condensed tr>th:last-child {
-  padding-right: 0;
+  padding-right: 2px;
 }
 
 /* Reduces weight of column headers */

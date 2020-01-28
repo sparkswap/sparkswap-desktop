@@ -1,38 +1,21 @@
-let fs: any = null // eslint-disable-line
-let logFile: number | null = null
-
-enum LogLevel {
+export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
   WARN = 'warn',
   ERROR = 'error'
 }
 
-function formatLogLine (level: LogLevel, message: string): string {
-  const timestamp = (new Date()).toISOString()
-  return `${timestamp} ${level} ${message}`
+export interface LoggerTransport {
+  write (time: Date, level: LogLevel, message: string): void
 }
 
-function printLogLine (level: LogLevel, message: string): void {
-  const line = formatLogLine(level, message)
-  console[level](line)
-  if (logFile) {
-    fs.write(logFile, line + '\n', () => true)
-  }
+export function formatLogLine (time: Date, level: LogLevel, message: string): string {
+  return `${time.toISOString()} ${level} ${message}`
 }
 
-export function openLogFile (filepath: string): Promise<void> {
-  // we import dynamically so that we can use this module in the browser
-  return import('fs').then(imported => {
-    fs = imported
-    logFile = fs.openSync(filepath, 'a')
-  })
-}
-
-export function closeLogFile (): void {
-  if (logFile) {
-    fs.closeSync(logFile)
-    logFile = null
+class ConsoleTransport implements LoggerTransport {
+  write (time: Date, level: LogLevel, message: string): void {
+    console[level](formatLogLine(time, level, message))
   }
 }
 
@@ -43,11 +26,44 @@ export interface LoggerInterface {
   error (message: string): void
 }
 
-class Logger implements LoggerInterface {
-  debug (message: string): void { printLogLine(LogLevel.DEBUG, message) }
-  info (message: string): void { printLogLine(LogLevel.INFO, message) }
-  warn (message: string): void { printLogLine(LogLevel.WARN, message) }
-  error (message: string): void { printLogLine(LogLevel.ERROR, message) }
+export interface ConfigurableLoggerInterface extends LoggerInterface {
+  addTransport (transport: LoggerTransport): LoggerTransport
 }
 
-export default new Logger()
+class Logger implements ConfigurableLoggerInterface {
+  private transports: LoggerTransport[]
+
+  constructor (defaultTransport?: LoggerTransport) {
+    this.transports = []
+    if (defaultTransport) {
+      this.addTransport(defaultTransport)
+    }
+  }
+
+  addTransport (transport: LoggerTransport): LoggerTransport {
+    this.transports.push(transport)
+    return transport
+  }
+
+  debug (message: string): void {
+    this.write(LogLevel.DEBUG, message)
+  }
+  info (message: string): void {
+    this.write(LogLevel.INFO, message)
+  }
+  warn (message: string): void {
+    this.write(LogLevel.WARN, message)
+  }
+  error (message: string): void {
+    this.write(LogLevel.ERROR, message)
+  }
+
+  private write (level: LogLevel, message: string): void {
+    const time = new Date()
+    this.transports.forEach(transport => {
+      transport.write(time, level, message)
+    })
+  }
+}
+
+export default new Logger(new ConsoleTransport())

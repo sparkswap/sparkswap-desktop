@@ -21,6 +21,7 @@ interface DbTrade {
   sourceAmountAsset: string,
   sourceAmountUnit: string,
   sourceAmountValue: number,
+  expiration: string,
   startTime?: string,
   endTime?: string,
   preimage?: string,
@@ -31,7 +32,8 @@ function serializeQuote (quote: Quote): DbTrade {
   const {
     hash,
     destinationAmount,
-    sourceAmount
+    sourceAmount,
+    expiration
   } = quote
 
   return {
@@ -41,7 +43,8 @@ function serializeQuote (quote: Quote): DbTrade {
     destinationAmountValue: destinationAmount.value,
     sourceAmountAsset: sourceAmount.asset,
     sourceAmountUnit: sourceAmount.unit,
-    sourceAmountValue: sourceAmount.value
+    sourceAmountValue: sourceAmount.value,
+    expiration: expiration.toISOString()
   }
 }
 
@@ -63,6 +66,7 @@ function deserializeTrade (dbTrade: DbTrade): Trade {
     sourceAmountAsset,
     sourceAmountUnit,
     sourceAmountValue,
+    expiration,
     startTime,
     endTime,
     preimage,
@@ -85,8 +89,9 @@ function deserializeTrade (dbTrade: DbTrade): Trade {
       unit: valueToUnit(sourceAmountUnit),
       value: sourceAmountValue
     },
-    startTime: new Date(`${startTime} UTC`),
-    endTime: endTime ? new Date(`${endTime} UTC`) : undefined,
+    expiration: new Date(expiration),
+    startTime: new Date(startTime),
+    endTime: endTime ? new Date(endTime) : undefined,
     preimage,
     failureCode,
     status: getTradeStatus(dbTrade)
@@ -112,7 +117,8 @@ INSERT INTO trades (
   destinationAmountValue,
   sourceAmountAsset,
   sourceAmountUnit,
-  sourceAmountValue
+  sourceAmountValue,
+  expiration
 ) VALUES (
   @hash,
   @destinationAmountAsset,
@@ -120,7 +126,8 @@ INSERT INTO trades (
   @destinationAmountValue,
   @sourceAmountAsset,
   @sourceAmountUnit,
-  @sourceAmountValue
+  @sourceAmountValue,
+  @expiration
 )
   `)
 
@@ -134,7 +141,7 @@ INSERT INTO trades (
 export function completeTrade (db: Database, id: number, hash: SwapHash, preimage: SwapPreimage): void {
   const statement = db.prepare(`
 UPDATE trades
-SET endTime = datetime('now'), preimage = @preimage
+SET endTime = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), preimage = @preimage
 WHERE id = @id AND hash = @hash
   `)
 
@@ -146,7 +153,7 @@ WHERE id = @id AND hash = @hash
 export function failTrade (db: Database, id: number, reason: TradeFailureReason): void {
   const statement = db.prepare(`
 UPDATE trades
-SET endTime = datetime('now'), failureCode = @reason
+SET endTime = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), failureCode = @reason
 WHERE id = @id
   `)
 
@@ -166,6 +173,7 @@ SELECT
   sourceAmountAsset,
   sourceAmountUnit,
   sourceAmountValue,
+  expiration,
   startTime,
   endTime,
   preimage,
@@ -191,6 +199,7 @@ SELECT
   sourceAmountAsset,
   sourceAmountUnit,
   sourceAmountValue,
+  expiration,
   startTime,
   endTime,
   preimage,
@@ -213,6 +222,7 @@ SELECT
   sourceAmountAsset,
   sourceAmountUnit,
   sourceAmountValue,
+  expiration,
   startTime
 FROM trades
 WHERE endTime IS NULL

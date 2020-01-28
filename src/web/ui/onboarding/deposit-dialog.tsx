@@ -19,7 +19,7 @@ import {
   ANCHOR_DASHBOARD_PATH,
   ANCHOR_PHOTO_ID_PATH
 } from '../../../global-shared/anchor-engine/api'
-import { formatDollarValue } from '../formatters'
+import { formatDollarValue } from '../../../common/formatters'
 import { Asset } from '../../../global-shared/types'
 import { openBeacon } from '../beacon'
 import { Berbix } from './berbix'
@@ -427,7 +427,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       return (
         <React.Fragment>
           <p>Your ACH transfer of {formatDollarValue(amountDeposited)} USD has been initiated and will be posted to your account in a few days.</p>
-          <p>You will receive an email from AnchorUSD once the transfer has been posted. Please <Button className="link-button" minimal={true} onClick={openBeacon}>contact us</Button> for more information.</p>
+          <p>You will receive an email from AnchorUSD once the transfer has been posted. Please <Button className='link-button' minimal={true} onClick={openBeacon}>contact us</Button> for more information.</p>
         </React.Fragment>
       )
     }
@@ -446,7 +446,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       <React.Fragment>
         <p>In order to purchase BTC, you must transfer USD from your bank using our payment processing partner, <strong>AnchorUSD</strong>.</p>
         <p>Link your bank account and transfer your funds to AnchorUSD securely to continue.</p>
-        <p>For more information on how USD is handled, please <Button className="link-button" minimal={true} onClick={openBeacon}>contact us</Button>.</p>
+        <p>For more information on how USD is handled, please <Button className='link-button' minimal={true} onClick={openBeacon}>contact us</Button>.</p>
       </React.Fragment>
     )
   }
@@ -480,7 +480,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
       <Dialog
         className={this.className}
         backdropClassName={this.backdropClassName}
-        title="Deposit USD"
+        title='Deposit USD'
         isOpen={this.props.isOpen}
         onClose={() => this.props.onClose()}
         onOpened={this.handleOpen}
@@ -490,7 +490,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
           {this.maybeRenderTitle()}
           {this.renderNonWebviewContent()}
           <webview
-            id="AnchorDepositIFrame"
+            id='AnchorDepositIFrame'
             ref={this.webviewRef}
             partition={ANCHOR_PARTITION}
             src={urlWithPostMessage}
@@ -502,7 +502,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
             <div className={Classes.DIALOG_FOOTER}>
               <div className={Classes.DIALOG_FOOTER_ACTIONS}>
                 <Button
-                  text="Done"
+                  text='Done'
                   onClick={this.props.onDepositDone}
                   className='DoneButton'
                   fill={true}

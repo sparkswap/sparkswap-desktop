@@ -84,7 +84,7 @@ export class ProofOfKeysDialog extends React.Component<{}, ProofOfKeysDialogStat
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
-              text="Done"
+              text='Done'
               onClick={this.handleClose}
               fill={true}
             />
@@ -100,7 +100,7 @@ export class ProofOfKeysDialog extends React.Component<{}, ProofOfKeysDialogStat
 
     return (
       <div className={Classes.DIALOG_FOOTER}>
-        <Button minimal={true} text="Back to app" onClick={this.handleClose} />
+        <Button minimal={true} text='Back to app' onClick={this.handleClose} />
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
           <ExternalButton
             icon={<img src={TwitterLogo} width={15} alt='Twitter' />}
@@ -118,19 +118,19 @@ export class ProofOfKeysDialog extends React.Component<{}, ProofOfKeysDialogStat
   render (): ReactNode {
     return (
       <Dialog
-        className="ProofOfKeysDialog"
+        className='ProofOfKeysDialog'
         isOpen={this.state.isOpen}
         onClose={this.handleClose}
-        title="Proof of Keys"
-        portalClassName="bp3-portal portal-behind"
+        title='Proof of Keys'
+        portalClassName='bp3-portal portal-behind'
       >
         <div className={Classes.DIALOG_BODY}>
           <p>
             Congratulations! You just received your instant proof of keys by buying Bitcoin from Sparkswap.
           </p>
           <p>
-            <ExternalLink className="proof-link" href={this.proofUrl}>
-              <img className="proof-badge" src={this.badgeUrl} alt="Proof of Keys Badge"/>
+            <ExternalLink className='proof-link' href={this.proofUrl}>
+              <img className='proof-badge' src={this.badgeUrl} alt='Proof of Keys Badge'/>
               Link to full Proof of Keys
             </ExternalLink>
           </p>
@@ -139,9 +139,9 @@ export class ProofOfKeysDialog extends React.Component<{}, ProofOfKeysDialogStat
               className={Classes.TOOLTIP_INDICATOR}
               interactionKind={PopoverInteractionKind.HOVER}
               content={
-                <div className="tile-tooltip">
-                  <ExternalLink href="https://www.thetileapp.com/en-us/store/tiles/mate">
-                    <img src={TileImage} width={200} alt="Sparkswap-branded Tile Mate" />
+                <div className='tile-tooltip'>
+                  <ExternalLink href='https://www.thetileapp.com/en-us/store/tiles/mate'>
+                    <img src={TileImage} width={200} alt='Sparkswap-branded Tile Mate' />
                     The Tile Mate (thetileapp.com)
                   </ExternalLink>
                 </div>

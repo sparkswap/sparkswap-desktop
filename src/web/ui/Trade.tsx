@@ -1,26 +1,34 @@
 import React, { ReactNode } from 'react'
 import {
+  ButtonGroup,
   Button,
+  AnchorButton,
   FormGroup,
   NumericInput,
   Intent,
   Classes,
-  Switch
+  Switch,
+  Tooltip
 } from '@blueprintjs/core'
-import { toaster, showSuccessToast, showErrorToast, showSupportToast } from './AppToaster'
+import {
+  toaster,
+  showSuccessToast,
+  showErrorToast,
+  showSupportToast,
+  showLoadingToast
+} from './AppToaster'
 import { requestQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
-import {
-  toCommon,
-  validateQuantity
-} from '../domain/quantity'
+import { validateQuantity } from '../domain/quantity'
 import { altAmount } from '../domain/convert-amount'
-import { formatAmount, formatAsset, getAltAmount } from './formatters'
+import { formatAsset, getAltAmount } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
-import { QuoteResponse } from '../../global-shared/types/server'
 import { Amount, Asset } from '../../global-shared/types'
-import './Trade.css'
 import { BalanceError, QuantityError } from '../../common/errors'
+import { Quote } from '../../common/types'
+import { toCommon } from '../../common/currency-conversions'
+import { formatAmount } from '../../common/formatters'
+import './Trade.css'
 
 interface TradeProps {
   onDeposit: Function
@@ -33,7 +41,7 @@ interface TradeState {
   quantity?: Amount,
   asset: Asset,
   currentPrice: number | null,
-  quote?: QuoteResponse
+  quote?: Quote
 }
 
 const initialState: TradeState = {
@@ -76,10 +84,6 @@ class Trade extends React.Component<TradeProps, TradeState> {
     this.setState({ currentPrice })
   }
 
-  componentWillUnmount (): void {
-    marketDataSubscriber.removeListener('update', this.onData)
-  }
-
   pulseQuantity (): void {
     this.setState({ isPulsingQuantity: true })
     setTimeout(() => this.setState({ isPulsingQuantity: false }), 1000)
@@ -92,7 +96,19 @@ class Trade extends React.Component<TradeProps, TradeState> {
     }
   }
 
+  escape = (event: KeyboardEvent): void => {
+    if (event.keyCode === 27 && this.isQuoteValid) {
+      this.cancelQuote()
+    }
+  }
+
+  componentWillUnmount (): void {
+    document.removeEventListener('keydown', this.escape, false)
+    marketDataSubscriber.removeListener('update', this.onData)
+  }
+
   componentDidMount (): void {
+    document.addEventListener('keydown', this.escape, false)
     marketDataSubscriber.on('update', this.onData)
     this.focus()
   }
@@ -115,14 +131,16 @@ class Trade extends React.Component<TradeProps, TradeState> {
         return
       }
 
+      const dismissToast = showLoadingToast('Executing trade')
+
       try {
         await executeTrade(quote)
+        showSuccessToast('Trade completed')
       } catch (e) {
         showSupportToast('Failed to execute trade: ' + e.message)
-        return
+      } finally {
+        dismissToast()
       }
-
-      showSuccessToast('Trade completed')
     }
   }
 
@@ -157,6 +175,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
     this.setState({
       quote: undefined
     })
+    this.focus()
   }
 
   switchAsset = (): void => {
@@ -240,11 +259,11 @@ class Trade extends React.Component<TradeProps, TradeState> {
       const conversionClassName = shouldUseSkeleton ? Classes.SKELETON : ''
 
       return (
-        <div className="button-container">
-          <div className="conversion">
+        <div className='button-container'>
+          <div className='conversion'>
             = <span className={conversionClassName}>{formatAmount(this.altAmount)} {formatAsset(this.altAmount.asset)}</span>
           </div>
-          <Button tabIndex={2} className="buy" type="submit" icon="layers" fill={true}>Buy BTC</Button>
+          <Button tabIndex={2} className='buy' type='submit' icon='layers' fill={true}>Buy BTC</Button>
         </div>
       )
     }
@@ -254,8 +273,8 @@ class Trade extends React.Component<TradeProps, TradeState> {
       : `Buy ${formatAmount(quote.destinationAmount)} BTC`
 
     return (
-      <div className="button-container">
-        <Button tabIndex={2} className="confirm-buy" onClick={this.confirmBuy} icon="layers" fill={true}>{finalAmount}</Button>
+      <div className='button-container'>
+        <Button tabIndex={2} className='confirm-buy' onClick={this.confirmBuy} icon='layers' fill={true}>{finalAmount}</Button>
         <Button tabIndex={3} minimal={true} onClick={this.handleCancel}>Cancel</Button>
       </div>
     )
@@ -272,11 +291,17 @@ class Trade extends React.Component<TradeProps, TradeState> {
     const dollarRight = Math.min(170 + (inputDollarLength), 320)
 
     return (
-      <div className="Trade">
-        <div className="bp3-overlay-backdrop" style={{ display: this.isQuoteValid ? 'block' : 'none' }}></div>
-        <form action="#" onSubmit={this.startBuy} className={this.isQuoteValid ? 'quoted' : ''}>
+      <div className='Trade'>
+        <div className='bp3-overlay-backdrop' style={{ display: this.isQuoteValid ? 'block' : 'none' }}></div>
+        <ButtonGroup fill={true}>
+          <Button active={true}>Buy</Button>
+          <Tooltip content='Coming soon!'>
+            <AnchorButton disabled={true}>Sell</AnchorButton>
+          </Tooltip>
+        </ButtonGroup>
+        <form action='#' onSubmit={this.startBuy} className={this.isQuoteValid ? 'quoted' : ''}>
           {this.maybeRenderCoundown()}
-          <FormGroup className="TradeForm">
+          <FormGroup className='TradeForm'>
             <span className='quantity-label' style={{ right: `${dollarRight}px` }}>
               {asset === Asset.USDX ? '$' : '₿'}
             </span>
@@ -284,7 +309,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
               tabIndex={1}
               className={`quantity ${asset} ${this.state.isPulsingQuantity ? 'PulseRed' : ''}`}
               fill={true}
-              buttonPosition="none"
+              buttonPosition='none'
               value={quantityStr}
               placeholder={placeholder}
               rightElement={

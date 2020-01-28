@@ -40,7 +40,7 @@ export class ProofOfKeysDialog extends React.Component<{}, ProofOfKeysDialogStat
       <Dialog
         isOpen={this.state.isOpen}
         onClose={this.handleClose}
-        title="Proof of Keys"
+        title='Proof of Keys'
       >
       </Dialog>
     )

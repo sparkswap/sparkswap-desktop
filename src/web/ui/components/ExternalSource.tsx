@@ -48,8 +48,8 @@ export class ExternalLink extends React.Component<ExternalLinkProps> {
     return (
       <a
         href={this.props.href}
-        target="_blank"
-        rel="noopener noreferrer"
+        target='_blank'
+        rel='noopener noreferrer'
         className={this.props.className}
         onClick={this.handleClick}
       >

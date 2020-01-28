@@ -12,6 +12,11 @@ import { Nullable } from '../global-shared/types'
 
 const DOWNLOAD_RESTART_DELAY_MS = 5000
 const LN_URI_PREFIX = 'lightning:'
+const WIDTH = 1100
+const HEIGHT = 650
+const MIN_WIDTH = 905
+// Add 30px for Linux and Windows
+const MIN_HEIGHT = IS_MACOS ? 595 : 625
 
 function isWindowAvailable (window: BrowserWindow): boolean {
   return !window.isDestroyed() && !window.webContents.isDestroyed()
@@ -20,8 +25,8 @@ function isWindowAvailable (window: BrowserWindow): boolean {
 function createMainWindow (): BrowserWindow {
   const window = new BrowserWindow({
     titleBarStyle: 'hiddenInset',
-    width: 1100,
-    height: 650,
+    width: WIDTH,
+    height: HEIGHT,
     webPreferences: {
       sandbox: true,
       nodeIntegration: false,
@@ -36,6 +41,8 @@ function createMainWindow (): BrowserWindow {
     backgroundColor: '#293742',
     show: false
   })
+
+  window.setMinimumSize(MIN_WIDTH, MIN_HEIGHT)
 
   const startUrl = IS_PRODUCTION || IS_TEST
     ? url.format({

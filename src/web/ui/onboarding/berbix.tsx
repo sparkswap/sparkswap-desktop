@@ -60,7 +60,7 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
 
   renderDialogBody (): ReactNode {
     if (this.state.loading) {
-      return <Spinner className="BerbixSpinner" size={Spinner.SIZE_LARGE} />
+      return <Spinner className='BerbixSpinner' size={Spinner.SIZE_LARGE} />
     }
     return (
       <React.Fragment>
@@ -69,7 +69,7 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
           Click the link in the message to upload your Photo ID from your phone.
         </p>
         <p>
-          If you didn&apos;t receive the text message, <a href="#send-message" onClick={() => this.sendBerbixMessage()}>click here</a> to send it again.
+          If you didn&apos;t receive the text message, <a href='#send-message' onClick={() => this.sendBerbixMessage()}>click here</a> to send it again.
         </p>
       </React.Fragment>
     )
@@ -80,11 +80,11 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
     const onClose = (): void => this.props.onClose()
     const { onGoBack } = this.props
     const onGoBackButton = onGoBack
-      ? <Button minimal={true} text="Go back" onClick={(): void => onGoBack()} />
+      ? <Button minimal={true} text='Go back' onClick={(): void => onGoBack()} />
       : null
 
     return (
-      <Dialog title="Upload Photo ID" isOpen={isOpen} onClose={onClose}>
+      <Dialog title='Upload Photo ID' isOpen={isOpen} onClose={onClose}>
         <div className={Classes.DIALOG_BODY}>
           {this.renderDialogBody()}
         </div>
@@ -92,7 +92,7 @@ export class Berbix extends React.Component<BerbixProps, BerbixState> {
           {onGoBackButton}
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
-              text="Continue"
+              text='Continue'
               rightIcon='double-chevron-right'
               onClick={this.handleComplete}
               fill={true}

@@ -1,11 +1,12 @@
 import React, { ReactNode } from 'react'
-import { formatAmount, formatAsset } from './formatters'
+import { formatAsset } from './formatters'
 import { Asset } from '../../global-shared/types'
 import { balances, balanceUpdater, BalanceState } from '../domain/balance'
 import { marketDataSubscriber } from '../domain/market-data'
 import { altAmount, altAsset } from '../domain/convert-amount'
 import { Classes, H4, H5, Button } from '@blueprintjs/core'
 import PayInvoice from './PayInvoice'
+import { formatAmount } from '../../common/formatters'
 import './Balances.css'
 
 interface BalanceProps {
@@ -97,7 +98,7 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
     const currentPrice = this.state.currentPrice
 
     if (balance instanceof Error || currentPrice === null) {
-      return
+      return <span className='subtitle'></span>
     }
 
     return (
@@ -125,30 +126,34 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
     )
   }
 
-  renderBalance (asset: Asset): ReactNode {
-    return (
-      <span>
-        {this.renderAmount(asset)}
-        &nbsp;{formatAsset(asset)}
-      </span>
-    )
-  }
-
   render (): ReactNode {
     return (
-      <div className="Balances">
+      <div className='Balances'>
         <H4>Balances</H4>
-        <div className='balances-row'>
-          <H5 className='single-balance'>
-            {this.renderBalance(Asset.BTC)}
-            <PayInvoice onDeposit={this.props.onDeposit} />
+        <H5 className='single-balance'>
+          <div className='asset'>
+            {formatAsset(Asset.BTC)}
+          </div>
+          <div className='info'>
+            {this.renderAmount(Asset.BTC)}
             {this.renderConverted(Asset.BTC)}
-          </H5>
-          <H5 className='single-balance'>
-            {this.renderBalance(Asset.USDX)}
+          </div>
+          <div className='actions'>
+            <PayInvoice onDeposit={this.props.onDeposit} />
+          </div>
+        </H5>
+        <H5 className='single-balance'>
+          <div className='asset'>
+            {formatAsset(Asset.USDX)}
+          </div>
+          <div className='info'>
+            {this.renderAmount(Asset.USDX)}
+            {this.renderConverted(Asset.USDX)}
+          </div>
+          <div className='actions'>
             <Button onClick={this.props.onDeposit} loading={this.props.depositLoading} small={true}>Deposit</Button>
-          </H5>
-        </div>
+          </div>
+        </H5>
       </div>
     )
   }

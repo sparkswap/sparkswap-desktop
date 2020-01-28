@@ -4,6 +4,14 @@ Buy Bitcoin instantly on the Lightning Network.
 
 <img src="https://sparkswap.com/img/buy-btc.gif" alt="Sparkswap - stack your sats" width="600">
 
+### Contributing
+
+THIS REPO IS A MIRROR OF THE SPARKSWAP DESKTOP APPLICATION. SPARKSWAP ALLOWS CONTRIBUTIONS WHICH WILL BE PORTED TO THE APPLICATION BUT WILL NOT MERGE PULL REQUESTS DIRECTLY.
+
+- If you have found an issue in the project, open an issue on GitHub including a description of the bug and reproduction steps.
+- If you have found a vulnerability in the project, please write privately to security@sparkswap.com
+- If you have any questions, please reach out to support@sparkwswap.com
+
 ### Download Sparkswap Desktop
 
 Navigate to Sparkswap Desktop's [Latest Release](https://github.com/sparkswap/sparkswap-desktop/releases/latest) and download the file for your specific platform.

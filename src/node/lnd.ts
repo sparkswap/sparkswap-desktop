@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
 import { EventEmitter } from 'events'
-import LndEngine from 'lnd-engine'
+import LndEngine from '../global-shared/lnd-engine'
 import logger from '../global-shared/logger'
 import { ConnectionConfig, Statuses } from '../global-shared/types/lnd'
 import { Asset } from '../global-shared/types'

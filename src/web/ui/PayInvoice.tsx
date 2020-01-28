@@ -5,12 +5,13 @@ import executeTrade from '../domain/trade'
 import { handleLightningPaymentUri } from '../domain/main-request'
 import { Button, Dialog, Classes, Label, TextArea, Switch, Spinner } from '@blueprintjs/core'
 import { showErrorToast } from './AppToaster'
-import { QuoteResponse } from '../../global-shared/types/server'
 import logger from '../../global-shared/logger'
 import { Asset, Unit, Amount, Nullable } from '../../global-shared/types'
 import { SpinnerSuccess } from './components'
-import { formatAmount, formatAsset } from './formatters'
+import { formatAsset } from './formatters'
 import { isUSDXSufficient } from '../domain/balance'
+import { Quote } from '../../common/types'
+import { formatAmount } from '../../common/formatters'
 import './PayInvoice.css'
 
 interface PayInvoiceProps {
@@ -22,7 +23,7 @@ interface PayInvoiceState {
   paymentRequest: string,
   invoiceError: Nullable<string>,
   shouldBuyBtc: boolean,
-  quote: Nullable<QuoteResponse>,
+  quote: Nullable<Quote>,
   btcAmount: Nullable<Amount>,
   isPaying: boolean,
   isPaid: boolean,
@@ -52,7 +53,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
     return this.state.paymentRequest === paymentRequest
   }
 
-  isQuoteValid (paymentRequest: string, quote: Nullable<QuoteResponse>): boolean {
+  isQuoteValid (paymentRequest: string, quote: Nullable<Quote>): boolean {
     return this.state.shouldBuyBtc && paymentRequest === this.state.paymentRequest && quote === this.state.quote
   }
 
@@ -104,6 +105,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
     if (this.state.shouldBuyBtc && this.isPaymentRequestValid(paymentRequest)) {
       this.setState({
         quote,
+        // this value won't be exact, but should be close enough
         secondsRemaining: getQuoteUserDuration(quote)
       })
 
@@ -112,7 +114,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
     }
   }
 
-  countdown (paymentRequest: string, quote: Nullable<QuoteResponse>): void {
+  countdown (paymentRequest: string, quote: Nullable<Quote>): void {
     if (this.isQuoteValid(paymentRequest, quote)) {
       const secondsRemaining = Math.max(this.state.secondsRemaining - 1, 0)
       this.setState({
@@ -290,7 +292,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
               <Button
-                text="Done"
+                text='Done'
                 fill={true}
                 onClick={this.closeDialog}
               />
@@ -328,7 +330,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
         <div className={Classes.DIALOG_FOOTER}>
           <Button
             minimal={true}
-            text="Return to app"
+            text='Return to app'
             onClick={this.closeDialog}
           />
           {this.renderRefresh()}
@@ -357,12 +359,12 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
           small={true}
           onClick={() => this.setState({ isDialogOpen: true }) }
         >
-          Pay
+          Send
         </Button>
         <Dialog
           isOpen={isDialogOpen}
           onClose={this.closeDialog}
-          title='Pay Invoice'
+          title='Pay Lightning Invoice'
           className='PayInvoice'
         >
           {this.renderBody()}

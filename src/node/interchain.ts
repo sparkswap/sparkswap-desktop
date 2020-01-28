@@ -1,42 +1,9 @@
 import logger from '../global-shared/logger'
 import { delay } from '../global-shared/util'
-import { AnchorEngine } from '../global-shared/anchor-engine'
-import LndEngine from 'lnd-engine'
 import { cancelSwapWithRetry } from '../global-shared/retry'
 import { Engine, SwapHash, SwapPreimage } from '../global-shared/types'
-import { swapTimeLock } from '../global-shared/time-locks'
-
-const {
-  PermanentSwapError: LndPermanentSwapError,
-  ExpiredSwapError: LndExpiredSwapError,
-  CanceledSwapError: LndCanceledSwapError,
-  SettledSwapError: LndSettledSwapError
-} = LndEngine.ERRORS
-
-const {
-  PermanentSwapError: AnchorPermanentSwapError,
-  ExpiredSwapError: AnchorExpiredSwapError,
-  CanceledSwapError: AnchorCanceledSwapError,
-  SettledSwapError: AnchorSettledSwapError
-} = AnchorEngine.ERRORS
-
-interface EngineErrors {
-  PermanentSwapError: typeof LndPermanentSwapError | typeof AnchorPermanentSwapError,
-  ExpiredSwapError: typeof LndExpiredSwapError | typeof AnchorExpiredSwapError,
-  CanceledSwapError: typeof LndCanceledSwapError | typeof AnchorCanceledSwapError,
-  SettledSwapError: typeof LndSettledSwapError | typeof AnchorSettledSwapError
-}
-
-function getInstanceErrors (engine: Engine): EngineErrors {
-  if (engine instanceof LndEngine) {
-    return LndEngine.ERRORS
-  }
-  if (engine instanceof AnchorEngine) {
-    return AnchorEngine.ERRORS
-  }
-
-  throw new Error('Invalid Engine')
-}
+import { innerTimeLock, outerTimeLock } from '../global-shared/time-locks'
+import { getEngineErrors } from '../global-shared/errors'
 
 interface Payment {
   engine: Engine,
@@ -59,7 +26,11 @@ const RETRY_DELAY = 30000
  */
 async function prepareSwap (hash: SwapHash, inboundEngine: Engine,
   outboundEngine: Engine, amount: string, timeout: Date): Promise<void> {
-  const inboundTimeLock = swapTimeLock(inboundEngine, outboundEngine).outerTimeLock.receive
+  // we use a swap `duration` of 0, since we will translate the swap as though
+  // it was received exactly at expiration. This allows us to be more lenient
+  // with inbound swaps we will accept without the risk that we will be left
+  // non-atomic.
+  const { receive: inboundTimeLock } = outerTimeLock(outboundEngine, inboundEngine, 0)
   await inboundEngine.prepareSwap(
     hash,
     amount,
@@ -79,14 +50,13 @@ async function prepareSwap (hash: SwapHash, inboundEngine: Engine,
 async function translateIdempotent (
   hash: SwapHash,
   inboundEngine: Engine,
-  { engine: outboundEngine, amount: outboundAmount, address: outboundAddress }: Payment
+  { engine: outboundEngine, amount: outboundAmount, address: outboundAddress }: Payment,
+  expiration: Date
 ): Promise<SwapPreimage> {
-  let committedTime
-
   try {
-    committedTime = await inboundEngine.waitForSwapCommitment(hash)
+    await inboundEngine.waitForSwapCommitment(hash, expiration)
   } catch (e) {
-    if (e instanceof getInstanceErrors(inboundEngine).SettledSwapError) {
+    if (e instanceof getEngineErrors(inboundEngine).SettledSwapError) {
       logger.debug(`Swap for ${hash} has already been settled`)
 
       return inboundEngine.getSettledSwapPreimage(hash)
@@ -95,8 +65,8 @@ async function translateIdempotent (
     throw e
   }
 
-  const timeLock = swapTimeLock(inboundEngine, outboundEngine).innerTimeLock.send
-  const maxTime = new Date(committedTime.getTime() + timeLock * 1000)
+  const { send: timeLock } = innerTimeLock(outboundEngine)
+  const maxTime = new Date(expiration.getTime() + timeLock * 1000)
 
   logger.debug(`Sending payment to ${outboundAddress} to translate ${hash} ` +
     `maxTime=${maxTime.toISOString()} outboundAmount=${outboundAmount}`)
@@ -125,12 +95,12 @@ async function settleSwap (engine: Engine, hash: SwapHash, preimage: SwapPreimag
  * error is encountered. When any other error is encountered, it retries
  * to protect us against being in a non-atomic state.
  */
-async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayment: Payment): Promise<SwapPreimage> {
-  const inboundErrors = getInstanceErrors(inboundEngine)
-  const outboundErrors = getInstanceErrors(outboundPayment.engine)
+async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayment: Payment, expiration: Date): Promise<SwapPreimage> {
+  const inboundErrors = getEngineErrors(inboundEngine)
+  const outboundErrors = getEngineErrors(outboundPayment.engine)
 
   try {
-    const paymentPreimage = await translateIdempotent(hash, inboundEngine, outboundPayment)
+    const paymentPreimage = await translateIdempotent(hash, inboundEngine, outboundPayment, expiration)
     logger.debug(`Successfully retrieved preimage for swap ${hash}`)
 
     await settleSwap(inboundEngine, hash, paymentPreimage)
@@ -175,7 +145,7 @@ async function forwardSwap (hash: SwapHash, inboundEngine: Engine, outboundPayme
     logger.debug(`Delaying swap forward retry for ${hash} for ${RETRY_DELAY}ms`)
     await delay(RETRY_DELAY)
     logger.debug(`Retrying swap forward for ${hash}`)
-    return forwardSwap(hash, inboundEngine, outboundPayment)
+    return forwardSwap(hash, inboundEngine, outboundPayment, expiration)
   }
 }
 

@@ -1,5 +1,5 @@
 import mainRequest, { mainRequestSync } from './main-request'
-import { Invoice } from 'lnd-engine'
+import { Invoice } from '../../global-shared/lnd-engine'
 import {
   ConnectionConfig,
   Statuses

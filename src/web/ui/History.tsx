@@ -1,90 +1,186 @@
 import React, { ReactNode } from 'react'
 import './History.css'
-import { HTMLTable, H4, Spinner, Button } from '@blueprintjs/core'
-import { Trade, TradeStatus } from '../../common/types'
-import { formatDate, formatAmount, addMutedSpan } from './formatters'
-import { showErrorToast } from './AppToaster'
 import {
-  trades,
-  updater as tradeUpdater,
-  loadTrades,
-  canLoadMore as canLoadMoreTrades
-} from '../domain/history'
+  Spinner,
+  Button,
+  Card,
+  Icon,
+  H5,
+  H6,
+  Intent,
+  NonIdealState,
+  Tooltip
+} from '@blueprintjs/core'
+import { Asset, Amount } from '../../global-shared/types'
+import { Trade, TradeStatus } from '../../common/types'
+import {
+  formatDate,
+  formatAsset,
+  formatTime
+} from './formatters'
+import { showErrorToast, showSuccessToast } from './AppToaster'
+import { loadTrades } from '../domain/history'
+import { toCommonPrice } from '../../common/currency-conversions'
+import { exportTransactions } from '../domain/main-request'
+import { formatAmount } from '../../common/formatters'
 
-interface HistoryRowProps {
+interface TradeProps {
   trade: Trade
 }
 
-const STATUS_CLASS_NAMES = Object.freeze({
-  [TradeStatus.UNKNOWN]: 'text-muted',
-  [TradeStatus.PENDING]: 'text-muted',
-  [TradeStatus.COMPLETE]: '',
-  [TradeStatus.FAILED]: 'error text-muted'
-})
+interface TradeState {
+  pulse: boolean
+}
 
-class HistoryRow extends React.PureComponent<HistoryRowProps> {
+class TradeCard extends React.PureComponent<TradeProps, TradeState> {
+  constructor (props: TradeProps) {
+    super(props)
+
+    this.state = {
+      pulse: false
+    }
+  }
+
+  componentDidUpdate (prevProps: TradeProps): void {
+    if (prevProps.trade.status !== this.props.trade.status &&
+        prevProps.trade.status === TradeStatus.PENDING) {
+      this.setState({ pulse: true })
+      setTimeout(() => this.setState({ pulse: false }), 1000)
+    }
+  }
+
+  get isPending (): boolean {
+    return this.props.trade.status === TradeStatus.PENDING
+  }
+
+  get isFailed (): boolean {
+    return this.props.trade.status === TradeStatus.FAILED
+  }
+
+  get bought (): boolean {
+    return this.props.trade.destinationAmount.asset === Asset.BTC
+  }
+
+  get price (): Amount {
+    return toCommonPrice(this.btcAmount.value, this.usdAmount.value)
+  }
+
+  get usdAmount (): Amount {
+    return this.bought ? this.props.trade.sourceAmount : this.props.trade.destinationAmount
+  }
+
+  get btcAmount (): Amount {
+    return this.bought ? this.props.trade.destinationAmount : this.props.trade.sourceAmount
+  }
+
+  get date (): Date {
+    return this.props.trade.endTime || this.props.trade.startTime
+  }
+
+  get formattedUsd (): string {
+    const sign = this.bought ? '-' : '+'
+
+    return `${sign} ${formatAmount(this.usdAmount)} ${formatAsset(Asset.USDX)}`
+  }
+
+  get formattedBtc (): string {
+    const sign = this.bought ? '+' : '-'
+
+    return `${sign} ${formatAmount(this.btcAmount)} ${formatAsset(Asset.BTC)}`
+  }
+
+  get pulseClassName (): string {
+    if (!this.state.pulse) return ''
+
+    if (this.isFailed) return 'PulseRed'
+
+    return 'PulseGreen'
+  }
+
+  renderIcon (): ReactNode {
+    if (this.isPending) {
+      return <Spinner className='trade-status-spinner' size={16} />
+    }
+
+    if (this.isFailed) {
+      return <Icon intent={Intent.DANGER} icon='cross' />
+    }
+    return <Icon icon='swap-horizontal' className={this.pulseClassName} />
+  }
+
+  renderTitle (): string {
+    if (this.isFailed) {
+      return 'Failed Trade'
+    }
+
+    if (this.bought) {
+      if (this.isPending) {
+        return 'Buying Bitcoin'
+      }
+      return 'Bought Bitcoin'
+    }
+
+    if (this.isPending) {
+      return 'Selling Bitcoin'
+    }
+    return 'Sold Bitcoin'
+  }
+
   render (): ReactNode {
-    const { trade } = this.props
-
-    // Assumes buying BTC
-    const amountBtc = addMutedSpan(formatAmount(trade.destinationAmount))
-    // remove dollar sign, we'll apply in styles
-    const amountUsd = addMutedSpan(formatAmount(trade.sourceAmount).slice(1))
-
-    const dateField =
-      trade.status === TradeStatus.PENDING
-        ? <Spinner className='trade-status-spinner' size={12} />
-        : formatDate(trade.endTime || trade.startTime)
-
     return (
-      <tr className={STATUS_CLASS_NAMES[trade.status]}>
-        <td className='trade-amount'>{amountBtc}</td>
-        <td className='trade-amount usd'>{amountUsd}</td>
-        <td className='text-muted DateColumn'>{dateField}</td>
-      </tr>
+      <Card className='transaction trade'>
+        {this.renderIcon()}
+        <H5 className='transaction-type'>
+          <span className={this.pulseClassName}>
+            {this.renderTitle()}
+          </span>
+          <br />
+          <Tooltip
+            targetClassName='subtitle'
+            content={`${formatDate(this.date)} ${formatTime(this.date)}`}
+            boundary='window'
+          >
+            {formatDate(this.date)}
+          </Tooltip>
+        </H5>
+        <H6 className='price'>
+          <span className='subtitle'>Price</span>
+          {formatAmount(this.price)}
+        </H6>
+        <H6 className='amounts'>
+          {this.formattedBtc}
+          <br />
+          <span className='subtitle'>{this.formattedUsd}</span>
+        </H6>
+      </Card>
     )
   }
 }
 
-interface HistoryState {
+interface HistoryProps {
   trades: Trade[],
-  loading: boolean,
   canLoadMore: boolean
 }
 
-function mapToArr (tradesMap: Map<number, Trade>): Trade[] {
-  return Array.from(tradesMap.values()).sort((a, b) => {
-    return b.id - a.id
-  })
+interface HistoryState {
+  loading: boolean
 }
 
-class History extends React.PureComponent<{}, HistoryState> {
-  constructor (props: object) {
+class History extends React.Component<HistoryProps, HistoryState> {
+  constructor (props: HistoryProps) {
     super(props)
 
     this.state = {
-      trades: mapToArr(trades),
-      loading: false,
-      canLoadMore: canLoadMoreTrades
+      loading: false
     }
-  }
-
-  componentDidMount (): void {
-    tradeUpdater.on('update', trades => {
-      this.setState({
-        trades: mapToArr(trades),
-        canLoadMore: canLoadMoreTrades
-      })
-    })
   }
 
   handleLoadMore = async (): Promise<void> => {
     this.setState({ loading: true })
-    const { trades } = this.state
+    const { trades } = this.props
     try {
       const lastTradeId = trades.length ? trades[trades.length - 1].id : undefined
-      const canLoadMore = await loadTrades(lastTradeId)
-      this.setState({ canLoadMore })
+      await loadTrades(lastTradeId)
     } catch (e) {
       showErrorToast(`Error while loading additional trades: ${e.message}`)
     } finally {
@@ -92,15 +188,16 @@ class History extends React.PureComponent<{}, HistoryState> {
     }
   }
 
-  renderLoadMore (): React.ReactNode {
-    if (!this.state.canLoadMore) {
+  maybeRenderLoadMore (): React.ReactNode {
+    if (!this.props.canLoadMore) {
       return
     }
 
     return (
       <Button
-        fill={true}
-        minimal={true}
+        fill
+        minimal
+        large
         loading={this.state.loading}
         onClick={this.handleLoadMore}
       >
@@ -109,30 +206,45 @@ class History extends React.PureComponent<{}, HistoryState> {
     )
   }
 
+  async handleExport (): Promise<void> {
+    try {
+      const success = await exportTransactions()
+      // If `success` returns false then the request has been cancelled by the user
+      if (success) {
+        showSuccessToast('Successfully exported transactions to CSV')
+      }
+    } catch (e) {
+      showErrorToast(`Error when exporting: ${e.message}`)
+    }
+  }
+
   render (): React.ReactNode {
-    const { trades } = this.state
+    const { trades } = this.props
+
+    if (!trades.length) {
+      return (
+        <div className='History'>
+          <NonIdealState
+            title='No Transactions'
+            description="You haven't made any trades yet. When you do, they'll show up here."
+            icon='inbox'
+          />
+        </div>
+      )
+    }
 
     return (
-      <div className="History">
-        <H4 className='HistoryTitle'>History</H4>
-        <div className="table-outer">
-          <div className="table-inner">
-            <HTMLTable className='trade-table' condensed={true}>
-              <thead>
-                <tr>
-                  <th className='text-muted'>Size (BTC)</th>
-                  <th className='text-muted'>Size (USD)</th>
-                  <th className='text-muted DateColumn'>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.map((trade) => <HistoryRow trade={trade} key={trade.id} />)}
-              </tbody>
-            </HTMLTable>
-            {this.renderLoadMore()}
-          </div>
+      <React.Fragment>
+        <div className='export-row'>
+          <Button className='export-button' rightIcon='export' onClick={this.handleExport} minimal>
+            Export CSV
+          </Button>
         </div>
-      </div>
+        <div className='History'>
+          {trades.map(trade => <TradeCard trade={trade} key={trade.id} />)}
+          {this.maybeRenderLoadMore()}
+        </div>
+      </React.Fragment>
     )
   }
 }

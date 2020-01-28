@@ -47,8 +47,8 @@ export function addressToAccount (address: PaymentChannelNetworkAddress): string
   return accountId
 }
 
-function assertEscrowTerms (escrow: api.Escrow, terms: SwapInvoiceTerms): void {
-  if (escrow.timeout <= new Date() || terms.expiration <= new Date()) {
+function assertEscrowTerms (escrow: api.Escrow, terms: SwapInvoiceTerms, expiration: Date): void {
+  if (escrow.timeout <= new Date() || terms.expiration <= new Date() || expiration <= new Date()) {
     throw new ExpiredSwapError(`Swap with hash (${escrow.hash}) is expired.`)
   }
 
@@ -94,7 +94,7 @@ export class AnchorEngine {
   private incomingSwaps: Map<SwapHash, SwapInvoiceTerms>
   private accountId?: string
 
-  constructor (apiKey: string, { logger = console as LoggerInterface } = {}) {
+  constructor (apiKey: string, { logger }: { logger: LoggerInterface }) {
     this.symbol = api.USDX
     this.name = 'AnchorUSD'
     this.quantumsPerCommon = '100'
@@ -311,7 +311,7 @@ export class AnchorEngine {
     return escrow ? escrow.status : null
   }
 
-  async waitForSwapCommitment (hash: SwapHash): Promise<Date> {
+  async waitForSwapCommitment (hash: SwapHash, expiration: Date): Promise<void> {
     const terms = this.incomingSwaps.get(hash)
 
     if (!terms) {
@@ -329,13 +329,11 @@ export class AnchorEngine {
     }
 
     try {
-      assertEscrowTerms(escrow, terms)
+      assertEscrowTerms(escrow, terms, expiration)
     } catch (e) {
       await this.cancelSwap(hash)
       throw e
     }
-
-    return escrow.created
   }
 
   private async getAccountId (): Promise<string> {

@@ -38,6 +38,7 @@ interface DCAProps {
 }
 
 interface DCAState {
+  executingBuys: Set<number>,
   recurringBuys: RecurringBuy[],
   isDialogOpen: boolean
 }
@@ -47,6 +48,7 @@ class DCA extends React.Component<DCAProps, DCAState> {
     super(props)
     this.state = {
       recurringBuys: mapToArr(recurringBuys),
+      executingBuys: new Set(),
       isDialogOpen: false
     }
   }
@@ -55,42 +57,88 @@ class DCA extends React.Component<DCAProps, DCAState> {
     this.setState({ recurringBuys: mapToArr(recurringBuys) })
   }
 
+  onExecuting = (id: number): void => {
+    this.state.executingBuys.add(id)
+    this.setState({
+      executingBuys: this.state.executingBuys
+    })
+  }
+
+  onDone = (id: number): void => {
+    this.state.executingBuys.delete(id)
+    this.setState({
+      executingBuys: this.state.executingBuys
+    })
+  }
+
   componentDidMount (): void {
     this.props.recurringBuySubscriber.on('update', this.onData)
+    this.props.recurringBuySubscriber.on('executing:id', this.onExecuting)
+    this.props.recurringBuySubscriber.on('success:id', this.onDone)
+    this.props.recurringBuySubscriber.on('error:id', this.onDone)
   }
 
   componentWillUnmount (): void {
     this.props.recurringBuySubscriber.removeListener('update', this.onData)
+    this.props.recurringBuySubscriber.removeListener('executing:id', this.onExecuting)
+    this.props.recurringBuySubscriber.removeListener('success:id', this.onDone)
+    this.props.recurringBuySubscriber.removeListener('error:id', this.onDone)
   }
 
   componentDidUpdate (prevProps: DCAProps): void {
     if (this.props.recurringBuySubscriber !== prevProps.recurringBuySubscriber) {
       prevProps.recurringBuySubscriber.removeListener('update', this.onData)
+      prevProps.recurringBuySubscriber.removeListener('executing:id', this.onExecuting)
+      prevProps.recurringBuySubscriber.removeListener('success:id', this.onDone)
+      prevProps.recurringBuySubscriber.removeListener('error:id', this.onDone)
       this.props.recurringBuySubscriber.on('update', this.onData)
+      this.props.recurringBuySubscriber.on('executing:id', this.onExecuting)
+      this.props.recurringBuySubscriber.on('success:id', this.onDone)
+      this.props.recurringBuySubscriber.on('error:id', this.onDone)
     }
   }
 
   toggleDialog = (): void => this.setState({ isDialogOpen: !this.state.isDialogOpen })
 
-  maybeRenderEmptyState (): ReactNode {
-    if (this.state.recurringBuys.length) {
-      return null
+  renderTable (): ReactNode {
+    const {
+      recurringBuys,
+      executingBuys
+    } = this.state
+
+    if (!recurringBuys.length) {
+      return <Button
+        icon='add'
+        minimal
+        fill
+        text='Add Recurring Buy'
+        onClick={this.toggleDialog}
+      />
     }
 
-    return <Button
-      icon='add'
-      minimal
-      fill
-      text='Add Recurring Buy'
-      onClick={this.toggleDialog}
-    />
+    return (
+      <div className='table-outer'>
+        <div className='table-inner'>
+          <HTMLTable className='trade-table' condensed={true}>
+            <tbody>
+              {recurringBuys.map(buy => {
+                return <RecurringBuyRow
+                  recurringBuy={buy}
+                  key={buy.id}
+                  isExecuting={executingBuys.has(buy.id)}
+                />
+              })}
+            </tbody>
+          </HTMLTable>
+        </div>
+      </div>
+    )
   }
 
   render (): ReactNode {
-    const { recurringBuys } = this.state
     return (
       <div className='DCA'>
-        <div className="title-row">
+        <div className='title-row'>
           <H4 className='DCATitle'>Recurring</H4>
           <Button
             icon='add'
@@ -98,23 +146,7 @@ class DCA extends React.Component<DCAProps, DCAState> {
             minimal
           />
         </div>
-        <div className='table-outer'>
-          <div className='table-inner'>
-            <HTMLTable className='trade-table' condensed={true}>
-              <thead>
-                <tr>
-                  <th className='text-muted'>Size (BTC)</th>
-                  <th className='text-muted'>Size (USD)</th>
-                  <th className='text-muted'>Schedule</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recurringBuys.map(buy => <RecurringBuyRow recurringBuy={buy} key={buy.id} />)}
-              </tbody>
-            </HTMLTable>
-          </div>
-        </div>
-        {this.maybeRenderEmptyState()}
+        {this.renderTable()}
         <DCADialog isOpen={this.state.isDialogOpen} onClose={this.toggleDialog} />
       </div>
     )
