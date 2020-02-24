@@ -481,9 +481,13 @@ export class RegisterSparkswapKYC
       this.setState({ isKycDone: false })
       this.props.onClose()
     }
-    const onClick = (): void => {
-      this.setState({ isKycDone: false })
-      this.props.onProceed()
+    const onClick = async (): Promise<void> => {
+      this.setState({ isLoading: true })
+      await this.props.onProceed()
+      this.setState({
+        isLoading: false,
+        isKycDone: false
+      })
     }
 
     return (

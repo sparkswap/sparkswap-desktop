@@ -1,0 +1,14 @@
+.History {
+  /** 36px is to account for the export-row **/
+  height: calc(100% - 36px);
+}
+
+.export-row {
+  width: 100%;
+  text-align: right;
+}
+
+.export-row .export-button {
+  padding-bottom: 15px;
+  padding-right: 2px;
+}

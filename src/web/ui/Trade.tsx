@@ -21,13 +21,13 @@ import { requestQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
 import { validateQuantity } from '../domain/quantity'
 import { altAmount } from '../domain/convert-amount'
-import { formatAsset, getAltAmount } from './formatters'
+import { getAltAmount } from './formatters'
 import { marketDataSubscriber } from '../domain/market-data'
 import { Amount, Asset } from '../../global-shared/types'
 import { BalanceError, QuantityError } from '../../common/errors'
 import { Quote } from '../../common/types'
-import { toCommon } from '../../common/currency-conversions'
-import { formatAmount } from '../../common/formatters'
+import { toCommon } from '../../global-shared/currency-conversions'
+import { formatAmount, formatAsset } from '../../common/formatters'
 import './Trade.css'
 
 interface TradeProps {
@@ -261,7 +261,7 @@ class Trade extends React.Component<TradeProps, TradeState> {
       return (
         <div className='button-container'>
           <div className='conversion'>
-            = <span className={conversionClassName}>{formatAmount(this.altAmount)} {formatAsset(this.altAmount.asset)}</span>
+            = <span className={conversionClassName}>{formatAmount(this.altAmount, { includeAsset: true })}</span>
           </div>
           <Button tabIndex={2} className='buy' type='submit' icon='layers' fill={true}>Buy BTC</Button>
         </div>

@@ -1,5 +1,5 @@
 import { Amount, Asset, assetToUnit } from '../../global-shared/types'
-import { centsPerUSD, satoshisPerBTC } from '../../common/constants'
+import { centsPerUSD, satoshisPerBTC } from '../../global-shared/currency-conversions'
 
 export function altAsset (asset: Asset): Asset {
   if (asset === Asset.BTC) return Asset.USDX

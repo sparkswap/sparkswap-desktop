@@ -138,6 +138,7 @@ export class RegisterDialog extends React.Component<RegisterDialogProps, Registe
                 onItemSelect={this.handleJurisdictionSelection}
                 activeItem={this.state.jurisdiction || null}
                 popoverProps={{
+                  popoverClassName: 'select-jurisdiction',
                   position: PopoverPosition.TOP,
                   minimal: true
                 }}

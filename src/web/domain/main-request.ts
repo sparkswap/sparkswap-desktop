@@ -1,4 +1,11 @@
-import { Auth, Amount, Asset, URL } from '../../global-shared/types'
+import {
+  Auth,
+  Asset,
+  URL,
+  Transaction,
+  Channel,
+  EngineBalances
+} from '../../global-shared/types'
 import {
   Quote,
   Trade,
@@ -6,9 +13,15 @@ import {
   RecurringBuy,
   AlertEvent,
   UnsavedRecurringBuy,
-  WireRecurringBuy
+  WireRecurringBuy,
+  WireTransaction
 } from '../../common/types'
-import { serializeUnsavedRecurringBuyToWire, deserializeRecurringBuyFromWire, deserializeTradeFromWire } from '../../common/serializers'
+import {
+  serializeUnsavedRecurringBuyToWire,
+  deserializeRecurringBuyFromWire,
+  deserializeTradeFromWire,
+  deserializeTransactionFromWire
+} from '../../common/serializers'
 import { ipcRenderer } from '../electron'
 
 let counter = 1
@@ -70,8 +83,8 @@ export async function startDeposit (): Promise<URL> {
   return await mainRequest('anchor:startDeposit') as URL
 }
 
-export async function getBalance (asset: Asset): Promise<Amount> {
-  return await mainRequest('getBalance', asset) as Amount
+export async function getBalances (asset: Asset): Promise<EngineBalances> {
+  return await mainRequest('getBalances', asset) as EngineBalances
 }
 
 export function getWebviewPreloadPath (): string {
@@ -112,6 +125,22 @@ export function sendAppNotification (event: AlertEvent): void {
 
 export async function exportTransactions (): Promise<boolean> {
   return await mainRequest('report:transactions') as boolean
+}
+
+export async function getTransactions (asset: Asset): Promise<Transaction[]> {
+  return (await mainRequest('getTransactions', asset) as WireTransaction[]).map(deserializeTransactionFromWire)
+}
+
+export async function getChannels (): Promise<Channel[]> {
+  return await mainRequest('lnd:getChannels') as Channel[]
+}
+
+export async function getLNAlias (pubKey: string): Promise<string> {
+  return await mainRequest('lnd:getAlias', pubKey) as string
+}
+
+export async function closeChannel (channelPoint: string, force: boolean): Promise<void> {
+  await mainRequest('lnd:closeChannel', { channelPoint, force })
 }
 
 export default mainRequest

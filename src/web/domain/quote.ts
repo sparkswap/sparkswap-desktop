@@ -70,11 +70,11 @@ function validateAmount (amount: Amount): Amount {
     throw new Error('Unable to execute buy before prices load')
   }
 
-  const usdBalance = balances[Asset.USDX]
+  const usdBalances = balances[Asset.USDX]
 
-  if (usdBalance instanceof Error) {
+  if (usdBalances instanceof Error) {
     throw new Error('Unable to execute buy before USD balance loads')
-  } else if (usdBalance.value === 0) {
+  } else if (usdBalances.total.value === 0) {
     throw new BalanceError('Deposit before executing buy', Asset.USDX)
   }
 

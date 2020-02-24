@@ -81,7 +81,7 @@ class LNDStatus extends React.Component<LNDStatusProps, {}> {
       return <Spinner tagName='span' size={13} />
     }
 
-    return <StatusBadge intent={this.statusIntent} />
+    return <StatusBadge usePulse intent={this.statusIntent} />
   }
 
   render (): ReactNode {

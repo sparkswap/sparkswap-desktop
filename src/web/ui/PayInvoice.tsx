@@ -1,5 +1,5 @@
 import React, { ReactNode, ChangeEvent } from 'react'
-import { payInvoice, getInvoice } from '../domain/lnd'
+import { payInvoice, decodePaymentRequest } from '../domain/lnd'
 import { requestQuote, getQuoteUserDuration } from '../domain/quote'
 import executeTrade from '../domain/trade'
 import { handleLightningPaymentUri } from '../domain/main-request'
@@ -8,14 +8,16 @@ import { showErrorToast } from './AppToaster'
 import logger from '../../global-shared/logger'
 import { Asset, Unit, Amount, Nullable } from '../../global-shared/types'
 import { SpinnerSuccess } from './components'
-import { formatAsset } from './formatters'
 import { isUSDXSufficient } from '../domain/balance'
 import { Quote } from '../../common/types'
-import { formatAmount } from '../../common/formatters'
+import { formatAmount, formatAsset } from '../../common/formatters'
 import './PayInvoice.css'
 
 interface PayInvoiceProps {
-  onDeposit: Function
+  onDeposit: Function,
+  onInvoiceSuccess: Function,
+  small?: boolean,
+  title?: string
 }
 
 interface PayInvoiceState {
@@ -76,7 +78,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
     }
 
     try {
-      const { numSatoshis } = await getInvoice(paymentRequest)
+      const { numSatoshis } = await decodePaymentRequest(paymentRequest)
       // we want to make sure the payment request is still the same
       // so that we are associating the invoice amount with the correct payment request.
       if (this.isPaymentRequestValid(paymentRequest)) {
@@ -162,6 +164,7 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
       this.loadInvoice(this.state.paymentRequest)
     }
     this.setState({ shouldBuyBtc: !this.state.shouldBuyBtc })
+    this.addPaymentRequest(this.state.paymentRequest)
   }
 
   closeDialog = (): void => {
@@ -226,10 +229,10 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
     }
 
     if (!shouldBuyBtc || !quote) {
-      return `${formatAmount(btcAmount)} ${formatAsset(btcAmount.asset)}`
+      return formatAmount(btcAmount, { includeAsset: true })
     }
 
-    return `${formatAmount(quote.sourceAmount)} ${formatAsset(quote.sourceAmount.asset)}`
+    return formatAmount(quote.sourceAmount, { includeAsset: true })
   }
 
   renderError (): ReactNode {
@@ -293,8 +296,11 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
               <Button
                 text='Done'
-                fill={true}
-                onClick={this.closeDialog}
+                fill
+                onClick={() => {
+                  this.closeDialog()
+                  this.props.onInvoiceSuccess()
+                }}
               />
             </div>
           </div>
@@ -356,10 +362,10 @@ class PayInvoice extends React.Component<PayInvoiceProps, PayInvoiceState> {
     return (
       <React.Fragment>
         <Button
-          small={true}
-          onClick={() => this.setState({ isDialogOpen: true }) }
+          small={this.props.small}
+          onClick={() => this.setState({ isDialogOpen: true })}
         >
-          Send
+          {this.props.title ? this.props.title : 'Send'}
         </Button>
         <Dialog
           isOpen={isDialogOpen}

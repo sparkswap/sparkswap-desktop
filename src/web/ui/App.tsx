@@ -4,7 +4,7 @@ import { EventEmitter } from 'events'
 import React, { ReactNode } from 'react'
 import './App.css'
 import LNDConnect from './LNDConnect'
-import MainContent from './MainContent'
+import MainContent, { TabIds as MainContentTab, TabId as MainContentTabId } from './MainContent'
 import CurrentPrice, { Size as CurrentPriceSize } from './CurrentPrice'
 import DownloadProgress from './DownloadProgress'
 import Trade from './Trade'
@@ -22,7 +22,11 @@ import * as lnd from '../domain/lnd'
 import register from '../domain/register'
 import { getStatus } from '../domain/server'
 import { getAuth, startDeposit, sendAppNotification } from '../domain/main-request'
-import { ReviewStatus, URL } from '../../global-shared/types'
+import {
+  ReviewStatus,
+  URL,
+  Asset
+} from '../../global-shared/types'
 import { ReactComponent as Logo } from './assets/icon-dark.svg'
 import { Button, IActionProps, Intent } from '@blueprintjs/core'
 import { ProofOfKeysDialog } from './proof-of-keys-dialog'
@@ -35,6 +39,11 @@ logger.addTransport(rendererTransport)
 // which is less informative
 const OS_NTFN_DELAY = 500
 
+const assetMainContent = Object.freeze({
+  [Asset.USDX]: MainContentTab.usdAccount,
+  [Asset.BTC]: MainContentTab.btcAccount
+})
+
 interface OnboardingStep {
   stage: OnboardingStage,
   depositUrl?: URL
@@ -45,7 +54,8 @@ interface AppState {
   depositLoading: boolean,
   showSteps: boolean,
   depositUrl?: URL,
-  uuid?: string
+  uuid?: string,
+  mainContent?: MainContentTabId
 }
 
 class App extends React.Component<{}, AppState> {
@@ -148,6 +158,7 @@ class App extends React.Component<{}, AppState> {
     } catch (e) {
       logger.error(`Error registering: ${e}`)
       showSupportToast('Error during initial registration')
+      this.setState({ depositLoading: false })
       return
     }
 
@@ -202,6 +213,7 @@ class App extends React.Component<{}, AppState> {
 
   handleDepositDone = (): void => {
     this.handleClose()
+    this.handleSelectBalance(Asset.USDX)
   }
 
   handleDepositError = (message: string, action?: IActionProps): void => {
@@ -213,12 +225,21 @@ class App extends React.Component<{}, AppState> {
     this.setState({ onboardingStage: OnboardingStage.NONE })
   }
 
+  handleSelectMainContent = (content: MainContentTabId): void => {
+    this.setState({ mainContent: content })
+  }
+
+  handleSelectBalance = (asset: Asset): void => {
+    this.handleSelectMainContent(assetMainContent[asset])
+  }
+
   render (): ReactNode {
     const {
       onboardingStage,
       depositLoading,
       depositUrl,
-      showSteps
+      showSteps,
+      mainContent
     } = this.state
 
     return (
@@ -250,11 +271,21 @@ class App extends React.Component<{}, AppState> {
           <div className='tools-content'>
             <Trade onDeposit={this.handleDeposit} />
             <DCA recurringBuySubscriber={this.recurringBuySubscriber} />
-            <Balances onDeposit={this.handleDeposit} depositLoading={depositLoading} />
+            <Balances
+              onDeposit={this.handleDeposit}
+              depositLoading={depositLoading}
+              selectBalance={this.handleSelectBalance}
+            />
           </div>
           <div className='vertical-line' />
           <div className='main-content'>
-            <MainContent />
+            <MainContent
+              selectedTabId={mainContent}
+              onTabChange={this.handleSelectMainContent}
+              onDeposit={this.handleDeposit}
+              depositLoading={depositLoading}
+              selectBalance={this.handleSelectBalance}
+            />
           </div>
         </div>
         <Button className='help-link' icon='help' minimal={true} onClick={openBeacon} />

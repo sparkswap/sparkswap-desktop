@@ -1,20 +1,26 @@
 import LegacyEngine, {
   LndEngineClient as LegacyClient,
   Transaction as LegacyTransaction,
-  Invoice as LegacyInvoice,
-  Channel as LegacyChannel
+  Invoice as LegacyInvoice
 } from 'lnd-engine'
 import { Statuses } from '../types/lnd'
 import { LoggerInterface } from '../logger'
 import { payInvoice } from './pay-invoice'
 import { createChannel, CreateChannelOptions } from './create-channel'
 import { waitForSwapCommitment } from './wait-for-swap-commitment'
+import { getBalances, Balances as LndBalances } from './get-balances'
+import { getChannels } from './get-channels'
+import { getChannelsForRemoteAddress } from './get-channels-for-remote-address'
+import { getAlias } from './get-alias'
+import { closeChannel } from './close-channel'
+import { getTransactions } from './get-transactions'
+import { Channel, Transaction } from '../types'
 
 export { deadline } from './deadline'
 export type LndEngineClient = LegacyClient
-export type Transaction = LegacyTransaction
-export type Invoice = LegacyInvoice
-export type Channel = LegacyChannel
+export type ChainTransaction = LegacyTransaction
+export type DecodedPaymentRequest = LegacyInvoice
+export type Balances = LndBalances
 
 type SwapHash = string
 type SwapPreimage = string
@@ -115,6 +121,48 @@ export default class LndEngine {
       logger: this.engine.logger
     })
   }
+  getBalances (): Promise<Balances> {
+    return getBalances({
+      client: this.engine.client,
+      logger: this.engine.logger
+    })
+  }
+  getChannels (): Promise<Channel[]> {
+    return getChannels({
+      client: this.engine.client,
+      logger: this.engine.logger
+    })
+  }
+  getChannelsForRemoteAddress (address: string): Promise<Channel[]> {
+    return getChannelsForRemoteAddress(address, {
+      client: this.engine.client,
+      logger: this.engine.logger
+    })
+  }
+  getAlias (publicKey: string): Promise<string> {
+    return getAlias(publicKey, {
+      client: this.engine.client,
+      logger: this.engine.logger
+    })
+  }
+  closeChannel (channelPoint: string, force: boolean): Promise<string> {
+    return closeChannel(channelPoint, force, {
+      client: this.engine.client,
+      logger: this.engine.logger
+    })
+  }
+  getTransactions (): Promise<Transaction[]> {
+    return getTransactions({
+      client: this.engine.client,
+      logger: this.engine.logger
+    })
+  }
+
+  /* Modified from legacy */
+  decodePaymentRequest (paymentRequest: string): Promise<DecodedPaymentRequest> {
+    // Legacy `getInvoice` calls `decodePaymentRequest`
+    return this.engine.getInvoice(paymentRequest)
+  }
 
   /* Legacy Pass-thru */
   getSettledSwapPreimage (hash: SwapHash): Promise<SwapPreimage> {
@@ -156,17 +204,11 @@ export default class LndEngine {
   getStatus (): Promise<Statuses> {
     return this.engine.getStatus()
   }
-  getChannelsForRemoteAddress (address: string): Promise<Channel[]> {
-    return this.engine.getChannelsForRemoteAddress(address)
-  }
   getTotalBalanceForAddress (address: string): Promise<string> {
     return this.engine.getTotalBalanceForAddress(address)
   }
-  getChainTransactions (): Promise<Transaction[]> {
+  getChainTransactions (): Promise<ChainTransaction[]> {
     return this.engine.getChainTransactions()
-  }
-  getInvoice (paymentRequest: string): Promise<Invoice> {
-    return this.engine.getInvoice(paymentRequest)
   }
   getConfirmedBalance (): Promise<string> {
     return this.engine.getConfirmedBalance()

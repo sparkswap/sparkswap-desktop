@@ -1,7 +1,8 @@
 import { Database } from 'better-sqlite3'
-import { RecurringBuy, UnsavedRecurringBuy, valueToTimeUnit } from '../../common/types'
+import { RecurringBuy, UnsavedRecurringBuy, TimeUnit } from '../../common/types'
 import { EventEmitter } from 'events'
-import { valueToAsset, valueToUnit } from '../../global-shared/types'
+import { valueToEnum } from '../../global-shared/util'
+import { Asset, Unit } from '../../global-shared/types'
 
 export const updater = new EventEmitter()
 
@@ -36,13 +37,13 @@ function deserializeRecurringBuyFromDb (dbRecurringBuy: DbRecurringBuy): Recurri
   return {
     id: dbRecurringBuy.id,
     amount: {
-      asset: valueToAsset(dbRecurringBuy.amountAsset),
-      unit: valueToUnit(dbRecurringBuy.amountUnit),
+      asset: valueToEnum(Asset, dbRecurringBuy.amountAsset),
+      unit: valueToEnum(Unit, dbRecurringBuy.amountUnit),
       value: dbRecurringBuy.amountValue
     },
     frequency: {
       interval: dbRecurringBuy.duration,
-      unit: valueToTimeUnit(dbRecurringBuy.timeUnit)
+      unit: valueToEnum(TimeUnit, dbRecurringBuy.timeUnit)
     },
     referenceTime: new Date(dbRecurringBuy.referenceTime)
   }

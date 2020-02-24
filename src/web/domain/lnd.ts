@@ -1,5 +1,5 @@
 import mainRequest, { mainRequestSync } from './main-request'
-import { Invoice } from '../../global-shared/lnd-engine'
+import { DecodedPaymentRequest } from '../../global-shared/lnd-engine'
 import {
   ConnectionConfig,
   Statuses
@@ -34,9 +34,9 @@ export async function payInvoice (request: string): Promise<void> {
   await mainRequest('lnd:payInvoice', request)
 }
 
-export async function getInvoice (request: string): Promise<Invoice> {
-  const invoice = await mainRequest('lnd:getInvoice', request)
-  return invoice as Invoice
+export async function decodePaymentRequest (request: string): Promise<DecodedPaymentRequest> {
+  const decodedPaymentRequest = await mainRequest('lnd:decodePaymentRequest', request)
+  return decodedPaymentRequest as DecodedPaymentRequest
 }
 
 export {

@@ -4,10 +4,9 @@ import {
   Unit
 } from '../../global-shared/types'
 import { QuantityError } from '../../common/errors'
-import { formatAsset } from '../ui/formatters'
-import { formatAmount } from '../../common/formatters'
+import { formatAmount, formatAsset } from '../../common/formatters'
 import { altAmount } from './convert-amount'
-import { toSatoshis, toCents, toAmount } from '../../common/currency-conversions'
+import { toSatoshis, toCents, toAmount } from '../../global-shared/currency-conversions'
 
 export const MIN_QUANTITY_BTC = 0.00000001 // one satoshi
 export const MIN_QUANTITY_SAT = toSatoshis(MIN_QUANTITY_BTC)
@@ -97,13 +96,13 @@ export function validateQuantity (asset: Asset, quantity: number, currentPrice: 
   const alternateAmount = altAmount(toAmount(asset, quantity), currentPrice)
 
   if (quantity < MIN_QUANTITY[asset]) {
-    throw new QuantityError(`Minimum quantity is ${formatAmount(MIN_AMOUNT[asset])} ${formatAsset(asset)}`, asset)
+    throw new QuantityError(`Minimum quantity is ${formatAmount(MIN_AMOUNT[asset], { includeAsset: true })}`, asset)
   } else if (quantity > MAX_QUANTITY[asset]) {
-    throw new QuantityError(`Maximum quantity is ${formatAmount(MAX_AMOUNT[asset])} ${formatAsset(asset)}`, asset)
+    throw new QuantityError(`Maximum quantity is ${formatAmount(MAX_AMOUNT[asset], { includeAsset: true })}`, asset)
   } else if (alternateAmount.value < MIN_AMOUNT[alternateAmount.asset].value) {
-    throw new QuantityError(`Minimum quantity is ${formatAmount(MIN_AMOUNT[alternateAmount.asset])} ${formatAsset(alternateAmount.asset)}`, asset)
+    throw new QuantityError(`Minimum quantity is ${formatAmount(MIN_AMOUNT[alternateAmount.asset], { includeAsset: true })}}`, asset)
   } else if (alternateAmount.value > MAX_AMOUNT[alternateAmount.asset].value) {
-    throw new QuantityError(`Maximum quantity is ${formatAmount(MAX_AMOUNT[alternateAmount.asset])} ${formatAsset(alternateAmount.asset)}`, asset)
+    throw new QuantityError(`Maximum quantity is ${formatAmount(MAX_AMOUNT[alternateAmount.asset], { includeAsset: true })}`, asset)
   }
 
   if (isValidQuantity(asset, quantity) && isValidAmount(alternateAmount)) {

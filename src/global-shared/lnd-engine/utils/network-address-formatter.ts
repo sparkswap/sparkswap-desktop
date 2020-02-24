@@ -1,4 +1,11 @@
-const DELIMITER = ':'
+import {
+  parseNetworkAddress,
+  serializeNetworkAddress
+} from '../../util'
+import {
+  PaymentChannelNetworkAddress
+} from '../../types'
+
 const NETWORK_TYPE = 'bolt'
 
 interface ParsedAddress {
@@ -6,12 +13,25 @@ interface ParsedAddress {
   host?: string
 }
 
-export function parse (paymentChannelNetworkAddress: string): ParsedAddress {
-  const [networkType, networkAddress] = paymentChannelNetworkAddress.split(DELIMITER, 2)
-  if (networkType !== NETWORK_TYPE) {
-    throw new Error(`Unable to parse address for payment channel network type of '${networkType}'`)
+export function parse (
+  paymentChannelNetworkAddress: PaymentChannelNetworkAddress): ParsedAddress {
+  const {
+    network,
+    id,
+    host
+  } = parseNetworkAddress(paymentChannelNetworkAddress)
+
+  if (network !== NETWORK_TYPE) {
+    throw new Error(`Unable to parse address for ` +
+      `payment channel network type of '${NETWORK_TYPE}'`)
   }
 
-  const [publicKey, host] = networkAddress.split('@', 2)
-  return { publicKey, host }
+  return {
+    publicKey: id,
+    host
+  }
+}
+
+export function serialize (publicKey: string, host?: string): PaymentChannelNetworkAddress {
+  return serializeNetworkAddress(NETWORK_TYPE, publicKey, host)
 }

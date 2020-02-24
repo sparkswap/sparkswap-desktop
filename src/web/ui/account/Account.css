@@ -1,0 +1,38 @@
+.Account,
+.Account .bp3-tabs,
+.Account .bp3-tab-panel {
+  height: 100%;
+}
+
+.Account .balance-details {
+  width: 100%;
+}
+
+.Account .balance-details tr td:first-child,
+.Account .balance-details tr th:first-child {
+  padding-left: 0;
+}
+
+.Account .balance-details tr td:last-child,
+.Account .balance-details tr th:last-child {
+  padding-right: 0;
+}
+
+.Account .balance-details .subtitle {
+  display: block;
+  min-height: 16px;
+}
+
+.Account .account-actions {
+  float: right;
+  padding-right: 2px;
+}
+
+.Account .switch-asset {
+  display: inline-block;
+  margin-left: 1em;
+}
+
+.Account .TabContent {
+  height: calc(100% - 175px);
+}

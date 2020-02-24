@@ -1,35 +1,43 @@
 .Balances .single-balance {
-  font-weight: 500;
-  height: 70px;
-  vertical-align: middle;
-  border-bottom: 1px solid rgba(90, 103, 112, 0.50);
-  margin-bottom: 0;
-  padding: 1em 0;
-  display: flex;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
 
-.Balances .single-balance:last-child {
+.Balances .single-balance .bp3-heading {
+  vertical-align: middle;
+  font-weight: 500;
+  display: flex;
+  height: 70px;
+  padding: 1em 0;
+  margin: 0;
+  border-bottom: 1px solid rgba(90, 103, 112, 0.50);
+}
+
+.Balances .single-balance:last-child .bp3-heading {
   border-bottom: none;
-  padding-bottom: 0;
   height: calc(70px - 1em);
+  padding-bottom: 0;
+}
+
+.sparkswap .Balances .bp3-heading a {
+  display: inherit;
+}
+
+.sparkswap .Balances .bp3-heading > a,
+.sparkswap .Balances .bp3-heading > a:hover,
+.sparkswap .Balances .bp3-heading > a:active {
+  text-decoration: none;
+  opacity: 1;
 }
 
 .Balances .single-balance .asset {
   width: 50px;
 }
 
-.Balances .single-balance .actions {
+.Balances .single-balance .bp3-heading .actions {
   width: 100px;
-}
-
-.Balances .single-balance .info {
-  flex: 1;
-}
-
-.Balances .single-balance .subtitle {
-  margin-left: 0;
-  display: block;
-  height: 1.65em;
+  text-align: right;
 }
 
 .Balances .single-balance .actions .bp3-button {
@@ -39,12 +47,12 @@
   float: right;
 }
 
-@keyframes color-change {
-  0% { color: #f5f8fa; }
-  20% { color: #aaaaaa; }
-  100% { color: #f5f8fa; }
+.Balances .single-balance .bp3-heading a {
+  flex: 1;
 }
 
-.PulseBalance {
-  animation: color-change 1s 1 ease;
+.Balances .single-balance .subtitle {
+  margin-left: 0;
+  display: block;
+  height: 1.65em;
 }

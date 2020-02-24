@@ -16,6 +16,25 @@ export interface PricePoint {
   price: number
 }
 
+export enum DateRange {
+  Trailing365D
+}
+
+const RANGE_INTERVAL_MS = Object.freeze({
+  // one data point per day
+  [DateRange.Trailing365D]: 24 * 60 * 60 * 1000
+})
+
+function getRange (range: DateRange): [Date, Date] {
+  const end = new Date()
+  if (range === DateRange.Trailing365D) {
+    const start = new Date(new Date(end).setDate(end.getDate() - 365))
+    return [start, end]
+  }
+
+  throw new Error(`Unsupported date range: ${range}`)
+}
+
 function formatHistoricalData (res: HistoricalDataResponse): PricePoint[] {
   return Object.entries(res).map((arr) => {
     const [date, price] = arr
@@ -39,6 +58,26 @@ export class MarketData extends EventEmitter {
 
     this.retrieveMarketData()
     this.retrySubscribeUpdatesForever()
+  }
+
+  historicalDataRange (range: DateRange): PricePoint[] {
+    // TODO: support other date ranges
+    const [start, end] = getRange(range)
+    const interval = RANGE_INTERVAL_MS[range]
+
+    return this.historicalData
+      .filter((point: PricePoint) => {
+        // remove dates outside of the range
+        return point.date >= start && point.date <= end
+      })
+      .reduce((filtered: PricePoint[], point: PricePoint) => {
+        // only include one data point per interval
+        const lastDate = filtered.length ? filtered[filtered.length - 1].date : new Date(0)
+        if (point.date.getTime() - lastDate.getTime() >= interval) {
+          filtered.push(point)
+        }
+        return filtered
+      }, [])
   }
 
   private async retrieveMarketData (): Promise<void> {

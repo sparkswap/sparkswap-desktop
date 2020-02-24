@@ -1,0 +1,7 @@
+.EmptyableList {
+  overflow-y: scroll;
+}
+
+.EmptyableList .bp3-non-ideal-state {
+  height: 100%;
+}

@@ -47,3 +47,17 @@ ipcRenderer.on('js:showAnchorAmount', function () {
   const $anchorAmount = $('.cart-page-container')
   $anchorAmount.show()
 })
+
+ipcRenderer.on('js:addErrorListener', function () {
+  const target = document.querySelector('#deposit-form #purchase-errors')
+
+  const observer = new MutationObserver(function (_mutations) {
+    const error = $('#deposit-form #purchase-errors').text()
+    if (error.length) {
+      ipcRenderer.sendToHost('js:depositError', error)
+    }
+  })
+
+  const config = { attributes: true, childList: true, subtree: true }
+  observer.observe(target, config)
+})

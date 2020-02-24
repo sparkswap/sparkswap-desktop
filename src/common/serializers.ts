@@ -1,4 +1,10 @@
 import {
+  Transaction,
+  TransactionType,
+  TransactionStatus
+} from '../global-shared/types'
+import { valueToEnum } from '../global-shared/util'
+import {
   RecurringBuy,
   WireRecurringBuy,
   Quote,
@@ -6,7 +12,8 @@ import {
   Trade,
   WireTrade,
   UnsavedRecurringBuy,
-  WireUnsavedRecurringBuy
+  WireUnsavedRecurringBuy,
+  WireTransaction
 } from './types'
 
 export function deserializeQuoteFromWire (wireQuote: WireQuote): Quote {
@@ -58,5 +65,16 @@ export function serializeRecurringBuyToWire (recurringBuy: RecurringBuy): WireRe
   return {
     id: recurringBuy.id,
     ...partialWireRecurringBuy
+  }
+}
+
+export function deserializeTransactionFromWire (wireTx: WireTransaction): Transaction {
+  return {
+    id: wireTx.id,
+    type: valueToEnum(TransactionType, wireTx.type),
+    status: valueToEnum(TransactionStatus, wireTx.status),
+    amount: wireTx.amount,
+    date: new Date(wireTx.date),
+    fee: wireTx.fee
   }
 }

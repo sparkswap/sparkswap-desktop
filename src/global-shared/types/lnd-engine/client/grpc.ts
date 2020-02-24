@@ -8,6 +8,7 @@ export interface GrpcCall<T> {
   on(event: 'error', listener: (chunk: GrpcError) => void): this,
   on(event: 'end', listener: () => void): this,
   end (): this,
+  removeListener (event: 'data' | 'status' | 'error' | 'end', listener?: Function): void,
   removeAllListeners (): void,
   cancel (): void
 }

@@ -6,7 +6,6 @@ import { showErrorToast, showSuccessToast } from '../AppToaster'
 import { Button, PopoverInteractionKind, Tooltip, Spinner } from '@blueprintjs/core'
 import {
   addMutedSpan,
-  formatAsset,
   formatFrequency,
   formatDate,
   formatTime
@@ -90,9 +89,9 @@ export class RecurringBuyRow extends React.Component<RecurringBuyRowProps, Recur
     const displayTime = `every ${formatFrequency(recurringBuy.frequency)}`
 
     const className = asset === Asset.BTC ? 'trade-amount btc' : 'trade-amount usd'
+    const formattedAmount = formatAmount(recurringBuy.amount, { includeAsset: asset === Asset.BTC })
     // slice off the dollar symbol since we do that in css
-    const formattedAmount = formatAmount(recurringBuy.amount).slice(asset === Asset.USDX ? 1 : 0)
-    const formattedAsset = asset === Asset.BTC ? formatAsset(asset) : ''
+    const mutedAsset = addMutedSpan(formattedAmount.slice(asset === Asset.USDX ? 1 : 0))
 
     const nextBuyDate = new Date(Date.now() + timeoutDuration)
     const nextBuyText = <span>Next buy: {formatDate(nextBuyDate)} at {formatTime(nextBuyDate)}</span>
@@ -106,7 +105,7 @@ export class RecurringBuyRow extends React.Component<RecurringBuyRowProps, Recur
     return (
       <tr key={recurringBuy.id}>
         <td className='dca-type'>Buy</td>
-        <td className={className}>{addMutedSpan(formattedAmount)} {formattedAsset}</td>
+        <td className={className}>{mutedAsset}</td>
         <td className='dca-schedule'>{nextBuyTooltip}{this.renderRemoveOrSpinner(recurringBuy.id)}</td>
       </tr>
     )

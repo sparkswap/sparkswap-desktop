@@ -3,10 +3,9 @@ import {
   SwapHash,
   SwapPreimage,
   Asset,
-  Unit,
-  valueToAsset,
-  valueToUnit
+  Unit
 } from '../../global-shared/types'
+import { valueToEnum } from '../../global-shared/util'
 import { Quote, Trade, TradeStatus, TradeFailureReason } from '../../common/types'
 import { EventEmitter } from 'events'
 
@@ -22,13 +21,13 @@ interface DbTrade {
   sourceAmountUnit: string,
   sourceAmountValue: number,
   expiration: string,
-  startTime?: string,
+  startTime: string,
   endTime?: string,
   preimage?: string,
   failureCode?: TradeFailureReason
 }
 
-function serializeQuote (quote: Quote): DbTrade {
+function serializeQuote (quote: Quote): Omit<DbTrade, 'startTime'> {
   const {
     hash,
     destinationAmount,
@@ -80,13 +79,13 @@ function deserializeTrade (dbTrade: DbTrade): Trade {
     id,
     hash,
     destinationAmount: {
-      asset: valueToAsset(destinationAmountAsset),
-      unit: valueToUnit(destinationAmountUnit),
+      asset: valueToEnum(Asset, destinationAmountAsset),
+      unit: valueToEnum(Unit, destinationAmountUnit),
       value: destinationAmountValue
     },
     sourceAmount: {
-      asset: valueToAsset(sourceAmountAsset),
-      unit: valueToUnit(sourceAmountUnit),
+      asset: valueToEnum(Asset, sourceAmountAsset),
+      unit: valueToEnum(Unit, sourceAmountUnit),
       value: sourceAmountValue
     },
     expiration: new Date(expiration),
@@ -107,7 +106,9 @@ export function addTrade (db: Database, quote: Quote): number {
   if (quote.sourceAmount.asset !== Asset.USDX || quote.sourceAmount.unit !== Unit.Cent) {
     throw new Error('Only USDX amounts in cents are allowed as trade sources.')
   }
-  const dbTrade = serializeQuote(quote)
+
+  // Initialize the startTime in JS instead of the db process
+  const dbTrade = Object.assign({}, serializeQuote(quote), { startTime: new Date().toISOString() })
 
   const statement = db.prepare(`
 INSERT INTO trades (
@@ -118,7 +119,8 @@ INSERT INTO trades (
   sourceAmountAsset,
   sourceAmountUnit,
   sourceAmountValue,
-  expiration
+  expiration,
+  startTime
 ) VALUES (
   @hash,
   @destinationAmountAsset,
@@ -127,7 +129,8 @@ INSERT INTO trades (
   @sourceAmountAsset,
   @sourceAmountUnit,
   @sourceAmountValue,
-  @expiration
+  @expiration,
+  @startTime
 )
   `)
 
@@ -141,11 +144,11 @@ INSERT INTO trades (
 export function completeTrade (db: Database, id: number, hash: SwapHash, preimage: SwapPreimage): void {
   const statement = db.prepare(`
 UPDATE trades
-SET endTime = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), preimage = @preimage
+SET endTime = @endTime, preimage = @preimage
 WHERE id = @id AND hash = @hash
   `)
 
-  statement.run({ id, hash, preimage })
+  statement.run({ id, hash, preimage, endTime: new Date().toISOString() })
 
   updater.emit('update', id)
 }
@@ -153,11 +156,11 @@ WHERE id = @id AND hash = @hash
 export function failTrade (db: Database, id: number, reason: TradeFailureReason): void {
   const statement = db.prepare(`
 UPDATE trades
-SET endTime = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), failureCode = @reason
+SET endTime = @endTime, failureCode = @reason
 WHERE id = @id
   `)
 
-  statement.run({ id, reason })
+  statement.run({ id, reason, endTime: new Date().toISOString() })
 
   updater.emit('update', id)
 }

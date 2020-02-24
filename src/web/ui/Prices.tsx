@@ -2,14 +2,20 @@ import React, { ReactNode } from 'react'
 import { Classes, Colors, H3 } from '@blueprintjs/core'
 import { Line } from 'react-chartjs-2'
 import CurrentPrice from './CurrentPrice'
-import { marketDataSubscriber, PricePoint } from '../domain/market-data'
+import { marketDataSubscriber, DateRange, PricePoint } from '../domain/market-data'
 import { formatPercent } from './formatters'
 import { formatDollarValue } from '../../common/formatters'
 import './Prices.css'
 
+const DATE_RANGE = DateRange.Trailing365D
+
 const CURRENCY_NAME = 'Bitcoin'
 
 const CHART_OPTIONS = {
+  tooltips: {
+    intersect: false,
+    mode: 'index' as 'index'
+  },
   legend: {
     display: false
   },
@@ -87,7 +93,7 @@ class PriceChart extends React.Component<{}, PriceChartState> {
   constructor (props: {}) {
     super(props)
     this.state = {
-      historicalData: marketDataSubscriber.historicalData,
+      historicalData: marketDataSubscriber.historicalDataRange(DATE_RANGE),
       currentPrice: marketDataSubscriber.currentPrice
     }
   }
@@ -102,13 +108,12 @@ class PriceChart extends React.Component<{}, PriceChartState> {
 
   handleData = (): void => {
     const {
-      currentPrice,
-      historicalData
+      currentPrice
     } = marketDataSubscriber
 
     this.setState({
       currentPrice,
-      historicalData
+      historicalData: marketDataSubscriber.historicalDataRange(DATE_RANGE)
     })
   }
 

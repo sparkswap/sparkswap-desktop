@@ -18,7 +18,7 @@ export function waitForSwapCommitment (swapHash: string, expiration: Date, { cli
     let timer: NodeJS.Timer
 
     // subscribeSingleInvoice always sends out the initial invoice state
-    const stream = client.invoices.subscribeSingleInvoice({ rHash: Buffer.from(swapHash, 'base64') })
+    const stream = client.invoices.subscribeSingleInvoice({ rHash: swapHash })
 
     const cleanup = (): void => {
       stream.removeAllListeners()

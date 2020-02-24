@@ -2,7 +2,13 @@
   display: inline-block;
 }
 
-.InlineIcon {
+.InlineTooltip .bp3-popover-wrapper,
+label.bp3-label .InlineTooltip .bp3-popover-wrapper {
   margin-left: 0.5em;
+  display: inline-block;
+}
+
+.InlineIcon {
   color: #5C7080;
+  margin-bottom: 2px;
 }

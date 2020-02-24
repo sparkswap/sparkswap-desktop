@@ -6,11 +6,11 @@ import { showErrorToast, showSuccessToast, showSupportToast } from '../AppToaste
 import { validateQuantity } from '../../domain/quantity'
 import { getCronDate, getNextTimeoutDuration } from '../../../common/utils'
 import { addRecurringBuy } from '../../domain/main-request'
-import { formatAsset, getAltAmount, formatDate, formatTime } from '../formatters'
+import { getAltAmount, formatDate, formatTime } from '../formatters'
 import { Button, ButtonGroup, Callout, Classes, Dialog, H5, HTMLTable, Icon } from '@blueprintjs/core'
 import { FormField } from '../onboarding/form-field'
-import { toAmount, toCommon } from '../../../common/currency-conversions'
-import { formatAmount } from '../../../common/formatters'
+import { toAmount, toCommon } from '../../../global-shared/currency-conversions'
+import { formatAmount, formatAsset } from '../../../common/formatters'
 
 const PLACEHOLDER_INTERVAL = 1
 const NUM_IMPLIED_BUYS = 3

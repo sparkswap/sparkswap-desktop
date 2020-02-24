@@ -1,19 +1,15 @@
 import React, { ReactNode } from 'react'
 import { Nullable } from '../../global-shared/types'
-import { H1, H6, Classes } from '@blueprintjs/core'
+import { H1, H6 } from '@blueprintjs/core'
 import { marketDataSubscriber } from '../domain/market-data'
 import { formatDollarValue } from '../../common/formatters'
+import { DisplayValue, PulseColor } from './components/DisplayValue'
 import './CurrentPrice.css'
 
 const CURRENCY_NAME = 'Bitcoin'
 const CURRENCY_PAIR = 'BTC/USD'
 // Used for sizing the skeleton outline while price is loading
 const PLACEHOLDER_PRICE = 10000
-
-enum Pulse {
-  Red,
-  Green
-}
 
 export enum Size {
   Small,
@@ -26,17 +22,15 @@ interface CurrentPriceProps {
 
 interface CurrentPriceState {
   currentPrice: Nullable<number>,
-  pulse: Nullable<Pulse>
+  pulseColor: Nullable<PulseColor>
 }
 
 class CurrentPrice extends React.Component<CurrentPriceProps, CurrentPriceState> {
-  pulseTimer?: NodeJS.Timeout
-
   constructor (props: CurrentPriceProps) {
     super(props)
     this.state = {
       currentPrice: marketDataSubscriber.currentPrice,
-      pulse: null
+      pulseColor: null
     }
   }
 
@@ -57,47 +51,27 @@ class CurrentPrice extends React.Component<CurrentPriceProps, CurrentPriceState>
     }
 
     if (newPrice > existingPrice) {
-      this.pulsePrice(Pulse.Green)
+      this.setState({ pulseColor: PulseColor.Green })
     } else if (newPrice < existingPrice) {
-      this.pulsePrice(Pulse.Red)
+      this.setState({ pulseColor: PulseColor.Red })
     }
   }
 
-  pulsePrice (type: Pulse): void {
-    this.setState({ pulse: type })
-    if (this.pulseTimer) {
-      clearTimeout(this.pulseTimer)
-    }
-    this.pulseTimer = setTimeout(() => this.setState({ pulse: null }), 1000)
-  }
-
-  get className (): string {
+  renderPrice (): ReactNode {
     const {
       currentPrice,
-      pulse
+      pulseColor
     } = this.state
 
-    const classes = []
-
-    if (currentPrice == null) {
-      classes.push(Classes.SKELETON)
-    }
-
-    if (pulse === Pulse.Red) {
-      classes.push('PulseRed')
-    } else if (pulse === Pulse.Green) {
-      classes.push('PulseGreen')
-    }
-
-    return classes.join(' ')
-  }
-
-  get displayPrice (): string {
-    const {
-      currentPrice
-    } = this.state
-
-    return formatDollarValue(currentPrice || PLACEHOLDER_PRICE)
+    return (
+      <DisplayValue
+        pulseColor={pulseColor}
+        resetPulse={() => this.setState({ pulseColor: null })}
+        loading={currentPrice == null}
+      >
+        {formatDollarValue(currentPrice || PLACEHOLDER_PRICE)}
+      </DisplayValue>
+    )
   }
 
   render (): ReactNode {
@@ -105,16 +79,14 @@ class CurrentPrice extends React.Component<CurrentPriceProps, CurrentPriceState>
       return (
         <H6 className='current-price'>
           <span className='subtitle'>{CURRENCY_PAIR}</span>
-          <span className={this.className}>{this.displayPrice}</span>
+          {this.renderPrice()}
         </H6>
       )
     }
     return (
       <H1 className='current-price'>
         <span className='subtitle'>{CURRENCY_NAME} Price</span>
-        <span className={this.className}>
-          {this.displayPrice}
-        </span>
+        {this.renderPrice()}
       </H1>
     )
   }

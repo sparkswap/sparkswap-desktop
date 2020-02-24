@@ -1,7 +1,8 @@
 import { getAuth } from './main-request'
 import { serverRequest as baseRequest } from '../../common/utils'
 import { API_ENDPOINTS } from '../../common/config'
-import { valueToAsset, valueToUnit } from '../../global-shared/types'
+import { valueToEnum } from '../../global-shared/util'
+import { Asset, Unit } from '../../global-shared/types'
 import {
   MarketDataResponse,
   StatusResponse,
@@ -71,14 +72,14 @@ export async function getQuote (data: object): Promise<QuoteResponse> {
   }
 
   const sourceAmount = {
-    asset: valueToAsset(sourceAmountRes.asset as string),
-    unit: valueToUnit(sourceAmountRes.unit as string),
+    asset: valueToEnum(Asset, sourceAmountRes.asset),
+    unit: valueToEnum(Unit, sourceAmountRes.unit),
     value: sourceAmountRes.value as number
   }
 
   const destinationAmount = {
-    asset: valueToAsset(destinationAmountRes.asset as string),
-    unit: valueToUnit(destinationAmountRes.unit as string),
+    asset: valueToEnum(Asset, destinationAmountRes.asset),
+    unit: valueToEnum(Unit, destinationAmountRes.unit),
     value: destinationAmountRes.value as number
   }
 

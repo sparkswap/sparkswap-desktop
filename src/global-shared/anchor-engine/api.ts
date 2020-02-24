@@ -1,9 +1,28 @@
 import request, { RequestMethods } from './request'
-import { Amount, Unit, Asset, SwapHash, SwapPreimage, URL, UnknownObject, AnchorRegisterResult } from '../types'
+import {
+  Amount,
+  Unit,
+  Asset,
+  SwapHash,
+  SwapPreimage,
+  URL,
+  UnknownObject,
+  AnchorRegisterResult
+} from '../types'
+import { valueToEnum } from '../util'
+import {
+  toAmount,
+  toUSDX
+} from '../currency-conversions'
 import { isUnknownJSON } from '../fetch-json'
 
 export const USDX = 'USDX'
-export const centsPerUSD = 100
+export const USD = 'USD'
+
+interface ListResponse {
+  items: unknown[],
+  next_page?: string
+}
 
 export interface Balance {
   amount: number,
@@ -14,6 +33,37 @@ export interface Balance {
 export interface Account {
   id: string,
   balances: Balance[]
+}
+
+// Anchor supports other transaction types, but we filter those out
+export enum TransactionType {
+  deposit = 'deposit',
+  withdraw = 'withdraw'
+}
+
+export enum TransactionPaymentType {
+  achPull = 'ach_pull',
+  wire = 'wire'
+}
+
+export enum TransactionStatus {
+  created = 'created',
+  pending = 'pending',
+  executed = 'executed',
+  failed = 'failed',
+  canceled = 'canceled'
+}
+
+// see: https://www.anchorusd.com/9c0cba91e667a08e467f038b6e23e3c4/api/index.html#/?id=the-transaction-object
+export interface Transaction {
+  id: string,
+  startDate: Date,
+  type: TransactionType,
+  paymentType: TransactionPaymentType,
+  amount: Amount,
+  feeAmount: Amount,
+  status: TransactionStatus,
+  fundsMadeImmediatelyAvailable: boolean
 }
 
 export enum EscrowStatus {
@@ -54,26 +104,11 @@ export interface Escrow {
   preimage?: SwapPreimage
 }
 
-interface ListEscrowsResponse {
-  items: Escrow[],
-  next_page?: string
-}
-
 export interface DepositIntentResponse {
   type: string,
   url: string,
   identifier: string,
   api_key: string
-}
-
-function keyToStatus (key: unknown): EscrowStatus {
-  const statusStr = key as string
-
-  if (!(statusStr in EscrowStatus)) {
-    throw new Error(`Invalid escrow status: ${statusStr}`)
-  }
-
-  return EscrowStatus[statusStr as keyof typeof EscrowStatus]
 }
 
 function base64ToHex (base64: string): string {
@@ -98,16 +133,69 @@ function resToEscrow (res: unknown): Escrow {
     created: new Date(res.created as number * 1000),
     user: res.user as string,
     recipient: res.recipient as string,
-    amount: {
-      asset: Asset.USDX,
-      unit: Unit.Cent,
-      value: Math.round((res.amount as number) * centsPerUSD)
-    },
-    status: keyToStatus(res.status),
+    amount: toAmount(Asset.USDX, res.amount as number),
+    status: valueToEnum(EscrowStatus, res.status),
     timeout: new Date(res.timeout as number * 1000),
     hash: hexToBase64(res.hash as string),
     preimage: res.preimage ? hexToBase64(res.preimage as string) : undefined
   }
+}
+
+function filterUnsupportedTransactions (res: unknown[]): unknown[] {
+  return res.filter(tx => {
+    if (!isUnknownJSON(tx)) {
+      throw new Error(`Invalid transaction response: ${tx}`)
+    }
+    return tx.type === TransactionType.deposit ||
+           tx.type === TransactionType.withdraw
+  })
+}
+
+function resToTransaction (res: unknown): Transaction {
+  if (!isUnknownJSON(res)) {
+    throw new Error(`Invalid transaction response: ${res}`)
+  }
+
+  if (res.currency !== USDX) {
+    throw new Error(`Invalid ${res.type} currency: ${res.currency}`)
+  }
+
+  if (res.base_currency !== USD) {
+    throw new Error(`Invalid ${res.type} base currency: ${res.base_currency}`)
+  }
+
+  if (res.payment_type == null) {
+    throw new Error(`Payment type is required for ${res.type} transactions`)
+  }
+
+  return {
+    id: res.id as string,
+    startDate: new Date(res.start_date as number * 1000),
+    type: valueToEnum(TransactionType, res.type),
+    paymentType: valueToEnum(TransactionPaymentType, res.payment_type),
+    amount: toAmount(Asset.USDX, res.base_currency_amount as number),
+    feeAmount: toAmount(Asset.USDX, res.fee_amount as number),
+    status: valueToEnum(TransactionStatus, res.status),
+    fundsMadeImmediatelyAvailable: Boolean(res.funds_made_immediately_available_by)
+  }
+}
+
+async function pageResults (apiKey: string, path: string, params: object, limit?: number): Promise<unknown[]> {
+  const {
+    next_page,
+    items
+  } = await request(apiKey, path, params) as unknown as ListResponse
+
+  // eslint-disable-next-line
+  let nextPage = next_page
+
+  while (nextPage && (limit ? items.length < limit : true)) {
+    const res = (await request(apiKey, nextPage)) as unknown as ListResponse
+    items.push(...res.items)
+    nextPage = res.next_page
+  }
+
+  return items.slice(0, limit)
 }
 
 export async function getOwnAccount (apiKey: string): Promise<Account> {
@@ -117,6 +205,12 @@ export async function getOwnAccount (apiKey: string): Promise<Account> {
   return account as unknown as Account
 }
 
+export async function listTransactions (apiKey: string, limit?: number): Promise<Transaction[]> {
+  const results = await pageResults(apiKey, '/api/transactions', {}, limit)
+
+  return filterUnsupportedTransactions(results).map(resToTransaction)
+}
+
 export async function getEscrow (apiKey: string, id: string): Promise<Escrow> {
   return resToEscrow(await request(apiKey, `/api/escrow/${id}`))
 }
@@ -124,21 +218,9 @@ export async function getEscrow (apiKey: string, id: string): Promise<Escrow> {
 async function listEscrows (apiKey: string, hash?: SwapHash, limit?: number): Promise<Escrow[]> {
   const params = hash ? { hash: base64ToHex(hash) } : {}
 
-  const {
-    next_page,
-    items
-  } = (await request(apiKey, '/api/escrows', params)) as unknown as ListEscrowsResponse
+  const results = await pageResults(apiKey, '/api/escrows', params, limit)
 
-  // eslint-disable-next-line
-  let nextPage = next_page
-
-  while (nextPage && (limit ? items.length < limit : true)) {
-    const res = (await request(apiKey, nextPage)) as unknown as ListEscrowsResponse
-    items.push(...res.items)
-    nextPage = res.next_page
-  }
-
-  return items.slice(0, limit).map(resToEscrow)
+  return results.map(resToEscrow)
 }
 
 export async function getEscrowBalance (apiKey: string): Promise<Amount> {
@@ -200,7 +282,7 @@ export async function createEscrow (apiKey: string, hash: SwapHash, recipientId:
     {
       hash: base64ToHex(hash),
       recipient: recipientId,
-      amount: parseFloat((amount.value / centsPerUSD).toFixed(2)),
+      amount: toUSDX(amount.value),
       timeout_duration_from_creation: duration // eslint-disable-line
     },
     { method: RequestMethods.POST }
@@ -311,6 +393,8 @@ export function isAnchorMessage (message: UnknownObject): message is AnchorMessa
 
   return false
 }
+
+export const ANCHOR_PARTIAL_UNEXPECTED_ERROR = 'An unexpected error occurred'
 
 export const ANCHOR_DASHBOARD_PATH = '/dashboard'
 export const ANCHOR_DEPOSIT_PATH = '/dashboard/purchase'

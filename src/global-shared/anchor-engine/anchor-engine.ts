@@ -1,17 +1,25 @@
 import {
   Amount,
   Asset,
-  Unit,
   SwapHash,
   SwapPreimage,
-  PaymentChannelNetworkAddress
+  PaymentChannelNetworkAddress,
+  Transaction,
+  TransactionType,
+  TransactionStatus
 } from '../types'
 import { LoggerInterface } from '../logger'
-import { delay, generateHash } from '../util'
+import {
+  delay,
+  generateHash,
+  parseNetworkAddress,
+  serializeNetworkAddress
+} from '../util'
+import { asAmount } from '../currency-conversions'
 
 import * as api from './api'
 
-const ANCHOR_ADDRESS_PREFIX = 'anchor:'
+const ANCHOR_NETWORK_TYPE = 'anchor'
 
 // Milliseconds between polling attempts of escrow status
 const SUBSCRIBE_ESCROW_DELAY = 100
@@ -28,23 +36,36 @@ interface SwapInvoiceTerms {
   timelockDelta: number
 }
 
+export interface Balances {
+  total: Amount,
+  available: Amount,
+  holds: Amount
+}
+
 export class SettledSwapError extends Error {}
 export class CanceledSwapError extends Error {}
 export class ExpiredSwapError extends Error {}
 export class PermanentSwapError extends Error {}
 
 export function accountToAddress (accountId: string): PaymentChannelNetworkAddress {
-  return `${ANCHOR_ADDRESS_PREFIX}${accountId}`
+  return serializeNetworkAddress(ANCHOR_NETWORK_TYPE, accountId)
 }
 
 export function addressToAccount (address: PaymentChannelNetworkAddress): string {
-  const accountId = address.split(ANCHOR_ADDRESS_PREFIX)[1]
+  const {
+    network,
+    id
+  } = parseNetworkAddress(address)
 
-  if (!accountId) {
+  if (network !== ANCHOR_NETWORK_TYPE) {
+    throw new Error(`Invalid network type for anchor address: ${network}`)
+  }
+
+  if (!id) {
     throw new Error(`Invalid Anchor Payment Address: ${address}`)
   }
 
-  return accountId
+  return id
 }
 
 function assertEscrowTerms (escrow: api.Escrow, terms: SwapInvoiceTerms, expiration: Date): void {
@@ -71,6 +92,33 @@ function assertEscrowTerms (escrow: api.Escrow, terms: SwapInvoiceTerms, expirat
     throw new CanceledSwapError(`Swap with hash (${escrow.hash}) has ` +
       `incorrect time lock ${escrowTimelock} vs ${terms.timelockDelta}`)
   }
+}
+
+const TxTypes = Object.freeze({
+  [api.TransactionType.deposit]: TransactionType.RECEIVE,
+  [api.TransactionType.withdraw]: TransactionType.SEND
+})
+
+function convertTxType (rawTx: api.Transaction): TransactionType {
+  return TxTypes[rawTx.type]
+}
+
+const TxStatuses = Object.freeze({
+  [api.TransactionStatus.created]: TransactionStatus.PENDING,
+  [api.TransactionStatus.pending]: TransactionStatus.PENDING,
+  [api.TransactionStatus.executed]: TransactionStatus.COMPLETE,
+  [api.TransactionStatus.failed]: TransactionStatus.FAILED,
+  [api.TransactionStatus.canceled]: TransactionStatus.FAILED
+})
+
+function convertTxStatus (rawTx: api.Transaction): TransactionStatus {
+  // consider transactions where we fronted the funds to be complete
+  if (rawTx.status === api.TransactionStatus.pending &&
+      rawTx.fundsMadeImmediatelyAvailable) {
+    return TransactionStatus.COMPLETE
+  }
+
+  return TxStatuses[rawTx.status]
 }
 
 export class AnchorEngine {
@@ -164,7 +212,7 @@ export class AnchorEngine {
   }
 
   async translateSwap (address: PaymentChannelNetworkAddress, hash: SwapHash, value: string, maxTime: Date, finalHopTimeLock = this.finalHopTimeLock): Promise<SwapPreimage> {
-    const amount = { asset: Asset.USDX, unit: Unit.Cent, value: parseInt(value, 10) }
+    const amount = asAmount(Asset.USDX, parseInt(value, 10))
     const escrow = await this.createEscrowIdempotent(hash, address, amount, maxTime, finalHopTimeLock)
     const endedEscrow = await this.waitForEscrowEnd(escrow)
 
@@ -259,6 +307,39 @@ export class AnchorEngine {
     throw new Error('unimplemented')
   }
 
+  async getBalances (): Promise<Balances> {
+    const [
+      escrowBalance,
+      account,
+      transactions
+    ] = await Promise.all([
+      api.getEscrowBalance(this.apiKey),
+      api.getOwnAccount(this.apiKey),
+      this.getTransactions()
+    ])
+
+    const pendingDeposits = transactions.filter(tx => {
+      return tx.type === TransactionType.RECEIVE &&
+             tx.status === TransactionStatus.PENDING
+    })
+    const pendingDepositsValue = pendingDeposits.reduce((sum, tx) => sum + tx.amount.value, 0)
+
+    const accountBalance = account.balances.find(balance => balance.currency === api.USDX)
+    // Anchor will only return a balance if the user has ever held USDX
+    const accountBalValue = accountBalance
+      ? Math.round(accountBalance.amount * Number(this.quantumsPerCommon))
+      : 0
+
+    const holdsValue = pendingDepositsValue + escrowBalance.value
+    const totalValue = accountBalValue + holdsValue
+
+    return {
+      total: asAmount(Asset.USDX, totalValue),
+      available: asAmount(Asset.USDX, accountBalValue),
+      holds: asAmount(Asset.USDX, holdsValue)
+    }
+  }
+
   async getUncommittedBalance (): Promise<string> {
     // await to unify the interface with lnd-engine
     await new Promise(resolve => resolve())
@@ -334,6 +415,21 @@ export class AnchorEngine {
       await this.cancelSwap(hash)
       throw e
     }
+  }
+
+  async getTransactions (limit?: number): Promise<Transaction[]> {
+    const rawTxs = await api.listTransactions(this.apiKey, limit)
+
+    return rawTxs.map(rawTx => {
+      return {
+        id: rawTx.id,
+        date: rawTx.startDate,
+        type: convertTxType(rawTx),
+        status: convertTxStatus(rawTx),
+        amount: rawTx.amount,
+        fee: rawTx.feeAmount
+      }
+    })
   }
 
   private async getAccountId (): Promise<string> {

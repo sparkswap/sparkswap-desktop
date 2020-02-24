@@ -4,25 +4,46 @@ import {
   Intent,
   Tabs,
   Tab,
-  TabId
+  TabId as bpTabId
 } from '@blueprintjs/core'
 import {
   trades,
   updater as tradeUpdater,
   canLoadMore as canLoadMoreTrades
 } from '../domain/history'
+import { Asset } from '../../global-shared/types'
 import { Trade } from '../../common/types'
-import TradeHistory from './History'
+import TradeHistory from './trade-history/TradeHistory'
 import PriceChart from './Prices'
+import Account from './account/Account'
 import StatusBadge from './components/StatusBadge'
+import { formatAsset } from '../../common/formatters'
 import './MainContent.css'
+
+export type TabId = bpTabId
+
+export enum TabIds {
+  trades = 'trades',
+  usdAccount = 'usd-account',
+  btcAccount = 'btc-account',
+  prices = 'prices',
+  loading = 'loading'
+}
+
+interface MainContentProps {
+  onDeposit: (e: React.MouseEvent) => void,
+  depositLoading: boolean,
+  onTabChange: (tab: TabId) => void,
+  selectBalance: (asset: Asset) => void,
+  selectedTabId?: TabId
+}
 
 interface MainContentState {
   trades: Trade[],
   canLoadMore: boolean,
-  selectedTabId: TabId,
-  userSelected: boolean,
-  newHistory: boolean
+  defaultTabId: TabId,
+  newHistory: boolean,
+  accountAsset: Asset
 }
 
 function mapToArr (tradesMap: Map<number, Trade>): Trade[] {
@@ -31,43 +52,46 @@ function mapToArr (tradesMap: Map<number, Trade>): Trade[] {
   })
 }
 
-class MainContent extends React.Component<{}, MainContentState> {
-  constructor (props: {}) {
+class MainContent extends React.Component<MainContentProps, MainContentState> {
+  constructor (props: MainContentProps) {
     super(props)
     this.state = {
       trades: mapToArr(trades),
       canLoadMore: canLoadMoreTrades,
-      selectedTabId: 'loading',
-      userSelected: false,
-      newHistory: false
+      defaultTabId: TabIds.loading,
+      newHistory: false,
+      accountAsset: Asset.BTC
     }
   }
 
-  get hasNewHistory (): boolean {
-    return this.state.newHistory && this.state.selectedTabId !== 'history'
+  get selectedTabId (): TabId {
+    if (this.props.selectedTabId) {
+      return this.props.selectedTabId
+    }
+
+    return this.state.defaultTabId
   }
 
   updateTrades = (trades: Map<number, Trade>): void => {
     this.setState({
       trades: mapToArr(trades),
       canLoadMore: canLoadMoreTrades,
-      newHistory: Boolean(trades.size) && this.state.selectedTabId !== 'history'
+      newHistory: Boolean(trades.size) && this.selectedTabId !== TabIds.trades
     })
   }
 
   updateTab = (trades: Map<number, Trade>): void => {
-    // initialize the tab after trades load if the user has not already
-    if (!this.state.userSelected) {
-      if (trades.size) {
-        this.setState({
-          selectedTabId: 'history',
-          newHistory: false
-        })
-      } else {
-        this.setState({
-          selectedTabId: 'prices'
-        })
-      }
+    // initialize the default state of the component after
+    // trades have loaded
+    if (trades.size) {
+      this.setState({
+        defaultTabId: TabIds.trades,
+        newHistory: false
+      })
+    } else {
+      this.setState({
+        defaultTabId: TabIds.prices
+      })
     }
   }
 
@@ -81,59 +105,87 @@ class MainContent extends React.Component<{}, MainContentState> {
     tradeUpdater.removeListener('update', this.updateTab)
   }
 
-  handleTabChange = (newTabId: TabId, oldTabId: TabId): void => {
-    if (newTabId !== oldTabId) {
-      this.setState({
-        userSelected: true,
-        selectedTabId: newTabId
-      })
-      if (newTabId === 'history') {
-        this.setState({ newHistory: false })
-      }
-    }
-  }
-
   renderHistoryTitle (): ReactNode {
-    if (!this.hasNewHistory) {
-      return 'Transactions'
+    const historyTitle = 'Trades'
+
+    if (!this.state.newHistory) {
+      return historyTitle
     }
 
     return (
       <React.Fragment>
-        Transactions
+        {historyTitle}
         <StatusBadge intent={Intent.PRIMARY} />
       </React.Fragment>
     )
   }
 
+  onTabChange = (tab: TabId): void => {
+    if (tab === TabIds.trades) {
+      this.setState({ newHistory: false })
+    }
+    this.props.onTabChange(tab)
+  }
+
   render (): ReactNode {
     const {
       trades,
-      canLoadMore,
-      selectedTabId
+      canLoadMore
     } = this.state
 
     return (
       <Tabs
         className='main-content-tabs'
         id='main-content-tabs'
-        selectedTabId={selectedTabId}
-        onChange={this.handleTabChange}
+        selectedTabId={this.selectedTabId}
+        onChange={this.onTabChange}
         large={true}
       >
         <Tab
-          id='history'
-          className={this.hasNewHistory ? 'history-tab new-history' : 'history-tab'}
-          title={this.renderHistoryTitle()}
-          panel={<TradeHistory trades={trades} canLoadMore={canLoadMore} />}
-        />
+          id={TabIds.trades}
+          className={this.state.newHistory ? 'history-tab new-history' : 'history-tab'}
+          panel={
+            <TradeHistory
+              trades={trades}
+              canLoadMore={canLoadMore}
+            />
+          }
+        >
+          {this.renderHistoryTitle()}
+        </Tab>
         <Tab
-          id='prices'
+          id={TabIds.btcAccount}
+          panel={
+            <Account
+              asset={Asset.BTC}
+              onDeposit={this.props.onDeposit}
+              depositLoading={this.props.depositLoading}
+              selectBalance={this.props.selectBalance}
+            />
+          }
+        >
+          {formatAsset(Asset.BTC)} Account
+        </Tab>
+        <Tab
+          id={TabIds.usdAccount}
+          panel={
+            <Account
+              asset={Asset.USDX}
+              onDeposit={this.props.onDeposit}
+              depositLoading={this.props.depositLoading}
+              selectBalance={this.props.selectBalance}
+            />
+          }
+        >
+          {formatAsset(Asset.USDX)} Account
+        </Tab>
+        <Tab
+          id={TabIds.prices}
           title='Prices'
           panel={<PriceChart />}
         />
         <Tab
-          id='loading'
+          id={TabIds.loading}
           panelClassName='main-content-spinner'
           panel={<Spinner size={72} />}
         />

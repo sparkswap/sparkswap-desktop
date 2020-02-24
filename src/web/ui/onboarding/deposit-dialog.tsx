@@ -7,9 +7,10 @@ import logger from '../../../global-shared/logger'
 import { getWebviewPreloadPath } from '../../domain/main-request'
 import { submitPhotoId } from '../../domain/server'
 import { showSuccessToast } from '../AppToaster'
-import { balances, getBalanceState, BalanceState } from '../../domain/balance'
+import { balances, getBalances } from '../../domain/balance'
 import { isPlaidMessage, PlaidMessage, PlaidEvent } from '../../domain/plaid'
-import { ANCHOR_PARTITION, centsPerUSD } from '../../../common/constants'
+import { ANCHOR_PARTITION } from '../../../common/constants'
+import { toCents } from '../../../global-shared/currency-conversions'
 import { delay } from '../../../global-shared/util'
 import {
   isAnchorMessage,
@@ -17,10 +18,11 @@ import {
   AnchorStatus,
   ANCHOR_DEPOSIT_PATH,
   ANCHOR_DASHBOARD_PATH,
-  ANCHOR_PHOTO_ID_PATH
+  ANCHOR_PHOTO_ID_PATH,
+  ANCHOR_PARTIAL_UNEXPECTED_ERROR
 } from '../../../global-shared/anchor-engine/api'
 import { formatDollarValue } from '../../../common/formatters'
-import { Asset } from '../../../global-shared/types'
+import { Asset, AnchorBalances } from '../../../global-shared/types'
 import { openBeacon } from '../beacon'
 import { Berbix } from './berbix'
 
@@ -36,7 +38,8 @@ enum DEPOSIT_ERROR_MESSAGE {
   ERROR = 'Error in deposit workflow. Please try again.',
   PENDING_REVIEW = 'Deposit is pending review. AnchorUSD will notify you via email with further instructions.',
   ADDITIONAL_INFO_NEEDED = 'Additional info is needed to verify your identity.',
-  MANUAL_REVIEW = 'Your application is pending review. You will be notified via email with further instructions.'
+  MANUAL_REVIEW = 'Your application is pending review. You will be notified via email with further instructions.',
+  ANCHOR_INTERNAL = 'Error during deposit workflow. Please contact support prior to depositing again.'
 }
 
 const ANCHOR_MANUAL_REVIEW_TEXT = 'Your account is being reviewed'
@@ -57,7 +60,7 @@ interface DepositDialogState {
   isDone: boolean,
   amountDeposited?: number,
   instant?: boolean,
-  previousBalance?: BalanceState,
+  previousBalance?: AnchorBalances | Error,
   isBerbixOpen: boolean
 }
 
@@ -152,6 +155,23 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
 
   depositError (message: string = DEPOSIT_ERROR_MESSAGE.ERROR, action?: IActionProps): void {
     this.props.onDepositError(message, action)
+  }
+
+  handleDepositErrorMessage = (evt: IpcMessageEvent): void => {
+    if (evt.channel !== 'js:depositError') {
+      return
+    }
+
+    const message = evt.args[0]
+
+    if (typeof message !== 'string' || message.includes(ANCHOR_PARTIAL_UNEXPECTED_ERROR)) {
+      return this.depositError(DEPOSIT_ERROR_MESSAGE.ANCHOR_INTERNAL, {
+        text: 'Contact support',
+        onClick: openBeacon
+      })
+    }
+
+    return this.depositError(`Error while depositing: ${message}`)
   }
 
   handleMessage = (evt: IpcMessageEvent): void => {
@@ -273,17 +293,24 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     try {
       const prevBalance = this.state.previousBalance
       const amountDeposited = await this.getDepositAmount()
-      const currBalance = await getBalanceState(Asset.USDX)
+      await getBalances(Asset.USDX)
+      // assigning it this way allows the type to be AnchorBalances
+      const currBalance = balances[Asset.USDX]
 
       if (currBalance instanceof Error) {
         throw currBalance
       }
 
-      const prevBalanceVal = prevBalance instanceof Error || prevBalance === undefined ? 0 : prevBalance.value
+      const prevBalanceVal = (prevBalance instanceof Error || prevBalance === undefined)
+        ? 0
+        : prevBalance.available.value
+
+      logger.debug(`Change in balance: ${currBalance.available.value - prevBalanceVal}, ` +
+        `Amount deposited: ${toCents(amountDeposited)}`)
       this.setState({
         amountDeposited,
         isDone: true,
-        instant: Math.round(amountDeposited * centsPerUSD) === currBalance.value - prevBalanceVal
+        instant: toCents(amountDeposited) === currBalance.available.value - prevBalanceVal
       })
     } catch (e) {
       logger.debug(`Error while getting deposit amount: ${e}`)
@@ -317,6 +344,9 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
   handleWebviewReady = async (): Promise<void> => {
     const webviewNode = this.webviewRef.current
     if (!webviewNode) return
+
+    webviewNode.send('js:addErrorListener')
+    webviewNode.addEventListener('ipc-message', this.handleDepositErrorMessage as EventListener)
 
     const webviewUrl = new URL(webviewNode.getURL())
     if (webviewUrl.pathname === ANCHOR_PHOTO_ID_PATH) {
@@ -371,6 +401,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     this.setState(DepositDialogInitialState)
     webviewNode.removeEventListener('dom-ready', this.handleWebviewReady)
     webviewNode.removeEventListener('ipc-message', this.handleMessage as EventListener)
+    webviewNode.removeEventListener('ipc-message', this.handleDepositErrorMessage as EventListener)
   }
 
   hideAnchorAmount (): void {

@@ -1,0 +1,40 @@
+.sparkswap .bp3-card.transaction {
+  display: flex;
+}
+
+.sparkswap .transaction>* {
+  flex: 1;
+}
+
+.sparkswap .transaction>.bp3-icon,
+.sparkswap .transaction>.bp3-spinner {
+  max-width: 18px;
+  margin-right: 12px;
+}
+
+.sparkswap .transaction>.bp3-icon {
+  margin-top: 9px;
+}
+
+.sparkswap .transaction .bp3-heading {
+  /* align all elements of the card */
+  line-height: 18px;
+  margin-bottom: 0;
+}
+
+.sparkswap .transaction .bp3-heading .subtitle {
+  margin-left: 0;
+}
+
+.sparkswap .transaction .extra-info .subtitle {
+  margin-right: 0.5em;
+}
+
+.sparkswap .transaction .extra-info .tx-link {
+  color: rgba(245,248,250, 0.4);
+  font-size: 13px;
+}
+
+.sparkswap .transaction .amounts {
+  text-align: right;
+}

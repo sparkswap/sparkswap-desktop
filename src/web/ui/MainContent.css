@@ -5,26 +5,21 @@
   padding-top: 50px;
 }
 
-.main-content-tabs .bp3-tab-list {
+.main-content-tabs > .bp3-tab-list {
   position: absolute;
   top: 0;
   left: 0;
 }
 
-.main-content-tabs .bp3-tab {
-  margin-right: 8px;
-}
-
-.main-content-tabs .bp3-tab.history-tab {
-  /* room for the status indicator of 21px */
+.main-content-tabs > .bp3-tab-list .bp3-tab {
   margin-right: 29px;
 }
 
-.main-content-tabs .bp3-tab.history-tab.new-history {
+.main-content-tabs > .bp3-tab-list .bp3-tab.history-tab.new-history {
   margin-right: 8px;
 }
 
-.main-content-tabs .bp3-tab-panel {
+.main-content-tabs > .bp3-tab-panel {
   margin-top: 0;
   height: calc(100%);
   width: 100%;
@@ -34,4 +29,8 @@
   position: relative;
   top: 50%;
   margin-top: -72px;
+}
+
+.bp3-menu.account-select {
+  min-width: 82px;
 }

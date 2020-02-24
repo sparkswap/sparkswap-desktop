@@ -1,5 +1,12 @@
 import { createHash } from 'crypto'
-import { SwapHash, SwapPreimage } from './types'
+import {
+  SwapHash,
+  SwapPreimage,
+  Amount,
+  PaymentChannelNetworkAddress,
+  NetworkAddress,
+  NetworkType
+} from './types'
 import { Interface } from 'readline'
 
 export function requireEnv (name: string, defaultVal?: string): string | never {
@@ -47,6 +54,7 @@ export function getNthFromMap<K, T> (map: Map<K, T>, n: number): [K, T] {
 }
 
 type StringKeyOf<T> = Extract<keyof T, string>
+type StringEntryOf<T> = [StringKeyOf<T>, unknown]
 
 // like `Object.keys()`, but the type of the response is the union of the
 // enum's keys, rather than just `string`. This allows it to be used again
@@ -66,6 +74,13 @@ Array<StringKeyOf<T>> {
   }) as Array<StringKeyOf<T>>
 }
 
+export function enumEntries<T extends Record<string, unknown>> (obj: T):
+Array<StringEntryOf<T>> {
+  return enumStringKeys(obj).map((key) => {
+    return [key, obj[key]]
+  })
+}
+
 // Typeguard for strings as keys of a provided enum
 export function isEnumKey<T extends Record<string, unknown>> (obj: T,
   str: string): str is StringKeyOf<T> {
@@ -77,10 +92,55 @@ export function isEnumKey<T extends Record<string, unknown>> (obj: T,
   return false
 }
 
+export function valueToEnum<T extends Record<string, unknown>> (obj: T,
+  value: unknown): T[keyof T] {
+  const entries = enumEntries(obj)
+
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i][1] === value) {
+      if (isEnumKey(obj, entries[i][0])) {
+        return obj[entries[i][0]]
+      }
+    }
+  }
+
+  throw new Error(`Invalid enum value: ${value} ` +
+    `(valid values: ${entries.map(entry => entry[1]).join(', ')}`)
+}
+
 export function question (rl: Interface, question: string): Promise<string> {
   return new Promise((resolve) => {
     rl.question(question, (answer: string) => {
       resolve(answer)
     })
   })
+}
+
+export function addSignToAmount (amount: Amount, isPositive: boolean): Amount {
+  const sign = isPositive ? 1 : -1
+  return Object.assign({}, amount, { value: Math.abs(amount.value) * sign })
+}
+
+const NETWORK_DELIMITER = ':'
+const HOST_DELIMITER = '@'
+
+export function parseNetworkAddress (address: PaymentChannelNetworkAddress): NetworkAddress {
+  const [network, ...idAndHost] = address.split(NETWORK_DELIMITER)
+  const [id, ...rest] = idAndHost.join(NETWORK_DELIMITER).split(HOST_DELIMITER)
+
+  if (network !== 'anchor' && network !== 'bolt') {
+    throw new Error(`Unrecognized network address: ${network}`)
+  }
+
+  return {
+    network,
+    id,
+    host: rest.join(HOST_DELIMITER)
+  }
+}
+
+export function serializeNetworkAddress (network: NetworkType, id: string, host?: string): string {
+  const hostPart = host ? `${HOST_DELIMITER}${host}` : ''
+
+  return `${network}${NETWORK_DELIMITER}${id}${hostPart}`
 }

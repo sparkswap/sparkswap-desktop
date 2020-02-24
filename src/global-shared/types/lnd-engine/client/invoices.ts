@@ -10,18 +10,19 @@ export enum InvoiceState {
 export interface Invoice {
   state: InvoiceState,
   memo: string,
-  rHash: Buffer,
-  rPreimage: Buffer,
+  rHash: string, // base64
+  rPreimage: string, // base64
   value: string,
   amtPaidSat: string,
   expiry: string,
   cltvExpiry: string,
   paymentRequest: string,
-  creationDate: string
+  creationDate: string, // int64
+  settleDate: string // int64
 }
 
 interface SubscribeSingleInvoiceRequest {
-  rHash: Buffer
+  rHash: string // base64
 }
 
 export interface LndInvoices {

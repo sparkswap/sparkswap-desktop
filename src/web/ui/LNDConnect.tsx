@@ -20,7 +20,7 @@ import {
 } from './components'
 import LNDStatus from './LNDStatus'
 import { Asset } from '../../global-shared/types'
-import { getBalanceState } from '../domain/balance'
+import { getBalances } from '../domain/balance'
 import LNDGraphic from './assets/sparkswap-lnd.svg'
 import ZapLogo from './assets/zap.svg'
 import LPULogo from './assets/lightning-power.png'
@@ -134,7 +134,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
       const status = newStatus || await lnd.getStatus()
       this.setState({ status })
       if (status === lnd.Statuses.VALIDATED && status !== oldStatus) {
-        getBalanceState(Asset.BTC)
+        getBalances(Asset.BTC)
       }
     } catch (e) {
       this.setState({ status: lnd.Statuses.UNAVAILABLE })

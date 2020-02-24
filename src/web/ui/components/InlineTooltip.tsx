@@ -10,9 +10,16 @@ class InlineTooltip extends React.Component<InlineTooltipProps> {
   render (): ReactNode {
     return (
       <div className='InlineTooltip'>
-        <Tooltip content={this.props.content}>
-          <span>{this.props.children} <Icon className='InlineIcon' icon='help'/></span>
-        </Tooltip>
+        <span>
+          {this.props.children}
+          <Tooltip content={this.props.content}>
+            <Icon
+              className='InlineIcon'
+              icon='help'
+              iconSize={12}
+            />
+          </Tooltip>
+        </span>
       </div>
     )
   }

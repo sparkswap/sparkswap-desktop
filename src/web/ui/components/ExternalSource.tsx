@@ -40,6 +40,7 @@ interface ExternalLinkProps {
 export class ExternalLink extends React.Component<ExternalLinkProps> {
   handleClick = (e: React.MouseEvent<HTMLElement>): void => {
     e.preventDefault()
+    e.stopPropagation()
     openLinkInBrowser(this.props.href)
     if (this.props.onClick) this.props.onClick(e)
   }

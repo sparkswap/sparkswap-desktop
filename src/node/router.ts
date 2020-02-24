@@ -1,18 +1,19 @@
 import { App } from 'electron'
 import logger from '../global-shared/logger'
+import { valueToEnum } from '../global-shared/util'
 import { listen, listenSync, close as closeListeners } from './main-listener'
 import LndClient from './lnd'
 import LndEngine from '../global-shared/lnd-engine'
 import { AnchorEngine } from '../global-shared/anchor-engine'
 import {
-  Amount,
+  Nullable,
+  EngineBalances,
   Asset,
-  Unit,
-  valueToAsset,
-  assetToUnit,
-  Engine
+  Engine,
+  Transaction
 } from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
+import { asAmount } from '../global-shared/currency-conversions'
 import {
   AlertEvent,
   WireUnsavedRecurringBuy,
@@ -102,31 +103,33 @@ export class Router {
     }
   }
 
-  private async getBalance (asset: Asset): Promise<Amount | null> {
+  private getBalances (asset: Asset): Promise<Nullable<EngineBalances>> {
     if (asset === Asset.USDX && !this.anchorClient.isConfigured()) {
-      return { asset: Asset.USDX, unit: Unit.Cent, value: 0 }
+      return new Promise((resolve) => resolve({
+        total: asAmount(Asset.USDX, 0),
+        available: asAmount(Asset.USDX, 0),
+        holds: asAmount(Asset.USDX, 0)
+      }))
     }
 
     const engine = this.getEngineSafe(asset)
 
     if (!engine || !engine.validated) {
-      return null
+      return new Promise((resolve) => resolve(null))
     }
 
-    const balances = await Promise.all([
-      engine.getUncommittedBalance(),
-      engine.getTotalChannelBalance(),
-      engine.getTotalPendingChannelBalance(),
-      engine.getUncommittedPendingBalance()
-    ])
+    return engine.getBalances()
+  }
 
-    const totalBalance = balances.reduce((acc, bal) => parseFloat(bal) + acc, 0)
+  private getTransactions (asset: Asset): Promise<Transaction[]> {
+    const engine = this.getEngineSafe(asset)
 
-    return {
-      value: totalBalance,
-      asset,
-      unit: assetToUnit(asset)
+    if (!engine || !engine.validated) {
+      // shim for a promise since engine.getTransactions returns one
+      return new Promise(resolve => resolve([]))
     }
+
+    return engine.getTransactions()
   }
 
   listen (): void {
@@ -136,8 +139,14 @@ export class Router {
     listenSync('lnd:getConnectionConfig', () => this.lndClient.getConnectionConfig())
     listen('lnd:getPaymentChannelNetworkAddress', () => this.lndClient.engine.getPaymentChannelNetworkAddress())
     listen('lnd:payInvoice', (paymentRequest: string) => this.lndClient.engine.payInvoice(paymentRequest))
-    listen('lnd:getInvoice', (request: string) => this.lndClient.engine.getInvoice(request))
-    listen('getBalance', (asset: string) => this.getBalance(valueToAsset(asset)))
+    listen('lnd:decodePaymentRequest', (request: string) => this.lndClient.engine.decodePaymentRequest(request))
+    listen('lnd:getChannels', () => this.lndClient.engine.getChannels())
+    listen('lnd:getAlias', (publicKey: string) => this.lndClient.engine.getAlias(publicKey))
+    listen('lnd:closeChannel', ({ channelPoint, force }: { channelPoint: string, force: boolean }) => {
+      return this.lndClient.engine.closeChannel(channelPoint, force)
+    })
+    listen('getBalances', (asset: string) => this.getBalances(valueToEnum(Asset, asset)))
+    listen('getTransactions', (asset: string) => this.getTransactions(valueToEnum(Asset, asset)))
     listen('openLink', ({ link }: { link: string}) => openLink(link))
     listen('trade:execute', (quote: WireQuote) => executeTrade(this.db, this.engines, deserializeQuoteFromWire(quote)))
     listen('trade:getTrades', ({ limit, olderThanTradeId }: { limit: number, olderThanTradeId?: number }) => store.getTrades(this.db, olderThanTradeId, limit))

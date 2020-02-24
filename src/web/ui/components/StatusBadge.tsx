@@ -4,7 +4,8 @@ import './StatusBadge.css'
 
 interface StatusBadgeProps {
   size?: number,
-  intent?: Intent
+  intent?: Intent,
+  usePulse?: boolean
 }
 
 interface DefaultProps {
@@ -31,7 +32,7 @@ class StatusBadge extends React.Component<StatusBadgeProps> {
     const names = [
       'StatusBadge',
       Classes.intentClass(this.props.intent),
-      pulseLevel ? `pulse-${pulseLevel}` : ''
+      this.props.usePulse && pulseLevel ? `pulse-${pulseLevel}` : ''
     ]
 
     return names.filter(Boolean).join(' ')

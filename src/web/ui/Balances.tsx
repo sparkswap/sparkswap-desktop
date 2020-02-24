@@ -1,128 +1,137 @@
 import React, { ReactNode } from 'react'
-import { formatAsset } from './formatters'
-import { Asset } from '../../global-shared/types'
-import { balances, balanceUpdater, BalanceState } from '../domain/balance'
-import { marketDataSubscriber } from '../domain/market-data'
-import { altAmount, altAsset } from '../domain/convert-amount'
-import { Classes, H4, H5, Button } from '@blueprintjs/core'
+import { formatAsset, formatAmount } from '../../common/formatters'
+import {
+  Asset,
+  Amount,
+  LndBalances,
+  AnchorBalances
+} from '../../global-shared/types'
+import {
+  balances,
+  balanceUpdater
+} from '../domain/balance'
+import { H4, H5, Button } from '@blueprintjs/core'
 import PayInvoice from './PayInvoice'
-import { formatAmount } from '../../common/formatters'
+import Balance from './Balance'
 import './Balances.css'
 
-interface BalanceProps {
+interface BalanceSummaryProps {
+  selectBalance: (asset: Asset) => void,
   onDeposit: (e: React.MouseEvent) => void,
   depositLoading: boolean
 }
 
-interface BalancesState {
+interface BalanceSummaryState {
   balances: {
-    BTC: BalanceState,
-    USDX: BalanceState,
-    [asset: string]: BalanceState
-  },
-  updated: {
-    BTC: boolean,
-    USDX: boolean,
-    [asset: string]: boolean
-  },
-  currentPrice: number | null
+    [Asset.BTC]: LndBalances | Error,
+    [Asset.USDX]: AnchorBalances | Error
+  }
 }
 
-class Balances extends React.Component<BalanceProps, BalancesState> {
-  constructor (props: BalanceProps) {
+class BalanceSummary extends React.Component<BalanceSummaryProps, BalanceSummaryState> {
+  constructor (props: BalanceSummaryProps) {
     super(props)
     this.state = {
-      balances: {
-        [Asset.BTC]: balances[Asset.BTC],
-        [Asset.USDX]: balances[Asset.BTC]
-      },
-      updated: {
-        [Asset.BTC]: false,
-        [Asset.USDX]: false
-      },
-      currentPrice: marketDataSubscriber.currentPrice
+      balances
     }
   }
 
-  private isBalanceChange (oldBalance: BalanceState, newBalance: BalanceState): boolean {
-    if (oldBalance instanceof Error || newBalance instanceof Error) {
-      return false
-    }
-    return oldBalance.value !== newBalance.value
-  }
-
-  onData = (): void => {
-    const { currentPrice } = marketDataSubscriber
-    this.setState({ currentPrice })
+  onBalanceUpdate = (): void => {
+    this.setState({ balances })
   }
 
   componentWillUnmount (): void {
-    marketDataSubscriber.removeListener('update', this.onData)
+    balanceUpdater.removeListener('update', this.onBalanceUpdate)
   }
 
   componentDidMount (): void {
-    marketDataSubscriber.on('update', this.onData)
-    balanceUpdater.on('update', () => {
-      const oldBalances = this.state.balances
-      const updatedBTC = this.isBalanceChange(oldBalances[Asset.BTC], balances[Asset.BTC])
-      const updatedUSDX = this.isBalanceChange(oldBalances[Asset.USDX], balances[Asset.USDX])
-
-      this.setState({
-        balances: {
-          [Asset.BTC]: balances[Asset.BTC],
-          [Asset.USDX]: balances[Asset.USDX]
-        },
-        updated: {
-          [Asset.BTC]: updatedBTC || this.state.updated[Asset.BTC],
-          [Asset.USDX]: updatedUSDX || this.state.updated[Asset.USDX]
-        }
-      })
-
-      // use 2s for removing 1s animation to ensure animation doesnt get cut off
-      if (updatedBTC) {
-        setTimeout(() => this.setState(Object.assign(this.state, {
-          updated: { [Asset.BTC]: false }
-        })), 2000)
-      }
-
-      if (updatedUSDX) {
-        setTimeout(() => this.setState(Object.assign(this.state, {
-          updated: { [Asset.USDX]: false }
-        })), 2000)
-      }
-    })
+    balanceUpdater.on('update', this.onBalanceUpdate)
   }
 
-  renderConverted (asset: Asset): ReactNode {
-    const balance = this.state.balances[asset]
-    const currentPrice = this.state.currentPrice
+  totalAmount (asset: Asset): Amount | Error {
+    const assetBalances = this.state.balances[asset]
 
-    if (balance instanceof Error || currentPrice === null) {
-      return <span className='subtitle'></span>
+    if (assetBalances instanceof Error) {
+      return assetBalances
+    }
+
+    if (asset === Asset.USDX) {
+      return (assetBalances as AnchorBalances).available
+    }
+
+    return assetBalances.total
+  }
+
+  renderAction (asset: Asset): ReactNode {
+    if (asset === Asset.USDX) {
+      return (
+        <Button
+          small
+          onClick={(e: React.MouseEvent): void => this.props.onDeposit(e)}
+          loading={this.props.depositLoading}
+        >
+          Deposit
+        </Button>
+      )
+    }
+
+    if (asset === Asset.BTC) {
+      return (
+        <PayInvoice
+          small
+          title='Send'
+          onDeposit={this.props.onDeposit}
+          onInvoiceSuccess={() => this.props.selectBalance(Asset.BTC)}
+        />
+      )
+    }
+
+    return null
+  }
+
+  maybeRenderHolds (asset: Asset): ReactNode {
+    if (asset !== Asset.USDX) {
+      return
+    }
+
+    const usdxBalances = this.state.balances[asset]
+
+    if (usdxBalances instanceof Error) {
+      return
     }
 
     return (
       <span className='subtitle'>
-        &asymp;&nbsp;{formatAmount(altAmount(balance, currentPrice))}
-        &nbsp;{formatAsset(altAsset(asset))}
+        {formatAmount(usdxBalances.holds)} Holds
       </span>
     )
   }
 
-  renderAmount (asset: Asset): ReactNode {
-    const balance = this.state.balances[asset]
-    const className = [
-      balance instanceof Error ? Classes.SKELETON : '',
-      !(balance instanceof Error) && this.state.updated[asset]
-        ? 'PulseBalance' : '',
-      'balance-amount'
-    ].join(' ')
-    const value = balance instanceof Error ? '0.00000000' : formatAmount(balance)
-
+  renderAsset (asset: Asset): ReactNode {
     return (
-      <span className={className}>
-        {value}
-      </span>
+      <div className='single-balance'>
+        <H5>
+          <a
+            href={`#main-content-${asset}`}
+            onClick={() => this.props.selectBalance(asset)}
+          >
+            <div className='asset'>
+              {formatAsset(asset)}
+            </div>
+            <div className='info'>
+              <Balance
+                asset={asset}
+                amount={this.totalAmount(asset)}
+                showConverted={asset === Asset.BTC}
+              />
+              {this.maybeRenderHolds(asset)}
+            </div>
+          </a>
+          <div className='actions'>
+            {this.renderAction(asset)}
+          </div>
+        </H5>
+      </div>
     )
   }
 
@@ -130,33 +139,11 @@ class Balances extends React.Component<BalanceProps, BalancesState> {
     return (
       <div className='Balances'>
         <H4>Balances</H4>
-        <H5 className='single-balance'>
-          <div className='asset'>
-            {formatAsset(Asset.BTC)}
-          </div>
-          <div className='info'>
-            {this.renderAmount(Asset.BTC)}
-            {this.renderConverted(Asset.BTC)}
-          </div>
-          <div className='actions'>
-            <PayInvoice onDeposit={this.props.onDeposit} />
-          </div>
-        </H5>
-        <H5 className='single-balance'>
-          <div className='asset'>
-            {formatAsset(Asset.USDX)}
-          </div>
-          <div className='info'>
-            {this.renderAmount(Asset.USDX)}
-            {this.renderConverted(Asset.USDX)}
-          </div>
-          <div className='actions'>
-            <Button onClick={this.props.onDeposit} loading={this.props.depositLoading} small={true}>Deposit</Button>
-          </div>
-        </H5>
+        {this.renderAsset(Asset.BTC)}
+        {this.renderAsset(Asset.USDX)}
       </div>
     )
   }
 }
 
-export default Balances
+export default BalanceSummary

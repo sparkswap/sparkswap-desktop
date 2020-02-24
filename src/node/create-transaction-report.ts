@@ -5,7 +5,7 @@ import { app, dialog } from 'electron'
 import { getTrades } from './data/trades'
 import logger from '../global-shared/logger'
 import { TradeStatus, Trade } from '../common/types'
-import { toCommonPrice } from '../common/currency-conversions'
+import { toCommonPrice } from '../global-shared/currency-conversions'
 import { Asset } from '../global-shared/types'
 import { formatAmount } from '../common/formatters'
 

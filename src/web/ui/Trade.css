@@ -115,17 +115,3 @@
   margin-left: 10px;
   margin-top: -0.5em;
 }
-
-.Trade .TradeForm .switch-asset.bp3-control.bp3-switch input ~ .bp3-control-indicator,
-.Trade .TradeForm .switch-asset.bp3-control.bp3-switch input:checked ~ .bp3-control-indicator {
-  background: rgba(16, 22, 26, 0.5);
-}
-
-.Trade .TradeForm .switch-asset.bp3-control.bp3-switch input:checked ~ .bp3-control-indicator::before {
-  box-shadow: 0 0 0 1px rgba(16, 22, 26, 0.4);
-}
-
-.Trade .TradeForm .switch-asset.bp3-control.bp3-switch:hover input ~ .bp3-control-indicator,
-.Trade .TradeForm .switch-asset.bp3-control.bp3-switch:hover input:checked ~ .bp3-control-indicator {
-  background: rgba(16, 22, 26, 0.7);
-}

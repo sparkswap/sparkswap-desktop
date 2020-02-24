@@ -1,4 +1,9 @@
-import { SwapHash, Amount, SwapPreimage } from '../global-shared/types'
+import {
+  SwapHash,
+  Amount,
+  SwapPreimage,
+  TransactionStatus
+} from '../global-shared/types'
 import { ConnectionConfig } from '../global-shared/types/lnd'
 
 export interface LndConfig extends ConnectionConfig {
@@ -26,12 +31,8 @@ export enum TradeFailureReason {
   PERMANENT_FORWARD_ERROR= 3
 }
 
-export enum TradeStatus {
-  UNKNOWN,
-  PENDING,
-  COMPLETE,
-  FAILED
-}
+export type TradeStatus = TransactionStatus
+export const TradeStatus = TransactionStatus
 
 export interface Trade extends Quote {
   id: number,
@@ -57,17 +58,6 @@ export enum TimeUnit {
   DAYS = 'DAYS',
   WEEKS = 'WEEKS',
   MONTHS = 'MONTHS'
-}
-
-const timeUnitEntries = Object.entries(TimeUnit)
-
-export function valueToTimeUnit (str: string): TimeUnit {
-  for (let i = 0; i < timeUnitEntries.length; i++) {
-    if (timeUnitEntries[i][1] === str) {
-      return TimeUnit[timeUnitEntries[i][0] as keyof typeof TimeUnit]
-    }
-  }
-  throw new Error(`${str} is not a valid value for TimeUnit`)
 }
 
 export interface Frequency {
@@ -96,4 +86,13 @@ export type WireUnsavedRecurringBuy = Omit<WireRecurringBuy, 'id'>
 export interface AlertEvent {
   title: string,
   message: string
+}
+
+export interface WireTransaction {
+  id: string,
+  type: number,
+  status: number,
+  amount: Amount,
+  date: string,
+  fee: Amount
 }

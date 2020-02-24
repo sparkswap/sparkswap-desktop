@@ -1,5 +1,7 @@
-import { satoshisPerBTC, centsPerUSD } from './constants'
 import { Asset, Amount, assetToUnit } from '../global-shared/types'
+
+export const centsPerUSD = 100
+export const satoshisPerBTC = 100000000
 
 export function toBTC (satoshis: number): number {
   return satoshis / satoshisPerBTC
@@ -31,6 +33,14 @@ export function toAmount (asset: Asset, quantity: number): Amount {
     asset,
     unit: assetToUnit(asset),
     value: toQuantum(asset, quantity)
+  }
+}
+
+export function asAmount (asset: Asset, quantums: number): Amount {
+  return {
+    asset,
+    unit: assetToUnit(asset),
+    value: quantums
   }
 }
 

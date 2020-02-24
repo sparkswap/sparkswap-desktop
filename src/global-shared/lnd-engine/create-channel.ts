@@ -1,14 +1,11 @@
-import {
-  LndActionOptions,
-  OpenChannelResponse,
-  PendingUpdateResponse,
-  ChannelOpenResponse
-} from '../types/lnd-engine/client'
+import { LndActionOptions } from '../types/lnd-engine/client'
 import { SECONDS_PER_BLOCK } from './config'
 import { connectPeer } from './connect-peer'
 import {
   parse as parseAddress,
-  loggablePubKey
+  loggablePubKey,
+  isPendingOpenResponse,
+  isChannelOpenUpdateResponse
 } from './utils'
 
 // Default number of seconds before our first confirmation. (30 minutes)
@@ -17,14 +14,6 @@ const DEFAULT_CONFIRMATION_DELAY = 1800
 export interface CreateChannelOptions {
   targetTime?: number,
   privateChan?: boolean
-}
-
-function isPendingUpdateResponse (res: OpenChannelResponse): res is PendingUpdateResponse {
-  return Object.keys(res).includes('chanPending')
-}
-
-function isChannelOpenUpdateResponse (res: OpenChannelResponse): res is ChannelOpenResponse {
-  return Object.keys(res).includes('chanOpen')
 }
 
 export async function createChannel (paymentChannelNetworkAddress: string, fundingAmount: number, {
@@ -49,14 +38,14 @@ export async function createChannel (paymentChannelNetworkAddress: string, fundi
   return new Promise((resolve, reject) => {
     try {
       const call = client.openChannel({
-        nodePubkey: Buffer.from(publicKey, 'hex'),
+        nodePubkey: Buffer.from(publicKey, 'hex').toString('base64'),
         localFundingAmount: fundingAmount,
         targetConf,
         private: privateChan
       })
 
       call.on('data', data => {
-        if (isPendingUpdateResponse(data)) {
+        if (isPendingOpenResponse(data)) {
           return resolve()
         }
 

@@ -1,6 +1,10 @@
 import { getServerAddress } from './server'
-import { Asset } from '../global-shared/types'
-import LndEngine, { Channel } from '../global-shared/lnd-engine'
+import {
+  Asset,
+  Channel,
+  ChannelStatus
+} from '../global-shared/types'
+import LndEngine from '../global-shared/lnd-engine'
 
 interface ChannelsState {
   maxRemotePendingOpenBalance: number,
@@ -8,7 +12,7 @@ interface ChannelsState {
 }
 
 function findMaxRemoteBalance (channels: Channel[]): number {
-  return Math.max(...channels.map(channel => parseFloat(channel.remoteBalance)))
+  return Math.max(...channels.map(channel => channel.remoteBalance - channel.remoteReserve))
 }
 
 async function getChannelsWithServer (engine: LndEngine): Promise<Channel[]> {
@@ -20,8 +24,8 @@ async function getChannelsWithServer (engine: LndEngine): Promise<Channel[]> {
 
 export async function getChannelsState (engine: LndEngine): Promise<ChannelsState> {
   const channels = await getChannelsWithServer(engine)
-  const activeChannels = channels.filter(chan => chan.active)
-  const pendingChannels = channels.filter(chan => chan.active === undefined)
+  const activeChannels = channels.filter(chan => chan.status === ChannelStatus.ACTIVE)
+  const pendingChannels = channels.filter(chan => chan.status === ChannelStatus.PENDING_OPEN)
 
   return {
     maxRemotePendingOpenBalance: findMaxRemoteBalance(pendingChannels),

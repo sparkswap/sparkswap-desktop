@@ -1,0 +1,84 @@
+.Channel {
+  display: flex;
+}
+
+.Channel > *,
+.Channel .bp3-heading {
+  margin-bottom: 0;
+  line-height: 24px;
+}
+
+.Channel > *:last-child {
+  margin-left: 0.5em;
+}
+
+.Channel.collapsed .details {
+  display: none;
+}
+
+.Channel > .channel-balance {
+  text-align: right;
+  width: 215px;
+  flex-shrink: 1;
+}
+
+.Channel .channel-balance .subtitle {
+  margin-right: 0.75em;
+  margin-left: 0;
+}
+
+.Channel .channel-balance .balance-units .subtitle {
+  margin-right: 0;
+}
+
+.Channel .channel-status {
+  font-weight: 400;
+  text-align: right;
+  flex: 1;
+}
+
+.Channel .channel-status .StatusBadge {
+  margin-bottom: 1px;
+}
+
+.Channel .channel-actions {
+  min-width: 105px;
+  flex: 1;
+}
+
+.Channel .channel-actions .channel-close {
+  margin-top: 0.9em;
+  float: right;
+}
+
+.Channel .channel-actions .channel-status > .bp3-icon {
+  color: #a7b6c2;
+  vertical-align: middle;
+  margin-left: 0.75em;
+}
+
+.Channel > .channel-peer {
+  min-width: 150px;
+  flex: 1;
+}
+
+.Channel h5.channel-peer .channel-id {
+  margin-left: 0.5em;
+  text-align: right;
+}
+
+.Channel.expanded h5.channel-peer .pubkey,
+.Channel.expanded h5.channel-peer .channel-tx {
+  display: block;
+  font-size: 13px;
+  margin-left: 0;
+  width: 150px;
+  line-height: 1.3em;
+  margin-top: 0.25em;
+  margin-bottom: 0.5em;
+}
+
+.Channel .channel-peer .pubkey a,
+.Channel .channel-peer .channel-tx a {
+  color: rgba(245,248,250, 0.4);
+}
