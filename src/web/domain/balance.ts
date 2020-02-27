@@ -76,7 +76,7 @@ export function engineBalancesHaveUpdated (oldBalances: EngineBalances | Error,
     `${oldBalances.total.asset}/${newBalances.total.asset}`)
 }
 
-export async function getBalances (asset: Asset): Promise<EngineBalances | Error> {
+export async function getBalances (asset: Asset, manualUpdate = false): Promise<EngineBalances | Error> {
   const existingAssetBalances = balances[asset]
 
   try {
@@ -101,24 +101,18 @@ export async function getBalances (asset: Asset): Promise<EngineBalances | Error
     }
 
     if (engineBalancesHaveUpdated(existingAssetBalances, assetBalances)) {
-      balanceUpdater.emit('update', asset, balances[asset])
+      balanceUpdater.emit('update', manualUpdate)
     }
   } catch (e) {
     balances[asset] = e
 
     if (engineBalancesHaveUpdated(existingAssetBalances, balances[asset])) {
       logger.error(`Error while retrieving ${asset} balances: ${e}`)
-      balanceUpdater.emit('update', asset, balances[asset])
+      balanceUpdater.emit('update', manualUpdate)
     }
   }
 
   return balances[asset]
-}
-
-export async function refreshBalances (): Promise<void> {
-  await Promise.all(
-    Object.keys(balances).map(asset => getBalances(valueToEnum(Asset, asset)))
-  )
 }
 
 async function pollBalances (): Promise<never> {

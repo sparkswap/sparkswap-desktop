@@ -134,7 +134,7 @@ class LNDConnect extends React.Component<{}, LNDConnectState> {
       const status = newStatus || await lnd.getStatus()
       this.setState({ status })
       if (status === lnd.Statuses.VALIDATED && status !== oldStatus) {
-        getBalances(Asset.BTC)
+        getBalances(Asset.BTC, true)
       }
     } catch (e) {
       this.setState({ status: lnd.Statuses.UNAVAILABLE })

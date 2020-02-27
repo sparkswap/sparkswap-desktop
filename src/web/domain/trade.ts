@@ -9,8 +9,8 @@ async function executeTrade (quote: Quote): Promise<void> {
 
   // This delay is necessary since LND doesn't update balance immediately after executeTrade
   await delay(200)
-  getBalances(Asset.USDX)
-  getBalances(Asset.BTC)
+  getBalances(Asset.USDX, true)
+  getBalances(Asset.BTC, true)
 }
 
 export default executeTrade

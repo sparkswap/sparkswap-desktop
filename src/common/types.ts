@@ -96,3 +96,10 @@ export interface WireTransaction {
   date: string,
   fee: Amount
 }
+
+export enum RequestChannelStatus {
+  SUCCESS,
+  EXISTING_CHANNEL,
+  NOT_APPROVED,
+  FAILED
+}

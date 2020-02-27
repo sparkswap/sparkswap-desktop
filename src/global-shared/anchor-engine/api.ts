@@ -224,7 +224,10 @@ async function listEscrows (apiKey: string, hash?: SwapHash, limit?: number): Pr
 }
 
 export async function getEscrowBalance (apiKey: string): Promise<Amount> {
-  const escrows = await listEscrows(apiKey)
+  // We only search for the top 200 escrows here because this call is triggered
+  // alot and we dont want to make A TON of calls if the user has > 1000 escrows
+  // TODO: Fix this call when Anchor allows us to search by pending escrows
+  const escrows = await listEscrows(apiKey, undefined, 200)
 
   const value = escrows.reduce((value, escrow) => {
     if (escrow.status === EscrowStatus.pending &&

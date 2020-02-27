@@ -293,7 +293,7 @@ export class DepositDialog extends React.Component<DepositDialogProps, DepositDi
     try {
       const prevBalance = this.state.previousBalance
       const amountDeposited = await this.getDepositAmount()
-      await getBalances(Asset.USDX)
+      await getBalances(Asset.USDX, true)
       // assigning it this way allows the type to be AnchorBalances
       const currBalance = balances[Asset.USDX]
 

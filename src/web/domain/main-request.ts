@@ -14,7 +14,8 @@ import {
   AlertEvent,
   UnsavedRecurringBuy,
   WireRecurringBuy,
-  WireTransaction
+  WireTransaction,
+  RequestChannelStatus
 } from '../../common/types'
 import {
   serializeUnsavedRecurringBuyToWire,
@@ -141,6 +142,10 @@ export async function getLNAlias (pubKey: string): Promise<string> {
 
 export async function closeChannel (channelPoint: string, force: boolean): Promise<void> {
   await mainRequest('lnd:closeChannel', { channelPoint, force })
+}
+
+export async function requestChannel (): Promise<RequestChannelStatus> {
+  return await mainRequest('requestChannel') as RequestChannelStatus
 }
 
 export default mainRequest

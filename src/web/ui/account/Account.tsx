@@ -15,14 +15,15 @@ import {
 } from '../../../global-shared/types'
 import { delay } from '../../../global-shared/util'
 import { formatAsset } from '../../../common/formatters'
+import { RequestChannelStatus } from '../../../common/types'
 import {
   getTransactions,
-  getChannels
+  getChannels,
+  requestChannel
 } from '../../domain/main-request'
 import {
   balances,
-  balanceUpdater,
-  refreshBalances
+  balanceUpdater
 } from '../../domain/balance'
 import Balance from '../Balance'
 import PayInvoice from '../PayInvoice'
@@ -30,6 +31,11 @@ import EmptyableList from '../components/EmptyableList'
 import InlineTooltip from '../components/InlineTooltip'
 import TransactionCard from './TransactionCard'
 import ChannelCard from './ChannelCard'
+import {
+  showSuccessToast,
+  showSupportToast,
+  showErrorToast
+} from '../AppToaster'
 import './Account.css'
 
 const GET_TX_DELAY = 5000
@@ -48,7 +54,8 @@ interface AccountState {
   balances: {
     [Asset.BTC]: LndBalances | Error,
     [Asset.USDX]: AnchorBalances | Error
-  }
+  },
+  isRequestingChannel: boolean
 }
 
 enum TabIds {
@@ -65,30 +72,27 @@ class Account extends React.Component<AccountProps, AccountState> {
     this.state = {
       transactions: [],
       channels: [],
-      balances
+      balances,
+      isRequestingChannel: false
     }
   }
 
-  async updateChansForever (): Promise<void> {
-    if (this.props.asset === Asset.BTC) {
-      do {
-        try {
-          const channels = await getChannels()
-          this.setState({ channels })
-          await refreshBalances()
-        } catch (e) {
-          logger.debug(`Error while retrieving channels: ${e.message}, retrying in ${GET_CHAN_DELAY}ms`)
-        }
-      } while (this._isMounted && await delay(GET_CHAN_DELAY))
-    }
-  }
-
-  async updateTxForever (): Promise<void> {
+  async updateBtcChansForever (): Promise<void> {
     do {
       try {
-        const transactions = await getTransactions(this.props.asset)
+        const channels = await getChannels()
+        this.setState({ channels })
+      } catch (e) {
+        logger.debug(`Error while retrieving channels: ${e.message}, retrying in ${GET_CHAN_DELAY}ms`)
+      }
+    } while (this._isMounted && await delay(GET_CHAN_DELAY))
+  }
+
+  async updateBtcTxForever (): Promise<void> {
+    do {
+      try {
+        const transactions = await getTransactions(Asset.BTC)
         this.setState({ transactions })
-        await refreshBalances()
       } catch (e) {
         logger.debug(`Error while retrieving transactions: ${e.message}, retrying in ${GET_TX_DELAY}ms`)
       }
@@ -109,20 +113,33 @@ class Account extends React.Component<AccountProps, AccountState> {
       const transactions = await getTransactions(this.props.asset)
       this.setState({ transactions })
     } catch (e) {
-      logger.debug(`Error while retrieving transactions: ${e.message}`)
+      logger.debug(`Error while retrieving transactions: ${e.message}.`)
     }
   }
 
-  onBalanceUpdate = (): void => {
-    this.forceUpdateChannels()
-    this.forceUpdateTransactions()
+  onBalanceUpdate = (manualUpdate: boolean): void => {
+    if (manualUpdate && this.props.asset === Asset.BTC) {
+      this.forceUpdateChannels()
+      this.forceUpdateTransactions()
+    } else {
+      // We only need to update transactions for USDx because Anchor does not
+      // have a convention for channels
+      this.forceUpdateTransactions()
+    }
+
     this.setState({ balances })
   }
 
   componentDidMount (): void {
     this._isMounted = true
-    this.updateTxForever()
-    this.updateChansForever()
+
+    // We only need to update txs and chans at an interval for BTC as the only
+    // way that USD transactions update our through our UI
+    if (this.props.asset === Asset.BTC) {
+      this.updateBtcTxForever()
+      this.updateBtcChansForever()
+    }
+
     balanceUpdater.on('update', this.onBalanceUpdate)
   }
 
@@ -131,14 +148,48 @@ class Account extends React.Component<AccountProps, AccountState> {
     balanceUpdater.removeListener('update', this.onBalanceUpdate)
   }
 
+  async requestChannel (): Promise<void> {
+    try {
+      this.setState({ isRequestingChannel: true })
+      const res = await requestChannel()
+
+      switch (res) {
+        case RequestChannelStatus.SUCCESS:
+          return showSuccessToast('Successfully requested new channel from Sparkswap')
+        case RequestChannelStatus.EXISTING_CHANNEL:
+          return showSupportToast('Channel with Sparkswap already exists')
+        case RequestChannelStatus.NOT_APPROVED:
+          return showErrorToast('Must be approved to request channel', {
+            text: 'Deposit',
+            onClick: this.props.onDeposit
+          })
+        case RequestChannelStatus.FAILED:
+          return showSupportToast('Failed to open channel')
+      }
+    } catch (e) {
+      showSupportToast('Failed to open channel')
+    } finally {
+      this.setState({ isRequestingChannel: false })
+    }
+  }
+
   renderActions (): ReactNode {
     if (this.props.asset === Asset.BTC) {
       return (
-        <PayInvoice
-          title={`Send ${this.props.asset}`}
-          onDeposit={this.props.onDeposit}
-          onInvoiceSuccess={() => this.props.selectBalance(Asset.BTC)}
-        />
+        <React.Fragment>
+          <Button
+            onClick={() => this.requestChannel()}
+            loading={this.state.isRequestingChannel}
+            className='request-channel'
+          >
+            Request Channel
+          </Button>
+          <PayInvoice
+            title={`Send ${this.props.asset}`}
+            onDeposit={this.props.onDeposit}
+            onInvoiceSuccess={() => this.props.selectBalance(Asset.BTC)}
+          />
+        </React.Fragment>
       )
     }
 

@@ -11,7 +11,9 @@ import {
   KYCUploadRequest,
   KYCUploadResponse,
   VerifyPhoneResponse,
-  ProofOfKeysResponse
+  ProofOfKeysResponse,
+  ServerAddressResponse,
+  RegisterRequest
 } from '../../global-shared/types/server'
 import { UnknownJSON, isUnknownJSON } from '../../global-shared/fetch-json'
 
@@ -26,7 +28,7 @@ export async function getMarketData (): Promise<MarketDataResponse> {
   return res as unknown as MarketDataResponse
 }
 
-export async function register (data: object): Promise<void> {
+export async function register (data: RegisterRequest): Promise<void> {
   await serverRequest(API_ENDPOINTS.REGISTER, data)
 }
 
@@ -100,4 +102,10 @@ export async function getProofOfKeys (): Promise<ProofOfKeysResponse> {
   const res = await serverRequest(API_ENDPOINTS.GET_PROOF)
 
   return res as unknown as ProofOfKeysResponse
+}
+
+export async function getServerAddress (asset: Asset): Promise<ServerAddressResponse> {
+  const res = await serverRequest(API_ENDPOINTS.ADDRESS, { asset })
+
+  return res as unknown as ServerAddressResponse
 }

@@ -156,8 +156,16 @@ class App extends React.Component<{}, AppState> {
       // through, afterward it will be a no-op
       await register()
     } catch (e) {
+      const lndStatus = await lnd.getStatus()
+      const { VALIDATED } = lnd.Statuses
+
+      if (lndStatus !== VALIDATED) {
+        showErrorToast('LND is not available. Please check your settings.')
+      } else {
+        showSupportToast(`Error during initial registration: ${e.message}`)
+      }
+
       logger.error(`Error registering: ${e}`)
-      showSupportToast('Error during initial registration')
       this.setState({ depositLoading: false })
       return
     }

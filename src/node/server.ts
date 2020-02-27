@@ -1,7 +1,12 @@
 import { getAuth } from './auth'
 import { serverRequest as baseRequest } from '../common/utils'
 import { API_ENDPOINTS } from '../global-shared/api'
-import { ServerAddressResponse, KYCResponse } from '../global-shared/types/server'
+import {
+  ServerAddressResponse,
+  KYCResponse,
+  StatusResponse,
+  RegisterRequest
+} from '../global-shared/types/server'
 import { Asset, PaymentChannelNetworkAddress } from '../global-shared/types'
 import { UnknownJSON } from '../global-shared/fetch-json'
 
@@ -36,4 +41,13 @@ export async function getEmail (): Promise<string | null> {
   } catch (e) {
     return null
   }
+}
+
+export async function getStatus (): Promise<StatusResponse> {
+  const res = await serverRequest(API_ENDPOINTS.STATUS)
+  return res as unknown as StatusResponse
+}
+
+export async function register (registerRequest: RegisterRequest): Promise<void> {
+  await serverRequest(API_ENDPOINTS.REGISTER, registerRequest)
 }

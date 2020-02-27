@@ -17,7 +17,8 @@ import { asAmount } from '../global-shared/currency-conversions'
 import {
   AlertEvent,
   WireUnsavedRecurringBuy,
-  WireQuote
+  WireQuote,
+  RequestChannelStatus
 } from '../common/types'
 import {
   deserializeQuoteFromWire,
@@ -32,6 +33,7 @@ import { getAuth } from './auth'
 import { openLink, showNotification } from './util'
 import { WEBVIEW_PRELOAD_PATH } from './electron-security'
 import { createTransactionReport } from './create-transaction-report'
+import { requestChannel } from './request-channel'
 
 interface Engines {
   BTC: LndEngine,
@@ -132,6 +134,16 @@ export class Router {
     return engine.getTransactions()
   }
 
+  private requestChannel (): Promise<RequestChannelStatus> {
+    const lndEngine = this.getEngineSafe(Asset.BTC) as LndEngine
+
+    if (!lndEngine || !lndEngine.validated) {
+      return new Promise(resolve => resolve(RequestChannelStatus.FAILED))
+    }
+
+    return requestChannel(lndEngine)
+  }
+
   listen (): void {
     listen('lnd:connect', (config: ConnectionConfig) => this.lndClient.manualConnect(config))
     listen('lnd:scan', () => this.lndClient.scan())
@@ -162,6 +174,7 @@ export class Router {
     listen('dca:getRecurringBuys', () => store.getRecurringBuys(this.db).map(serializeRecurringBuyToWire))
     listenSync('app:notification', (event: AlertEvent) => showNotification(event))
     listen('report:transactions', () => createTransactionReport(this.db))
+    listen('requestChannel', () => this.requestChannel())
   }
 
   close (): void {

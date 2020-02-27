@@ -3,7 +3,8 @@ import {
   ReviewStatus,
   Amount,
   SwapHash,
-  URL
+  URL,
+  Asset
 } from './'
 
 export interface ServerAddressResponse {
@@ -75,4 +76,9 @@ export interface ProofOfKeysResponse {
   publicId: string,
   message: string,
   signature: string
+}
+
+export interface RegisterRequest {
+  paymentChannelNetworkAddress: string,
+  asset: Asset
 }
